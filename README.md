@@ -1,5 +1,7 @@
 # Kimi Code Personal Configuration
 
+[中文版文档](./README.zh.md)
+
 This repository contains personal Kimi Code configuration drafts and local plugins migrated from the OpenCode setup.
 
 ## Contents
