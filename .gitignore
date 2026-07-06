@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+.turbo/
+out/
+target/
+
+# Environment and local credentials
+.env
+.env.*
+service-local.json
+
+# Local plugin/runtime state
+*.log
+*.tmp
+*.bak*
+missions.json
+forge/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
