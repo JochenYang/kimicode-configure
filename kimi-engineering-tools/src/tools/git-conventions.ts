@@ -30,6 +30,7 @@ export interface GitConventionsInput {
   branch?: string
   files?: string[]
   include_guide?: boolean
+  enforce_body?: boolean
 }
 
 function getSubjectLine(msg: string): string {
@@ -97,9 +98,12 @@ function checkAiSignature(msg: string): CheckResult {
   return { status: "pass", label: "AI Signature", detail: "No AI signature" }
 }
 
-function checkBodyQuality(msg: string): CheckResult {
+function checkBodyQuality(msg: string, enforceBody: boolean): CheckResult {
   const body = extractBody(msg)
-  if (!body) return { status: "pass", label: "Body", detail: "No body (subject only)" }
+  if (!body) {
+    if (enforceBody) return { status: "warn", label: "Body", detail: "No body (subject only); recommend a short bullet list (<= 15 lines)" }
+    return { status: "pass", label: "Body", detail: "No body (subject only); recommend a short bullet list when change is non-trivial" }
+  }
 
   const hardIssues: string[] = []
   const softIssues: string[] = []
@@ -133,8 +137,12 @@ function checkBodyQuality(msg: string): CheckResult {
 
   const bulletLines = bodyLines.filter((line) => line.startsWith("- ") || line.startsWith("* ")).length
   const proseLines = bodyLines.filter((line) => !line.startsWith("```") && !line.startsWith("- ") && !line.startsWith("* ")).length
-  if (bulletLines === 0 && proseLines >= 3) hardIssues.push("body is all prose; convert logical changes to bullets")
-  else if (proseLines > bulletLines && proseLines > 2) softIssues.push("body is prose-heavy; prefer bullets")
+  if (bulletLines === 0 && proseLines >= 3) {
+    if (enforceBody) hardIssues.push("body is all prose; convert logical changes to bullets")
+    else softIssues.push("body is all prose; convert logical changes to bullets")
+  } else if (proseLines > bulletLines && proseLines > 2) {
+    softIssues.push(`body has ${proseLines} prose line(s) vs ${bulletLines} bullet(s); prefer bullets`)
+  }
 
   if (hardIssues.length > 0) return { status: "error", label: "Body", detail: [...hardIssues, ...softIssues].join("; ") }
   if (softIssues.length > 0) return { status: "warn", label: "Body", detail: softIssues.join("; ") }
@@ -225,6 +233,7 @@ function buildGuide(files?: string[]): string {
 export function runGitConventions(input: GitConventionsInput): string {
   const output: string[] = []
   const checks: CheckResult[] = []
+  const enforceBody = input.enforce_body === true
 
   if (input.message) {
     checks.push(checkFormat(input.message))
@@ -232,10 +241,16 @@ export function runGitConventions(input: GitConventionsInput): string {
     checks.push(checkCase(input.message))
     checks.push(checkPeriod(input.message))
     checks.push(checkAiSignature(input.message))
-    checks.push(checkBodyQuality(input.message))
+    checks.push(checkBodyQuality(input.message, enforceBody))
   }
   if (input.branch) checks.push(checkBranch(input.branch))
   if (checks.length > 0) output.push(formatResults(checks))
+
+  if (input.message && enforceBody) {
+    output.push(`**Strictness:** body enforcement = on (subject alone returns a WARN, bad body returns ERROR)`)
+  } else if (input.message) {
+    output.push(`**Strictness:** body enforcement = off (bad body returns WARN; subject alone passes). Pass enforce_body=true to upgrade.`)
+  }
 
   const allPass = checks.every((check) => check.status !== "error")
   if (input.message && !allPass) {
