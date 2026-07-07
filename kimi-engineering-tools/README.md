@@ -2,7 +2,7 @@
 
 本目录是 Kimi Code 本地 MCP 插件草案，只迁移通用工程能力：
 
-- `git_conventions`：校验 commit message、分支名，并返回提交规范。`enforce_body` 默认 `false`：只校验 subject 时通过，body 质量不合规返回 WARN；设为 `true` 后只写 subject 返回 WARN、坏 body 返回 ERROR。
+- `git_conventions`：校验 commit message、分支名，并返回提交规范。`enforce_body` 默认 `true`：只写 subject 会返回 WARN，body 不合规会返回 ERROR。传 `false` 才能只校验 subject。
 - `codesearch`：调用 `ast-grep` 做结构化代码搜索。
 - `dead_code`：基于导入图和导出符号扫描潜在死代码。
 

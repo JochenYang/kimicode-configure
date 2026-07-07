@@ -19,6 +19,8 @@
 
 规则涵盖：个人协作偏好、工程标准、安全规范、证据优先行为、前端质量要求、Git 规范、Review 输出风格、交付闭环要求。
 
+本项目要求 commit 必须带 body，调用 `git_conventions` MCP 校验时使用默认 `enforce_body=true`，不要传 `false`。
+
 手动同步：
 
 ```powershell

@@ -21,7 +21,7 @@ results plus the user's Git convention guide unless include_guide=false.`,
     branch: z.string().optional().describe("Current or proposed branch name."),
     files: z.array(z.string()).optional().describe("Changed file paths for the output contract."),
     include_guide: z.boolean().optional().describe("Default true. Set false for validation result only."),
-    enforce_body: z.boolean().optional().describe("Default false. When true, missing body is WARN and bad body is ERROR; when false, missing body passes and bad body is WARN."),
+    enforce_body: z.boolean().optional().describe("Default true. When true (default), missing body is WARN and bad body is ERROR. Pass false only to validate subject-only."),
   },
   async (input) => ({
     content: [{ type: "text", text: runGitConventions(input) }],

@@ -195,19 +195,26 @@ function buildGuide(files?: string[]): string {
     "[Commit Format]",
     "  <type>(<scope>): <subject>",
     "",
+    "  <blank line>",
+    "  <body: 2-4 short bullets>",
+    "",
     `  Allowed types: ${ALLOWED_TYPES.join(", ")}`,
     "",
     "[Commit Rules]",
-    "  - Use English imperative mood (add, fix, update)",
+    "  - Body is mandatory unless enforcing via enforce_body=false explicitly",
     "  - Subject starts with lowercase",
     "  - Subject line <= 72 chars (recommended <= 50)",
     "  - No trailing period",
     "  - No AI signature or Co-Authored-By",
+    "  - Imperative mood (add, fix, update not added, fixed, updated)",
     "",
     "[Body Rules]",
     "  - Blank line between subject and body",
     "  - Each line <= 72 chars",
-    "  - Prefer concise bullet lines",
+    "  - Body is required for project commits; subject alone returns WARN",
+    "  - Prefer concise bullet lines (2-4 bullets per commit)",
+    "  - Each bullet describes one logical change in plain prose",
+    "  - Body <= 15 lines; split into multiple commits if longer",
     "  - Never paste raw tool output or JSON tool args",
     "",
     "[Pre-Commit Checklist]",
@@ -233,7 +240,7 @@ function buildGuide(files?: string[]): string {
 export function runGitConventions(input: GitConventionsInput): string {
   const output: string[] = []
   const checks: CheckResult[] = []
-  const enforceBody = input.enforce_body === true
+  const enforceBody = input.enforce_body !== false
 
   if (input.message) {
     checks.push(checkFormat(input.message))
@@ -246,10 +253,12 @@ export function runGitConventions(input: GitConventionsInput): string {
   if (input.branch) checks.push(checkBranch(input.branch))
   if (checks.length > 0) output.push(formatResults(checks))
 
-  if (input.message && enforceBody) {
-    output.push(`**Strictness:** body enforcement = on (subject alone returns a WARN, bad body returns ERROR)`)
-  } else if (input.message) {
-    output.push(`**Strictness:** body enforcement = off (bad body returns WARN; subject alone passes). Pass enforce_body=true to upgrade.`)
+  if (input.message) {
+    if (enforceBody) {
+      output.push(`**Strictness:** body enforcement = on (subject alone returns a WARN, bad body returns ERROR)`)
+    } else {
+      output.push(`**Strictness:** body enforcement = off (bad body returns WARN; subject alone passes)`)
+    }
   }
 
   const allPass = checks.every((check) => check.status !== "error")

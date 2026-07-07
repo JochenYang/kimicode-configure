@@ -21,6 +21,8 @@ The rules file is intended to be synced to:
 
 It defines personal collaboration preferences, engineering standards, security rules, evidence-first behavior, frontend quality requirements, Git conventions, review output style, and delivery closure requirements.
 
+This project requires commit messages to include a body. Use the `git_conventions` MCP tool with its default `enforce_body=true` strictness so a missing or malformed body fails the check.
+
 To sync manually:
 
 ```powershell

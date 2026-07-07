@@ -87,7 +87,17 @@
 - 提交格式：`<type>(<scope>): <subject>`。
 - 允许类型：`feat`、`fix`、`refactor`、`docs`、`style`、`test`、`chore`、`perf`、`ci`、`build`、`revert`。
 - subject 使用英文祈使句，小写开头，不以句号结尾，建议 <= 50 字符，硬限制 <= 72 字符。
-- body 用简洁 bullet 描述变更原因和内容，避免长篇 prose。
+- **本项目提交必须带 body**。
+- body 模板：
+
+```text
+- 简述变更原因或目标
+- 简述核心改动
+- 如有验证，简述验证结果
+```
+
+- 规则：2-4 条 bullet；不写流水账、不列全文件；每条控制在一行；大改动必须写验证结果。
+- 调用 `git_conventions` 校验时使用默认 `enforce_body=true`，把 body 当作强制项。
 - 提交前检查无密钥泄露、测试/构建情况、scope 聚焦。
 - 未经主人明确确认，不执行实际 `git commit`。
 - 不执行历史重写、强推、破坏性清理，除非主人明确授权。
