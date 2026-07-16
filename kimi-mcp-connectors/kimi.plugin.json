@@ -12,7 +12,7 @@
     "wigolo": {
       "command": "npx",
       "args": ["-y", "wigolo"],
-      "startupTimeoutMs": 120000,
+      "startupTimeoutMs": 30000,
       "toolTimeoutMs": 120000
     },
     "lorewiki": {
