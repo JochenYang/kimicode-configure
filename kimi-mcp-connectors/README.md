@@ -3,7 +3,7 @@
 个人 MCP 连接器插件，包含：
 
 - `context7`：Context7 文档检索 MCP。
-- `wigolo`：本地 Web Search / Fetch / Crawl / Research MCP（零 API Key）。
+- `exa`：Exa Web Search MCP。
 - `lorewiki`：本地 LoreWiki 知识库 MCP。
 
 ## 安装
@@ -31,14 +31,14 @@ $env:CONTEXT7_API_KEY="your-key"
 ## 前置依赖
 
 - `context7` 使用 `npx -y @upstash/context7-mcp`，需要 Node/npm 可用。
-- `wigolo` 使用 `npx -y wigolo`，需要 Node ≥ 20。首次调用时会懒加载 ~1.5GB 模型+浏览器引擎（磁盘一次性占用）。
+- `exa` 是远程 HTTP MCP，需要能访问 `https://mcp.exa.ai/mcp`。
 - `lorewiki` 需要 `lorewiki` CLI 在 PATH 上。
 
 ## 管理 MCP server
 
 ```text
-/plugins mcp disable kimi-mcp-connectors wigolo
-/plugins mcp enable kimi-mcp-connectors wigolo
+/plugins mcp disable kimi-mcp-connectors exa
+/plugins mcp enable kimi-mcp-connectors exa
 /reload
 ```
 
