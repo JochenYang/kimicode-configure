@@ -1,7 +1,7 @@
 {
   "name": "kimi-mcp-connectors",
-  "version": "0.1.0",
-  "description": "Personal MCP connectors for Context7, Exa, and LoreWiki.",
+  "version": "0.2.0",
+  "description": "Personal MCP connectors for Context7, Wigolo, and LoreWiki.",
   "mcpServers": {
     "context7": {
       "command": "npx",
@@ -9,8 +9,9 @@
       "startupTimeoutMs": 30000,
       "toolTimeoutMs": 120000
     },
-    "exa": {
-      "url": "https://mcp.exa.ai/mcp",
+    "wigolo": {
+      "command": "npx",
+      "args": ["-y", "wigolo"],
       "startupTimeoutMs": 30000,
       "toolTimeoutMs": 120000
     },
@@ -23,6 +24,6 @@
   },
   "interface": {
     "displayName": "Kimi MCP Connectors",
-    "shortDescription": "Context7 docs, Exa web search, and LoreWiki local knowledge MCP servers."
+    "shortDescription": "Context7 docs, Wigolo web search, and LoreWiki local knowledge MCP servers."
   }
 }
