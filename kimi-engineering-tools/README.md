@@ -7,7 +7,7 @@ This directory contains the TypeScript source, tests, and build tooling for a se
 Users install the runtime-only directory and do not run `npm install`:
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-engineering-tools\plugin
+/plugins install <repo-root>\kimi-engineering-tools\plugin
 /reload
 /plugins info kimi-engineering-tools
 ```

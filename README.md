@@ -1,222 +1,159 @@
 # Kimi Code Personal Configuration
 
-[中文版文档](./README.zh.md)
+[中文版](./README.zh.md)
 
-This repository contains personal Kimi Code configuration drafts and local plugins migrated from the OpenCode setup.
+This repository is an independently designed and implemented collection of personal configuration and local plugins built on Kimi Code's native `AGENTS.md`, Plugin, Skill, and MCP mechanisms.
 
-## Contents
-
-- `kimi-personal-rules/AGENTS.md`: Personal global rules for Kimi Code.
-- `kimi-engineering-tools/`: Local MCP plugin for engineering tools.
-- `kimi-mcp-connectors/`: Local MCP plugin for Context7, Exa, and LoreWiki connectors.
-- `kimi-development-workflow/`: Skills-only plugin for planning, debugging, testing, review, commit, and release workflows.
-- `kimi-code-opencode-migration-report.md`: Migration assessment notes.
-
-## Global Rules
-
-The rules file is intended to be synced to:
+## Repository layout
 
 ```text
-~/.kimi-code/AGENTS.md
+<repo-root>/
+├── kimi-personal-rules/          # Global collaboration and engineering rules
+├── kimi-engineering-tools/       # Self-contained local MCP engineering tools
+├── kimi-mcp-connectors/          # Context7, Exa, and LoreWiki MCP connectors
+└── kimi-development-workflow/    # Skills-only daily development workflows
 ```
 
-It defines personal collaboration preferences, engineering standards, security rules, evidence-first behavior, frontend quality requirements, Git conventions, review output style, and delivery closure requirements.
+`<repo-root>` means the absolute path where this repository is cloned. It can be located on any drive or directory.
 
-This project requires commit messages to include a body. Use the `git_conventions` MCP tool with its default `enforce_body=true` strictness so a missing or malformed body fails the check.
+## Components
 
-To sync manually:
+### Personal rules
+
+Source file:
+
+```text
+<repo-root>\kimi-personal-rules\AGENTS.md
+```
+
+Sync it to the Kimi Code user rules directory:
 
 ```powershell
-Copy-Item -LiteralPath "D:\codes\kimicode-configure\kimi-personal-rules\AGENTS.md" -Destination "$HOME\.kimi-code\AGENTS.md" -Force
+Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\AGENTS.md" `
+  -Destination "$HOME\.kimi-code\AGENTS.md" -Force
 ```
 
-Restart Kimi Code or start a new session after changing global rules.
+The rules define collaboration style, minimal-correct engineering, evidence-based verification, security boundaries, frontend quality, Git conventions, review output, and delivery closure.
 
-## Engineering Tools Plugin
+Start a new Kimi Code session after updating the global rules.
 
-Path:
+### Engineering tools plugin
+
+Installable directory:
 
 ```text
-D:\codes\kimicode-configure\kimi-engineering-tools
+<repo-root>\kimi-engineering-tools\plugin
 ```
-
-Provides one stdio MCP server with three tools:
-
-- `git_conventions`: Validate commit messages, branch names, and Git proposal conventions.
-- `codesearch`: Run ast-grep structural code search.
-- `dead_code`: Report heuristic modules unreachable from configured entry points.
-
-The committed plugin bundle is ready to install. Maintainers rebuild it after source changes:
-
-```powershell
-cd D:\codes\kimicode-configure\kimi-engineering-tools
-npm install
-npm run build
-```
-
-Install in Kimi Code:
-
-```text
-/plugins install D:\codes\kimicode-configure\kimi-engineering-tools\plugin
-/reload
-/plugins info kimi-engineering-tools
-```
-
-Expected healthy state:
-
-```text
-Status: enabled | state: ok
-MCP servers (1/1 enabled)
-plugin-kimi-engineering-tools:engineering-tools connected · 3 tools
-```
-
-If the plugin is installed but disabled:
-
-```text
-/plugins enable kimi-engineering-tools
-/reload
-```
-
-If the MCP server is disabled:
-
-```text
-/plugins mcp enable kimi-engineering-tools engineering-tools
-/reload
-```
-
-### dead_code Notes
-
-`dead_code` is heuristic only. Do not delete files directly from its output.
-
-Default excludes skip tests, mocks, storybook files, generated files, fixtures, examples, and declaration files. Package entry points such as `index`, `src/index`, and `packages/*/src/index` are protected as entry points rather than removed from the dependency graph.
-
-Useful test prompt:
-
-```text
-请调用 kimi-engineering-tools 插件提供的 MCP 工具 dead_code，参数 entry=".", lang=["typescript"]。使用默认排除规则，不要删除任何文件。只输出前 20 个候选 dead modules，并说明误报风险。
-```
-
-Correct optimized output should include:
-
-```text
-Excludes: 18 pattern(s) applied
-```
-
-### codesearch Notes
-
-`codesearch` requires `ast-grep` on PATH or in the target project's `node_modules/.bin`.
-
-Install one of:
-
-```powershell
-npm install -g @ast-grep/cli
-```
-
-```powershell
-winget install ast-grep
-```
-
-Example prompt:
-
-```text
-请调用 codesearch 工具，在当前项目中用 TypeScript 模式搜索所有 console.log 调用。pattern: console.log($$$), lang: typescript, path: ., maxResults: 20
-```
-
-## MCP Connectors Plugin
-
-Path:
-
-```text
-D:\codes\kimicode-configure\kimi-mcp-connectors
-```
-
-Provides MCP connectors:
-
-- `context7`: Documentation lookup via `npx -y @upstash/context7-mcp`.
-- `exa`: Remote HTTP MCP at `https://mcp.exa.ai/mcp`.
-- `lorewiki`: Local knowledge base via `lorewiki mcp serve`.
-
-Install in Kimi Code:
-
-```text
-/plugins install D:\codes\kimicode-configure\kimi-mcp-connectors
-/reload
-/plugins info kimi-mcp-connectors
-```
-
-Stdio MCP servers inherit the environment of the shell that starts Kimi Code. Keep API keys in environment variables or a secret manager, not in plugin files.
-
-If `context7` requires a key, ensure it exists before launching Kimi Code:
-
-```powershell
-$env:CONTEXT7_API_KEY="your-key"
-```
-
-If `lorewiki` does not connect, ensure the `lorewiki` CLI is on PATH.
-
-## Development Workflow Plugin
-
-Installable path:
-
-```text
-D:\codes\kimicode-configure\kimi-development-workflow\plugin
-```
-
-This plugin contains six manual Skills and no MCP servers, hooks, commands, Node.js runtime, or background process:
-
-- `/skill:change-plan`: Plan scope, impact, risks, and acceptance criteria before implementation.
-- `/skill:debug`: Reproduce, isolate, test hypotheses, apply the smallest fix, and verify it.
-- `/skill:test-changed`: Select and run the smallest meaningful tests for current changes.
-- `/skill:review`: Perform a read-only, findings-first code review.
-- `/skill:commit-review`: Check commit readiness and propose a branch and commit message.
-- `/skill:release-check`: Verify release readiness without publishing or deploying.
 
 Install:
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-development-workflow\plugin
+/plugins install <repo-root>\kimi-engineering-tools\plugin
+/reload
+/plugins info kimi-engineering-tools
+```
+
+The self-contained MCP bundle exposes:
+
+- `git_conventions`: validates branch names, commit messages, and commit bodies.
+- `codesearch`: runs structural code search through ast-grep.
+- `dead_code`: reports heuristic dead-module candidates for review.
+
+Users do not need to run `npm install`. The committed `plugin/bin/server.mjs` contains the JavaScript runtime dependencies. Node.js 20 or newer must be available on PATH; `codesearch` additionally requires ast-grep in the target project or on PATH.
+
+Maintainer verification:
+
+```powershell
+Set-Location "<repo-root>\kimi-engineering-tools"
+npm ci
+npm test
+```
+
+### MCP connectors plugin
+
+Installable directory:
+
+```text
+<repo-root>\kimi-mcp-connectors
+```
+
+Install:
+
+```text
+/plugins install <repo-root>\kimi-mcp-connectors
+/reload
+/plugins info kimi-mcp-connectors
+```
+
+Declared MCP servers:
+
+- `context7`: documentation lookup through `npx`.
+- `exa`: remote HTTP search service.
+- `lorewiki`: local knowledge base through the LoreWiki CLI.
+
+Runtime prerequisites depend on the connector: Context7 needs Node.js/npm and network access, Exa needs network access, and LoreWiki must be installed on PATH.
+
+### Development workflow plugin
+
+Installable directory:
+
+```text
+<repo-root>\kimi-development-workflow\plugin
+```
+
+Install:
+
+```text
+/plugins install <repo-root>\kimi-development-workflow\plugin
 /reload
 /plugins info kimi-development-workflow
 ```
-## Plugin Reinstall Notes
 
-Kimi Code copies local plugins into:
+This plugin contains six manual `flow` Skills and no MCP server, Hook, Command, Node.js runtime, or background process:
+
+- `/skill:change-plan`: converts a clear development goal into an executable and verifiable implementation plan.
+- `/skill:debug`: reproduces, isolates, tests hypotheses, applies the smallest fix, and verifies it.
+- `/skill:test-changed`: selects and runs the smallest meaningful validation set for current changes.
+- `/skill:review`: performs a read-only, findings-first code review with file and line references.
+- `/skill:commit-review`: checks commit readiness and proposes a compliant branch and commit message.
+- `/skill:release-check`: checks release readiness without tagging, publishing, deploying, or pushing.
+
+`change-plan` complements Plan mode: Plan mode controls session behavior and clarification, while the Skill defines the engineering content, scope, risks, acceptance criteria, and verification steps of a plan.
+
+## Updating local plugins
+
+Kimi Code copies locally installed plugins into:
 
 ```text
 ~/.kimi-code/plugins/managed/<plugin-id>
 ```
 
-After editing source files, reinstall the plugin and run `/reload` or `/new`.
+After changing a plugin source directory, reinstall it and reload the session:
 
-On Windows, reinstalling a running stdio MCP plugin may fail with `EBUSY`. If that happens:
+```text
+/plugins install <absolute-plugin-directory>
+/reload
+```
+
+On Windows, an active stdio MCP process may temporarily lock files. If reinstalling reports `EBUSY`, disable the plugin, reload, and retry. Exit Kimi Code if the managed directory remains locked.
+
+## Disable or remove
 
 ```text
 /plugins disable <plugin-id>
 /reload
 ```
 
-Then reinstall. If the directory is still locked, exit Kimi Code, reopen it, and install again.
-
-## Uninstall / Disable
-
-Disable a plugin temporarily:
-
 ```text
-/plugins disable kimi-engineering-tools
+/plugins remove <plugin-id>
 /reload
 ```
 
-Remove a plugin installation record:
+Removing an installation record does not delete this repository's source files.
 
-```text
-/plugins remove kimi-engineering-tools
-/reload
-```
+## Security
 
-Removing a plugin does not delete the original source directory in this repository.
-
-## Security Notes
-
-- Do not commit API keys, tokens, `.env` files, `service-local.json`, or local runtime state.
+- Do not commit API keys, tokens, passwords, private keys, cookies, sessions, `.env` files, or production credentials.
 - Keep credentials in environment variables or a secret manager.
-- Treat all MCP tools that execute local commands or access local data as trusted local extensions.
+- Treat local command execution and local data access through MCP as trusted extension capabilities.
+- Keep project-specific MCP servers in the project's `.kimi-code/mcp.json` instead of adding every server globally.

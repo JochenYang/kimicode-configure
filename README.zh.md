@@ -1,228 +1,157 @@
-# Kimi Code 个人配置
+# Kimi Code 个人配置与本地插件
 
-本仓库包含从 OpenCode 配置迁出的 Kimi Code 个人草稿与本地插件。
+本仓库是一套基于 Kimi Code 原生 `AGENTS.md`、Plugin、Skill 和 MCP 机制自主设计并实现的个人配置与本地插件集合。
 
-## 目录内容
-
-- `kimi-personal-rules/AGENTS.md`：Kimi Code 全局个人规则。
-- `kimi-engineering-tools/`：工程能力 MCP 本地插件。
-- `kimi-mcp-connectors/`：Context7、Exa、LoreWiki 连接器 MCP 本地插件。
-- `kimi-development-workflow/`：规划、调试、测试、审查、提交和发布工作流 Skills 插件。
-- `kimi-code-opencode-migration-report.md`：迁移评估记录。
-
-## 全局规则
-
-建议同步到：
+## 仓库结构
 
 ```text
-~/.kimi-code/AGENTS.md
+<repo-root>/
+├── kimi-personal-rules/          # 全局协作与工程规则
+├── kimi-engineering-tools/       # 自包含工程工具 MCP 插件
+├── kimi-mcp-connectors/          # Context7、Exa、LoreWiki MCP 连接器
+└── kimi-development-workflow/    # 日常开发流程 Skills 插件
 ```
 
-规则涵盖：个人协作偏好、工程标准、安全规范、证据优先行为、前端质量要求、Git 规范、Review 输出风格、交付闭环要求。
+`<repo-root>` 表示本仓库克隆后的绝对路径，可以位于任意磁盘或目录，不依赖固定盘符。
 
-本项目要求 commit 必须带 body，调用 `git_conventions` MCP 校验时使用默认 `enforce_body=true`，不要传 `false`。
+## 组件说明
 
-手动同步：
+### 个人全局规则
+
+源文件：
+
+```text
+<repo-root>\kimi-personal-rules\AGENTS.md
+```
+
+同步到 Kimi Code 用户规则目录：
 
 ```powershell
-Copy-Item -LiteralPath "D:\codes\kimicode-configure\kimi-personal-rules\AGENTS.md" -Destination "$HOME\.kimi-code\AGENTS.md" -Force
+Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\AGENTS.md" `
+  -Destination "$HOME\.kimi-code\AGENTS.md" -Force
 ```
 
-修改全局规则后，重启 Kimi Code 或开新会话生效。
+规则涵盖协作方式、最小正确工程、证据与验证、安全边界、前端质量、Git 规范、代码审查和交付闭环。
 
-## 工程能力插件
+更新全局规则后，建议开启新的 Kimi Code 会话。
 
-路径：
-
-```text
-D:\codes\kimicode-configure\kimi-engineering-tools
-```
-
-提供 1 个 stdio MCP server，3 个工具：
-
-- `git_conventions`：校验 commit message、分支名和 Git 提案规范。
-- `codesearch`：调用 ast-grep 做结构化代码搜索。
-- `dead_code`：启发式报告无法从配置入口到达的候选模块。
-
-仓库已提交可直接安装的 bundle。维护者修改源码后再执行：
-
-```powershell
-cd D:\codes\kimicode-configure\kimi-engineering-tools
-npm install
-npm run build
-```
-
-在 Kimi Code 安装：
-
-```text
-/plugins install D:\codes\kimicode-configure\kimi-engineering-tools\plugin
-/reload
-/plugins info kimi-engineering-tools
-```
-
-健康状态：
-
-```text
-Status: enabled | state: ok
-MCP servers (1/1 enabled)
-plugin-kimi-engineering-tools:engineering-tools connected · 3 tools
-```
-
-插件装好但被禁用：
-
-```text
-/plugins enable kimi-engineering-tools
-/reload
-```
-
-MCP server 被禁用：
-
-```text
-/plugins mcp enable kimi-engineering-tools engineering-tools
-/reload
-```
-
-### dead_code 说明
-
-`dead_code` 只是启发式，不能直接据其结果删除文件。
-
-默认排除：测试、mocks、storybook、generated、fixtures、examples、声明文件。
-
-入口文件（例如 `index`、`src/index`、`packages/*/src/index`）作为 entry points 保护，而不是从依赖图中剔除。
-
-测试 prompt：
-
-```text
-请调用 kimi-engineering-tools 插件提供的 MCP 工具 dead_code，参数 entry=".", lang=["typescript"]。使用默认排除规则，不要删除任何文件。只输出前 20 个候选 dead modules，并说明误报风险。
-```
-
-新版正确输出应包含：
-
-```text
-Excludes: 18 pattern(s) applied
-```
-
-### codesearch 说明
-
-`codesearch` 需要 `ast-grep` 在 PATH 或目标项目 `node_modules/.bin` 下。
-
-安装方式之一：
-
-```powershell
-npm install -g @ast-grep/cli
-```
-
-```powershell
-winget install ast-grep
-```
-
-示例 prompt：
-
-```text
-请调用 codesearch 工具，在当前项目中用 TypeScript 模式搜索所有 console.log 调用。pattern: console.log($$$), lang: typescript, path: ., maxResults: 20
-```
-
-## MCP 连接器插件
-
-路径：
-
-```text
-D:\codes\kimicode-configure\kimi-mcp-connectors
-```
-
-提供 MCP 连接器：
-
-- `context7`：通过 `npx -y @upstash/context7-mcp` 做文档查询。
-- `exa`：远程 HTTP MCP，地址 `https://mcp.exa.ai/mcp`。
-- `lorewiki`：本地知识库，通过 `lorewiki mcp serve` 启动。
-
-在 Kimi Code 安装：
-
-```text
-/plugins install D:\codes\kimicode-configure\kimi-mcp-connectors
-/reload
-/plugins info kimi-mcp-connectors
-```
-
-stdio MCP 子进程会继承启动 Kimi Code 的 shell 环境变量。API key 不要写进插件文件，用环境变量或 secret manager。
-
-若 `context7` 需要 key，确保启动 Kimi Code 之前已设置：
-
-```powershell
-$env:CONTEXT7_API_KEY="your-key"
-```
-
-若 `lorewiki` 连不上，确认 `lorewiki` CLI 在 PATH 上。
-
-## 开发工作流插件
+### 工程工具插件
 
 可安装目录：
 
 ```text
-D:\codes\kimicode-configure\kimi-development-workflow\plugin
+<repo-root>\kimi-engineering-tools\plugin
 ```
-
-该插件包含 6 个手动 Skill，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程：
-
-- `/skill:change-plan`：编码前明确范围、影响、风险和验收标准。
-- `/skill:debug`：复现、隔离、验证假设、最小修复并复验。
-- `/skill:test-changed`：为当前改动选择并运行最小有效测试。
-- `/skill:review`：执行只读、发现优先的代码审查。
-- `/skill:commit-review`：检查提交准备状态并生成分支和提交信息提案。
-- `/skill:release-check`：检查发布准备状态，但不执行发布或部署。
 
 安装：
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-development-workflow\plugin
+/plugins install <repo-root>\kimi-engineering-tools\plugin
+/reload
+/plugins info kimi-engineering-tools
+```
+
+自包含 MCP bundle 提供：
+
+- `git_conventions`：校验分支名、commit message 和 commit body。
+- `codesearch`：通过 ast-grep 执行结构化代码搜索。
+- `dead_code`：启发式报告待审查的不可达模块候选。
+
+普通用户不需要执行 `npm install`。仓库提交的 `plugin/bin/server.mjs` 已包含 JavaScript 运行时依赖。运行环境需要 PATH 中存在 Node.js 20 或更高版本；使用 `codesearch` 时，目标项目或系统 PATH 还需要提供 ast-grep。
+
+维护者验证：
+
+```powershell
+Set-Location "<repo-root>\kimi-engineering-tools"
+npm ci
+npm test
+```
+
+### MCP 连接器插件
+
+可安装目录：
+
+```text
+<repo-root>\kimi-mcp-connectors
+```
+
+安装：
+
+```text
+/plugins install <repo-root>\kimi-mcp-connectors
+/reload
+/plugins info kimi-mcp-connectors
+```
+
+声明的 MCP server：
+
+- `context7`：通过 `npx` 查询技术文档。
+- `exa`：远程 HTTP 搜索服务。
+- `lorewiki`：通过 LoreWiki CLI 访问本地知识库。
+
+运行条件取决于具体连接器：Context7 需要 Node.js、npm 和网络；Exa 需要网络；LoreWiki 需要提前安装并位于 PATH 中。
+
+### 开发工作流插件
+
+可安装目录：
+
+```text
+<repo-root>\kimi-development-workflow\plugin
+```
+
+安装：
+
+```text
+/plugins install <repo-root>\kimi-development-workflow\plugin
 /reload
 /plugins info kimi-development-workflow
 ```
-## 插件重装说明
 
-Kimi Code 会把本地插件复制到：
+该插件包含 6 个手动 `flow` Skill，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程：
+
+- `/skill:change-plan`：将明确的开发目标转换为可执行、可验证的实施计划。
+- `/skill:debug`：复现、隔离、验证假设、最小修复并回归验证。
+- `/skill:test-changed`：为当前改动选择并运行最小有效验证范围。
+- `/skill:review`：执行只读、发现优先、附文件和行号的代码审查。
+- `/skill:commit-review`：检查提交准备状态并生成符合规范的分支和提交信息提案。
+- `/skill:release-check`：检查发布准备状态，但不创建 tag、不发布、不部署、不推送。
+
+`change-plan` 与 Plan mode 互补：Plan mode 控制会话交互和需求澄清，Skill 负责规定工程计划中的范围、风险、验收标准和验证步骤。
+
+## 更新本地插件
+
+Kimi Code 会把本地安装的插件复制到：
 
 ```text
 ~/.kimi-code/plugins/managed/<plugin-id>
 ```
 
-修改源码后要重新安装并 `/reload` 或 `/new`。
+修改插件源码目录后，需要重新安装并 reload：
 
-Windows 上重装正在运行的 stdio MCP 插件可能遇到 `EBUSY`：
+```text
+/plugins install <插件绝对路径>
+/reload
+```
+
+Windows 上运行中的 stdio MCP 进程可能暂时锁定文件。如果重装时报 `EBUSY`，先禁用插件并 reload 后重试；若 managed 目录仍被占用，再退出 Kimi Code 后重新安装。
+
+## 禁用与移除
 
 ```text
 /plugins disable <plugin-id>
 /reload
 ```
 
-然后再装。如果目录仍被锁定，退出 Kimi Code 重新打开再装。
-
-## 禁用与卸载
-
-临时禁用：
-
 ```text
-/plugins disable kimi-engineering-tools
+/plugins remove <plugin-id>
 /reload
 ```
 
-删除安装记录：
-
-```text
-/plugins remove kimi-engineering-tools
-/reload
-```
-
-删除安装记录不会删除本仓库的源码目录。
+移除安装记录不会删除本仓库中的源码文件。
 
 ## 安全说明
 
-- 不要把 API key、token、`.env`、`service-local.json` 或本地运行时状态提交到仓库。
-- 凭据放在环境变量或 secret manager。
-- 所有执行本地命令或访问本地数据的 MCP 工具都视为受信本地扩展。
-
-## 相关文档
-
-- 英文版：`README.md`
-- 全局规则：`kimi-personal-rules/AGENTS.md`
-- 迁移记录：`kimi-code-opencode-migration-report.md`
+- 不提交 API key、Token、密码、私钥、Cookie、Session、`.env` 或生产凭据。
+- 凭据应保存在环境变量或 secret manager 中。
+- 将 MCP 的本地命令执行和本地数据访问视为受信扩展能力。
+- 项目专用 MCP 应放在项目的 `.kimi-code/mcp.json`，不要把所有服务都加入全局插件。

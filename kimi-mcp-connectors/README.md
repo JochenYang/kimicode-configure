@@ -6,12 +6,14 @@
 - `exa`：Exa Web Search MCP。
 - `lorewiki`：本地 LoreWiki 知识库 MCP。
 
+`<repo-root>` 表示本仓库克隆后的绝对路径，请在安装时替换为本机实际路径。
+
 ## 安装
 
 在 Kimi Code 中执行：
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-mcp-connectors
+/plugins install <repo-root>\kimi-mcp-connectors
 /reload
 /plugins info kimi-mcp-connectors
 ```

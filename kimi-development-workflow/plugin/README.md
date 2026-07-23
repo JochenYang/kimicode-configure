@@ -5,7 +5,7 @@
 ## 安装
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-development-workflow\plugin
+/plugins install <repo-root>\kimi-development-workflow\plugin
 /reload
 /plugins info kimi-development-workflow
 ```
