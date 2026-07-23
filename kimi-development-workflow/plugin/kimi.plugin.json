@@ -1,0 +1,21 @@
+{
+  "name": "kimi-development-workflow",
+  "version": "0.1.0",
+  "description": "用于日常开发的规划、调试、测试、审查、提交和发布工作流。",
+  "keywords": [
+    "development",
+    "review",
+    "debugging",
+    "testing",
+    "git",
+    "release"
+  ],
+  "skills": "./skills/",
+  "skillInstructions": "使用任何 Skill 前，先读取适用的 AGENTS.md，并遵循范围最具体的项目规则。保留用户已有的无关改动。未经明确授权，不执行提交、推送、发布、合并、历史重写或破坏性清理。区分执行/复现证据、日志、静态调用链、推断和猜测。先写清行为主张，再执行主张为假时会失败的最短检查；没有实际验证时不得宣称完成或正确。优先最小正确范围，并明确未验证项和残余风险。",
+  "interface": {
+    "displayName": "Kimi 开发工作流",
+    "shortDescription": "规划、调试、测试、审查、提交和发布工作流。",
+    "longDescription": "纯 Skills 开发工作流插件，不包含 MCP、Hook、Command、Node.js 运行时或后台进程。",
+    "developerName": "个人"
+  }
+}

@@ -1,19 +1,29 @@
 {
   "name": "kimi-engineering-tools",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Local MCP tools for Kimi Code engineering workflows.",
+  "description": "Local MCP tools for commit conventions, structural code search, and dead-module candidates.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "node ./dist/server.js"
+    "build": "npm run typecheck && npm run bundle",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bundle": "node ./scripts/bundle.mjs",
+    "verify:plugin": "node ./scripts/verify-plugin.mjs",
+    "test": "npm run build && npm run verify:plugin && node --import tsx --test tests/*.test.ts",
+    "start": "node ./plugin/bin/server.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.2",
+    "minimatch": "^10.0.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "esbuild": "^0.28.1",
+    "tsx": "^4.20.6",
     "typescript": "^5.7.2"
   }
 }

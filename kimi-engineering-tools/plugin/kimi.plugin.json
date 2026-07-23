@@ -1,0 +1,28 @@
+{
+  "name": "kimi-engineering-tools",
+  "version": "0.2.0",
+  "description": "Local MCP tools for commit conventions, structural code search, and dead-module candidates.",
+  "keywords": [
+    "mcp",
+    "code-search",
+    "git",
+    "static-analysis"
+  ],
+  "mcpServers": {
+    "engineering-tools": {
+      "command": "node",
+      "args": [
+        "./bin/server.mjs"
+      ],
+      "cwd": "./",
+      "startupTimeoutMs": 30000,
+      "toolTimeoutMs": 120000
+    }
+  },
+  "interface": {
+    "displayName": "Kimi Engineering Tools",
+    "shortDescription": "Commit validation, AST search, and heuristic dead-module analysis.",
+    "longDescription": "Local engineering tools for Kimi Code CLI. Dead-module results are heuristic review candidates, not deletion proof.",
+    "developerName": "Personal"
+  }
+}

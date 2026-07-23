@@ -7,7 +7,7 @@ import { runGitConventions } from "./tools/git-conventions.js"
 
 const server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.1.0",
+  version: "0.2.0",
 })
 
 server.tool(
@@ -49,7 +49,7 @@ or in the current project's node_modules/.bin directory.`,
 
 server.tool(
   "dead_code",
-  `Detect candidate dead modules and unused exported symbols.
+  `Detect candidate modules that are unreachable from configured entry points.
 
 This is a heuristic static analysis tool. Treat results as review candidates,
 not proof that code can be deleted. Dynamic imports, framework routes, plugin

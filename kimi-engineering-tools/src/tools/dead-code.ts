@@ -1,7 +1,21 @@
 import fs from "node:fs/promises"
 import path from "node:path"
+import { minimatch } from "minimatch"
 
-const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "coverage", ".next", ".nuxt", ".turbo", "out", "target", "vendor"])
+const SKIP_DIRS = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  "coverage",
+  ".next",
+  ".nuxt",
+  ".turbo",
+  "out",
+  "target",
+  "vendor",
+])
+
 const DEFAULT_ENTRIES = [
   "index",
   "main",
@@ -17,6 +31,7 @@ const DEFAULT_ENTRIES = [
   "packages/*/src/index",
   "packages/*/src/main",
 ]
+
 const DEFAULT_EXCLUDES = [
   "**/*.d.ts",
   "**/*.test.*",
@@ -37,6 +52,8 @@ const DEFAULT_EXCLUDES = [
   "**/example/**",
 ]
 
+type SymbolKind = "interface" | "type" | "enum" | "class" | "struct" | "function" | "variable"
+
 interface ImportDecl {
   rawPath: string
   isLocal: boolean
@@ -44,7 +61,7 @@ interface ImportDecl {
 
 interface TypeDef {
   name: string
-  kind: "interface" | "type" | "enum" | "class" | "struct"
+  kind: SymbolKind
   exported: boolean
   line: number
 }
@@ -70,30 +87,56 @@ export interface DeadCodeInput {
 
 interface ExportedSymbol {
   name: string
-  kind: TypeDef["kind"]
+  kind: SymbolKind
   module: string
   file: string
   line: number
 }
 
+function lineAt(content: string, index: number): number {
+  return content.slice(0, index).split("\n").length
+}
+
 const tsParser: Parser = {
   name: "TypeScript",
-  extensions: ["ts", "tsx", "js", "jsx", "mjs"],
+  extensions: ["ts", "tsx", "js", "jsx", "mjs", "cjs"],
   extractImports(content) {
     const imports: ImportDecl[] = []
-    const patterns = [/import\s+(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g, /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g, /export\s+(?:\w+\s+)?(?:\{[^}]*\}|\*)\s+from\s+['"]([^'"]+)['"]/g]
+    const patterns = [
+      /import\s+(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
+      /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+      /export\s+(?:type\s+)?(?:\{[^}]*\}|\*)\s+from\s+['"]([^'"]+)['"]/g,
+      /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+    ]
     for (const re of patterns) {
       let match: RegExpExecArray | null
-      while ((match = re.exec(content)) !== null) imports.push({ rawPath: match[1] ?? "", isLocal: /^[./]/.test(match[1] ?? "") })
+      while ((match = re.exec(content)) !== null) {
+        const rawPath = match[1] ?? ""
+        imports.push({ rawPath, isLocal: /^[./]/.test(rawPath) })
+      }
     }
     return imports
   },
   parseTypeDefs(content) {
     const defs: TypeDef[] = []
-    const patterns: Array<[RegExp, TypeDef["kind"]]> = [[/(export\s+)?interface\s+(\w+)/g, "interface"], [/(export\s+)?type\s+(\w+)\s*=/g, "type"], [/(export\s+)?enum\s+(\w+)/g, "enum"], [/(export\s+)?class\s+(\w+)/g, "class"]]
-    for (const [re, kind] of patterns) {
+    const patterns: Array<[RegExp, SymbolKind, number]> = [
+      [/(export\s+)?interface\s+(\w+)/g, "interface", 2],
+      [/(export\s+)?type\s+(\w+)\s*=/g, "type", 2],
+      [/(export\s+)?(?:const\s+)?enum\s+(\w+)/g, "enum", 2],
+      [/(export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+(\w+)/g, "class", 2],
+      [/(export\s+)(?:default\s+)?(?:async\s+)?function\s*\*?\s*(\w+)/g, "function", 2],
+      [/(export\s+)(?:declare\s+)?(?:const|let|var)\s+(\w+)/g, "variable", 2],
+    ]
+    for (const [re, kind, nameIndex] of patterns) {
       let match: RegExpExecArray | null
-      while ((match = re.exec(content)) !== null) defs.push({ name: match[2] ?? "", kind, exported: Boolean(match[1]), line: content.slice(0, match.index).split("\n").length })
+      while ((match = re.exec(content)) !== null) {
+        defs.push({
+          name: match[nameIndex] ?? "",
+          kind,
+          exported: Boolean(match[1]),
+          line: lineAt(content, match.index),
+        })
+      }
     }
     return defs
   },
@@ -114,7 +157,10 @@ const pyParser: Parser = {
     const patterns = [/^import\s+([.\w]+)/gm, /^from\s+([.\w]+)\s+import\s+[.\w,\s]+/gm]
     for (const re of patterns) {
       let match: RegExpExecArray | null
-      while ((match = re.exec(content)) !== null) imports.push({ rawPath: match[1] ?? "", isLocal: (match[1] ?? "").startsWith(".") })
+      while ((match = re.exec(content)) !== null) {
+        const rawPath = match[1] ?? ""
+        imports.push({ rawPath, isLocal: rawPath.startsWith(".") })
+      }
     }
     return imports
   },
@@ -124,7 +170,7 @@ const pyParser: Parser = {
     let match: RegExpExecArray | null
     while ((match = re.exec(content)) !== null) {
       const name = match[1] ?? ""
-      defs.push({ name, kind: "class", exported: !name.startsWith("_"), line: content.slice(0, match.index).split("\n").length + 1 })
+      defs.push({ name, kind: "class", exported: !name.startsWith("_"), line: lineAt(content, match.index) + 1 })
     }
     return defs
   },
@@ -132,7 +178,9 @@ const pyParser: Parser = {
   normalizeImportPath(rawPath, fromFile, srcDir) {
     const fromDir = path.dirname(fromFile)
     const cleaned = rawPath.replace(/^\.+/, "").replace(/\./g, "/")
-    const resolved = rawPath.startsWith(".") ? path.resolve(srcDir, fromDir, cleaned) : path.resolve(srcDir, cleaned)
+    const resolved = rawPath.startsWith(".")
+      ? path.resolve(srcDir, fromDir, cleaned)
+      : path.resolve(srcDir, cleaned)
     const relative = path.relative(srcDir, resolved)
     if (relative.startsWith("..") || path.isAbsolute(relative)) return null
     return relative.replace(/\\/g, "/")
@@ -142,13 +190,38 @@ const pyParser: Parser = {
 const simpleParsers: Parser[] = [
   tsParser,
   pyParser,
-  makeRegexParser("Go", ["go"], [/import\s+(?:\w+\s+)?"([^"]+)"/g], [[/type\s+(\w+)\s+struct\s*\{/g, "struct"], [/type\s+(\w+)\s+interface\s*\{/g, "interface"]]),
-  makeRegexParser("Rust", ["rs"], [/^use\s+([\w:]+).*;/gm, /^mod\s+(\w+)\s*[;{]/gm], [[/(pub\s+)?struct\s+(\w+)/g, "struct"], [/(pub\s+)?enum\s+(\w+)/g, "enum"], [/(pub\s+)?trait\s+(\w+)/g, "interface"]]),
-  makeRegexParser("C#", ["cs"], [/^using\s+(?:\w+\s*=\s*)?([\w.]+)\s*;/gm], [[/(public\s+)?(?:class|record)\s+(\w+)/g, "class"], [/(public\s+)?struct\s+(\w+)/g, "struct"], [/(public\s+)?interface\s+(\w+)/g, "interface"], [/(public\s+)?enum\s+(\w+)/g, "enum"]]),
-  makeRegexParser("C++", ["cpp", "cxx", "cc", "c", "hpp", "hxx", "h", "hh"], [/^#\s*include\s*"([^"]+)"/gm], [[/(?:class|struct)\s+(\w+)\s*[{:\n]/g, "struct"], [/(?:enum\s+class|enum)\s+(\w+)/g, "enum"]]),
+  makeRegexParser(
+    "Go",
+    ["go"],
+    [/import\s+(?:\w+\s+)?"([^"]+)"/g],
+    [[/type\s+(\w+)\s+struct\s*\{/g, "struct"], [/type\s+(\w+)\s+interface\s*\{/g, "interface"]],
+  ),
+  makeRegexParser(
+    "Rust",
+    ["rs"],
+    [/^use\s+([\w:]+).*;/gm, /^mod\s+(\w+)\s*[;{]/gm],
+    [[/(pub\s+)?struct\s+(\w+)/g, "struct"], [/(pub\s+)?enum\s+(\w+)/g, "enum"], [/(pub\s+)?trait\s+(\w+)/g, "interface"]],
+  ),
+  makeRegexParser(
+    "C#",
+    ["cs"],
+    [/^using\s+(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
+    [[/(public\s+)?(?:class|record)\s+(\w+)/g, "class"], [/(public\s+)?struct\s+(\w+)/g, "struct"], [/(public\s+)?interface\s+(\w+)/g, "interface"], [/(public\s+)?enum\s+(\w+)/g, "enum"]],
+  ),
+  makeRegexParser(
+    "C++",
+    ["cpp", "cxx", "cc", "c", "hpp", "hxx", "h", "hh"],
+    [/^#\s*include\s*"([^"]+)"/gm],
+    [[/(?:class|struct)\s+(\w+)\s*[{:\n]/g, "struct"], [/(?:enum\s+class|enum)\s+(\w+)/g, "enum"]],
+  ),
 ]
 
-function makeRegexParser(name: string, extensions: string[], importPatterns: RegExp[], typePatterns: Array<[RegExp, TypeDef["kind"]]>): Parser {
+function makeRegexParser(
+  name: string,
+  extensions: string[],
+  importPatterns: RegExp[],
+  typePatterns: Array<[RegExp, SymbolKind]>,
+): Parser {
   return {
     name,
     extensions,
@@ -156,7 +229,9 @@ function makeRegexParser(name: string, extensions: string[], importPatterns: Reg
       const imports: ImportDecl[] = []
       for (const re of importPatterns) {
         let match: RegExpExecArray | null
-        while ((match = re.exec(content)) !== null) imports.push({ rawPath: match[1] ?? "", isLocal: true })
+        while ((match = re.exec(content)) !== null) {
+          imports.push({ rawPath: match[1] ?? "", isLocal: true })
+        }
       }
       return imports
     },
@@ -166,14 +241,21 @@ function makeRegexParser(name: string, extensions: string[], importPatterns: Reg
         let match: RegExpExecArray | null
         while ((match = re.exec(content)) !== null) {
           const nameIndex = match.length > 2 ? 2 : 1
-          defs.push({ name: match[nameIndex] ?? "", kind, exported: match[1] === "pub " || match[1] === "public " || match.length === 2, line: content.slice(0, match.index).split("\n").length })
+          defs.push({
+            name: match[nameIndex] ?? "",
+            kind,
+            exported: match[1] === "pub " || match[1] === "public " || match.length === 2,
+            line: lineAt(content, match.index),
+          })
         }
       }
       return defs
     },
     isLocalImport: () => true,
     normalizeImportPath(rawPath, fromFile, srcDir) {
-      const relative = rawPath.includes("::") ? rawPath.replace(/^crate::/, "").replace(/::/g, "/") : rawPath
+      const relative = rawPath.includes("::")
+        ? rawPath.replace(/^crate::/, "").replace(/::/g, "/")
+        : rawPath
       const resolved = path.resolve(srcDir, path.dirname(fromFile), relative)
       const rel = path.relative(srcDir, resolved)
       if (rel.startsWith("..") || path.isAbsolute(rel)) return null
@@ -183,7 +265,7 @@ function makeRegexParser(name: string, extensions: string[], importPatterns: Reg
 }
 
 function stripExtension(filePath: string): string {
-  return filePath.replace(/\.(ts|tsx|js|jsx|mjs|py|go|rs|cs|cpp|cxx|cc|c|hpp|hxx|hh|h)$/, "")
+  return filePath.replace(/\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|cs|cpp|cxx|cc|c|hpp|hxx|hh|h)$/, "")
 }
 
 async function listFiles(dir: string): Promise<string[]> {
@@ -207,43 +289,45 @@ async function listFiles(dir: string): Promise<string[]> {
   return out
 }
 
-function globToRegExp(glob: string): RegExp {
-  const normalized = glob.replace(/\\/g, "/")
-  let out = "^"
-  for (let i = 0; i < normalized.length; i++) {
-    const char = normalized[i]
-    const next = normalized[i + 1]
-    if (char === "*" && next === "*") {
-      out += ".*"
-      i++
-    } else if (char === "*") {
-      out += "[^/]*"
-    } else if (char === "?") {
-      out += "[^/]"
-    } else {
-      out += char?.replace(/[|\\{}()[\]^$+?.]/g, "\\$&") ?? ""
-    }
-  }
-  out += "$"
-  return new RegExp(out)
-}
-
 function isExcluded(relFile: string, patterns: string[]): boolean {
   const normalized = relFile.replace(/\\/g, "/")
-  return patterns.some((pattern) => globToRegExp(pattern).test(normalized))
+  return patterns.some((pattern) => minimatch(normalized, pattern, { dot: true, matchBase: true }))
 }
 
 function isEntryPoint(module: string, entryPoints: string[]): boolean {
-  return entryPoints.some((entry) => entry === module || globToRegExp(entry).test(module))
+  return entryPoints.some((entry) => entry === module || minimatch(module, entry, { dot: true }))
 }
 
 function selectParsers(files: string[], explicitLangs?: string[]): Parser[] {
   if (explicitLangs && explicitLangs.length > 0) {
     const wanted = new Set(explicitLangs.map((lang) => lang.toLowerCase()))
-    return simpleParsers.filter((parser) => wanted.has(parser.name.toLowerCase()) || parser.extensions.some((ext) => wanted.has(ext)))
+    return simpleParsers.filter(
+      (parser) => wanted.has(parser.name.toLowerCase()) || parser.extensions.some((ext) => wanted.has(ext)),
+    )
   }
   const extSet = new Set(files.map((file) => path.extname(file).slice(1).toLowerCase()))
   return simpleParsers.filter((parser) => parser.extensions.some((ext) => extSet.has(ext)))
+}
+
+function resolveModuleKey(normalized: string, moduleKeys: Set<string>): string {
+  if (moduleKeys.has(normalized)) return normalized
+  const indexModule = `${normalized.replace(/\/$/, "")}/index`
+  if (moduleKeys.has(indexModule)) return indexModule
+  return normalized
+}
+
+function findReachable(graph: Map<string, Set<string>>, roots: string[]): Set<string> {
+  const reachable = new Set<string>()
+  const pending = [...roots]
+  while (pending.length > 0) {
+    const module = pending.pop()
+    if (!module || reachable.has(module)) continue
+    reachable.add(module)
+    for (const dependency of graph.get(module) ?? []) {
+      if (graph.has(dependency) && !reachable.has(dependency)) pending.push(dependency)
+    }
+  }
+  return reachable
 }
 
 export async function runDeadCode(input: DeadCodeInput): Promise<string> {
@@ -260,17 +344,22 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
     ...(input.include_default_excludes === false ? [] : DEFAULT_EXCLUDES),
     ...(input.exclude ?? []),
   ]
-  const files = (await listFiles(srcDir))
-    .filter((filePath) => !isExcluded(path.relative(srcDir, filePath).replace(/\\/g, "/"), excludePatterns))
+  const files = (await listFiles(srcDir)).filter(
+    (filePath) => !isExcluded(path.relative(srcDir, filePath).replace(/\\/g, "/"), excludePatterns),
+  )
   const parsers = selectParsers(files, input.lang)
   const extToParser = new Map<string, Parser>()
   for (const parser of parsers) parser.extensions.forEach((ext) => extToParser.set(ext, parser))
 
+  const sourceFiles = files.filter((filePath) => extToParser.has(path.extname(filePath).slice(1).toLowerCase()))
+  const moduleKeys = new Set(
+    sourceFiles.map((filePath) => stripExtension(path.relative(srcDir, filePath).replace(/\\/g, "/"))),
+  )
   const graph = new Map<string, Set<string>>()
   const reverse = new Map<string, Set<string>>()
   const symbols: ExportedSymbol[] = []
 
-  for (const filePath of files) {
+  for (const filePath of sourceFiles) {
     const ext = path.extname(filePath).slice(1).toLowerCase()
     const parser = extToParser.get(ext)
     if (!parser) continue
@@ -282,7 +371,7 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
     for (const decl of parser.extractImports(content)) {
       if (!decl.isLocal && !parser.isLocalImport(decl.rawPath)) continue
       const normalized = parser.normalizeImportPath(decl.rawPath, relFile, srcDir)
-      if (normalized) targets.add(normalized)
+      if (normalized) targets.add(resolveModuleKey(normalized, moduleKeys))
     }
 
     graph.set(moduleKey, targets)
@@ -293,38 +382,60 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
     }
 
     for (const def of parser.parseTypeDefs(content)) {
-      if (def.exported && def.name) symbols.push({ name: def.name, kind: def.kind, module: moduleKey, file: relFile, line: def.line })
+      if (def.exported && def.name) {
+        symbols.push({ name: def.name, kind: def.kind, module: moduleKey, file: relFile, line: def.line })
+      }
     }
   }
 
   if (graph.size === 0) return `No source files found in ${input.entry ?? "."}`
 
   const entryPoints = input.entry_points ?? DEFAULT_ENTRIES
+  const roots = [...graph.keys()].filter((module) => isEntryPoint(module, entryPoints))
   const minExports = input.min_exports ?? 1
-  const deadModules = [...reverse.entries()]
-    .filter(([module, dependents]) => !isEntryPoint(module, entryPoints) && dependents.size === 0 && graph.has(module))
-    .map(([module]) => ({ module, exportedSymbols: symbols.filter((symbol) => symbol.module === module) }))
-    .filter((item) => item.exportedSymbols.length >= minExports)
-    .sort((a, b) => b.exportedSymbols.length - a.exportedSymbols.length)
+  const reachable = findReachable(graph, roots)
+  const candidates = roots.length > 0
+    ? [...graph.keys()].filter((module) => !reachable.has(module))
+    : [...graph.keys()].filter((module) => (reverse.get(module)?.size ?? 0) === 0)
 
-  const parts = [`## Dead Code: ${input.entry ?? "."}`]
-  parts.push(`Languages: ${parsers.map((parser) => parser.name).join(", ") || "none"} | Modules: ${graph.size} | Exported symbols: ${symbols.length} | Dead modules: ${deadModules.length}`)
+  const deadModules = candidates
+    .filter((module) => !isEntryPoint(module, entryPoints))
+    .map((module) => ({ module, exportedSymbols: symbols.filter((symbol) => symbol.module === module) }))
+    .filter((item) => item.exportedSymbols.length >= minExports)
+    .sort((a, b) => b.exportedSymbols.length - a.exportedSymbols.length || a.module.localeCompare(b.module))
+
+  const mode = roots.length > 0
+    ? `unreachable from ${roots.length} entry point(s)`
+    : "zero inbound dependencies (no configured entry point matched)"
+  const parts = [`## Dead Module Candidates: ${input.entry ?? "."}`]
+  parts.push(
+    `Languages: ${parsers.map((parser) => parser.name).join(", ") || "none"} | Modules: ${graph.size} | Exported symbols: ${symbols.length} | Candidates: ${deadModules.length}`,
+  )
+  parts.push(`Analysis: ${mode}`)
   if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`)
   parts.push("")
+
   if (deadModules.length === 0) {
-    parts.push("No dead modules detected. Treat this as a heuristic result, not proof that no dead code exists.")
+    parts.push("No dead-module candidates detected. This heuristic result is not proof that no dead code exists.")
     return parts.join("\n")
   }
 
   const totalDeadExports = deadModules.reduce((sum, module) => sum + module.exportedSymbols.length, 0)
   parts.push("### Summary")
-  parts.push(`  Dead modules: ${deadModules.length} | Dead exports: ${totalDeadExports} / ${symbols.length}`)
-  parts.push("", "### Dead Modules (0 dependents)")
+  parts.push(`  Candidate modules: ${deadModules.length} | Candidate exports: ${totalDeadExports} / ${symbols.length}`)
+  parts.push("", "### Candidate Modules")
   for (const deadModule of deadModules.slice(0, 30)) {
-    parts.push(`  ${deadModule.module}/ (${deadModule.exportedSymbols.length} dead exports)`)
-    for (const symbol of deadModule.exportedSymbols.slice(0, 10)) parts.push(`    - ${symbol.kind} ${symbol.name} (${symbol.file}:${symbol.line})`)
-    if (deadModule.exportedSymbols.length > 10) parts.push(`    ... and ${deadModule.exportedSymbols.length - 10} more`)
+    parts.push(`  ${deadModule.module}/ (${deadModule.exportedSymbols.length} exported symbols)`)
+    for (const symbol of deadModule.exportedSymbols.slice(0, 10)) {
+      parts.push(`    - ${symbol.kind} ${symbol.name} (${symbol.file}:${symbol.line})`)
+    }
+    if (deadModule.exportedSymbols.length > 10) {
+      parts.push(`    ... and ${deadModule.exportedSymbols.length - 10} more`)
+    }
   }
-  parts.push("", "Note: dynamic imports, framework routes, plugin entrypoints, and CLI entrypoints can be false positives.")
+  parts.push(
+    "",
+    "Note: dynamic imports, path aliases, framework routes, plugin entrypoints, and CLI entrypoints can produce false positives.",
+  )
   return parts.join("\n")
 }

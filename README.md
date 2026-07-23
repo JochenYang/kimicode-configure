@@ -9,6 +9,7 @@ This repository contains personal Kimi Code configuration drafts and local plugi
 - `kimi-personal-rules/AGENTS.md`: Personal global rules for Kimi Code.
 - `kimi-engineering-tools/`: Local MCP plugin for engineering tools.
 - `kimi-mcp-connectors/`: Local MCP plugin for Context7, Exa, and LoreWiki connectors.
+- `kimi-development-workflow/`: Skills-only plugin for planning, debugging, testing, review, commit, and release workflows.
 - `kimi-code-opencode-migration-report.md`: Migration assessment notes.
 
 ## Global Rules
@@ -43,9 +44,9 @@ Provides one stdio MCP server with three tools:
 
 - `git_conventions`: Validate commit messages, branch names, and Git proposal conventions.
 - `codesearch`: Run ast-grep structural code search.
-- `dead_code`: Scan candidate dead modules and unused exported symbols.
+- `dead_code`: Report heuristic modules unreachable from configured entry points.
 
-Build before installing:
+The committed plugin bundle is ready to install. Maintainers rebuild it after source changes:
 
 ```powershell
 cd D:\codes\kimicode-configure\kimi-engineering-tools
@@ -56,7 +57,7 @@ npm run build
 Install in Kimi Code:
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-engineering-tools
+/plugins install D:\codes\kimicode-configure\kimi-engineering-tools\plugin
 /reload
 /plugins info kimi-engineering-tools
 ```
@@ -66,7 +67,7 @@ Expected healthy state:
 ```text
 Status: enabled | state: ok
 MCP servers (1/1 enabled)
-plugin-kimi-engineering-tools:kimi-engineering-tools connected · 3 tools
+plugin-kimi-engineering-tools:engineering-tools connected · 3 tools
 ```
 
 If the plugin is installed but disabled:
@@ -79,7 +80,7 @@ If the plugin is installed but disabled:
 If the MCP server is disabled:
 
 ```text
-/plugins mcp enable kimi-engineering-tools kimi-engineering-tools
+/plugins mcp enable kimi-engineering-tools engineering-tools
 /reload
 ```
 
@@ -153,6 +154,30 @@ $env:CONTEXT7_API_KEY="your-key"
 
 If `lorewiki` does not connect, ensure the `lorewiki` CLI is on PATH.
 
+## Development Workflow Plugin
+
+Installable path:
+
+```text
+D:\codes\kimicode-configure\kimi-development-workflow\plugin
+```
+
+This plugin contains six manual Skills and no MCP servers, hooks, commands, Node.js runtime, or background process:
+
+- `/skill:change-plan`: Plan scope, impact, risks, and acceptance criteria before implementation.
+- `/skill:debug`: Reproduce, isolate, test hypotheses, apply the smallest fix, and verify it.
+- `/skill:test-changed`: Select and run the smallest meaningful tests for current changes.
+- `/skill:review`: Perform a read-only, findings-first code review.
+- `/skill:commit-review`: Check commit readiness and propose a branch and commit message.
+- `/skill:release-check`: Verify release readiness without publishing or deploying.
+
+Install:
+
+```text
+/plugins install D:\codes\kimicode-configure\kimi-development-workflow\plugin
+/reload
+/plugins info kimi-development-workflow
+```
 ## Plugin Reinstall Notes
 
 Kimi Code copies local plugins into:

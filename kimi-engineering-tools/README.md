@@ -1,33 +1,49 @@
 # Kimi Engineering Tools
 
-本目录是 Kimi Code 本地 MCP 插件草案，只迁移通用工程能力：
+This directory contains the TypeScript source, tests, and build tooling for a self-contained Kimi Code CLI plugin.
 
-- `git_conventions`：校验 commit message、分支名，并返回提交规范。`enforce_body` 默认 `true`：只写 subject 会返回 WARN，body 不合规会返回 ERROR。传 `false` 才能只校验 subject。
-- `codesearch`：调用 `ast-grep` 做结构化代码搜索。
-- `dead_code`：基于导入图和导出符号扫描潜在死代码。
+## Install the plugin
 
-## 安装与构建
-
-```powershell
-npm install
-npm run build
-```
-
-Kimi Code 本地安装时使用插件目录的绝对路径：
+Users install the runtime-only directory and do not run `npm install`:
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-engineering-tools
+/plugins install D:\codes\kimicode-configure\kimi-engineering-tools\plugin
 /reload
+/plugins info kimi-engineering-tools
 ```
 
-## 运行依赖
+The installable directory contains only the manifest, documentation, and bundled MCP server:
 
-- Node.js 20+
-- `codesearch` 需要 `ast-grep` 可执行文件在当前项目 `node_modules/.bin` 或系统 PATH 中。
-- `dead_code` 是候选清单工具，不应直接根据结果删除代码；动态 import、框架入口、插件入口、CLI 入口都可能误报。
-- `dead_code` 默认排除测试、mock、storybook、generated、fixture、example 和声明文件。`index` / `src/index` / `packages/*/src/index` 等入口会作为 entry points 保护，而不是从依赖图里排除。可用 `exclude` 追加排除，或用 `include_default_excludes=false` 关闭默认排除。
+```text
+plugin/
+├── bin/server.mjs
+├── kimi.plugin.json
+└── README.md
+```
 
-## 不包含的内容
+## Development
 
-- 不包含 OpenCode mission、Forge、TUI、agent/subagent 适配。
-- 不包含任何 API key、`service-local.json`、备份配置或用户状态文件。
+Maintainers need Node.js 20 or newer:
+
+```powershell
+npm ci
+npm test
+```
+
+`npm run build` type-checks the source and bundles all JavaScript runtime dependencies into `plugin/bin/server.mjs`. The published plugin does not depend on `node_modules`.
+
+## Tools
+
+- `git_conventions`: validates commit messages and branch naming conventions.
+- `codesearch`: runs ast-grep structural searches. The target project must provide ast-grep in its `node_modules/.bin` directory or on PATH.
+- `dead_code`: reports modules that are heuristically unreachable from configured entry points. Results are review candidates, not deletion proof.
+
+## Verification
+
+```powershell
+npm run typecheck
+npm run verify:plugin
+npm test
+```
+
+`verify:plugin` rejects unexpected files in the installable directory and checks that the bundled server has no unresolved runtime package imports.

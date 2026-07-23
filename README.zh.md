@@ -7,6 +7,7 @@
 - `kimi-personal-rules/AGENTS.md`：Kimi Code 全局个人规则。
 - `kimi-engineering-tools/`：工程能力 MCP 本地插件。
 - `kimi-mcp-connectors/`：Context7、Exa、LoreWiki 连接器 MCP 本地插件。
+- `kimi-development-workflow/`：规划、调试、测试、审查、提交和发布工作流 Skills 插件。
 - `kimi-code-opencode-migration-report.md`：迁移评估记录。
 
 ## 全局规则
@@ -41,9 +42,9 @@ D:\codes\kimicode-configure\kimi-engineering-tools
 
 - `git_conventions`：校验 commit message、分支名和 Git 提案规范。
 - `codesearch`：调用 ast-grep 做结构化代码搜索。
-- `dead_code`：扫描候选死代码和无依赖导出符号。
+- `dead_code`：启发式报告无法从配置入口到达的候选模块。
 
-构建后再安装：
+仓库已提交可直接安装的 bundle。维护者修改源码后再执行：
 
 ```powershell
 cd D:\codes\kimicode-configure\kimi-engineering-tools
@@ -54,7 +55,7 @@ npm run build
 在 Kimi Code 安装：
 
 ```text
-/plugins install D:\codes\kimicode-configure\kimi-engineering-tools
+/plugins install D:\codes\kimicode-configure\kimi-engineering-tools\plugin
 /reload
 /plugins info kimi-engineering-tools
 ```
@@ -64,7 +65,7 @@ npm run build
 ```text
 Status: enabled | state: ok
 MCP servers (1/1 enabled)
-plugin-kimi-engineering-tools:kimi-engineering-tools connected · 3 tools
+plugin-kimi-engineering-tools:engineering-tools connected · 3 tools
 ```
 
 插件装好但被禁用：
@@ -77,7 +78,7 @@ plugin-kimi-engineering-tools:kimi-engineering-tools connected · 3 tools
 MCP server 被禁用：
 
 ```text
-/plugins mcp enable kimi-engineering-tools kimi-engineering-tools
+/plugins mcp enable kimi-engineering-tools engineering-tools
 /reload
 ```
 
@@ -153,6 +154,30 @@ $env:CONTEXT7_API_KEY="your-key"
 
 若 `lorewiki` 连不上，确认 `lorewiki` CLI 在 PATH 上。
 
+## 开发工作流插件
+
+可安装目录：
+
+```text
+D:\codes\kimicode-configure\kimi-development-workflow\plugin
+```
+
+该插件包含 6 个手动 Skill，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程：
+
+- `/skill:change-plan`：编码前明确范围、影响、风险和验收标准。
+- `/skill:debug`：复现、隔离、验证假设、最小修复并复验。
+- `/skill:test-changed`：为当前改动选择并运行最小有效测试。
+- `/skill:review`：执行只读、发现优先的代码审查。
+- `/skill:commit-review`：检查提交准备状态并生成分支和提交信息提案。
+- `/skill:release-check`：检查发布准备状态，但不执行发布或部署。
+
+安装：
+
+```text
+/plugins install D:\codes\kimicode-configure\kimi-development-workflow\plugin
+/reload
+/plugins info kimi-development-workflow
+```
 ## 插件重装说明
 
 Kimi Code 会把本地插件复制到：

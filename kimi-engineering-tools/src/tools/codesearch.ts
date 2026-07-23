@@ -56,33 +56,57 @@ export interface CodeSearchInput {
   cwd?: string
 }
 
-let cachedBin: string | null | undefined
+const cachedBins = new Map<string, string | null>()
 
 function findAstGrep(projectDir: string): string | null {
-  if (cachedBin !== undefined) return cachedBin
-  const localBin = path.join(projectDir, "node_modules", ".bin", process.platform === "win32" ? "ast-grep.cmd" : "ast-grep")
+  const cacheKey = path.resolve(projectDir)
+  if (cachedBins.has(cacheKey)) return cachedBins.get(cacheKey) ?? null
+
+  const localBin = path.join(
+    cacheKey,
+    "node_modules",
+    ".bin",
+    process.platform === "win32" ? "ast-grep.cmd" : "ast-grep",
+  )
   if (fs.existsSync(localBin)) {
-    cachedBin = localBin
+    cachedBins.set(cacheKey, localBin)
     return localBin
   }
+
   const which = process.platform === "win32" ? "where" : "which"
   try {
     const result = execFileSync(which, ["ast-grep"], { stdio: "pipe" }).toString().trim().split(/\r?\n/)[0]
     if (result) {
-      cachedBin = result
+      cachedBins.set(cacheKey, result)
       return result
     }
   } catch {
-    // Not installed on PATH.
+    // ast-grep is not installed on PATH.
   }
-  cachedBin = null
+
+  cachedBins.set(cacheKey, null)
   return null
+}
+
+function quoteCmdArgument(value: string): string {
+  if (value.length === 0) return '""'
+  return `"${value.replace(/(["^&|<>%!])/g, "^$1")}"`
+}
+
+async function runAstGrep(bin: string, args: string[], options: { maxBuffer: number; timeout: number }) {
+  if (process.platform === "win32" && bin.toLowerCase().endsWith(".cmd")) {
+    const command = [quoteCmdArgument(bin), ...args.map(quoteCmdArgument)].join(" ")
+    return exec(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", command], options)
+  }
+  return exec(bin, args, options)
 }
 
 function formatMatch(file: string, line: number, col: number, text: string): string {
   const lines = text.split("\n")
   const out = [`  ${file}:${line}:${col}`]
-  for (let i = 0; i < Math.min(lines.length, 5); i++) out.push(`${i === 0 ? "    >" : "     "} ${lines[i]}`)
+  for (let i = 0; i < Math.min(lines.length, 5); i++) {
+    out.push(`${i === 0 ? "    >" : "     "} ${lines[i]}`)
+  }
   if (lines.length > 5) out.push(`     ... (${lines.length - 5} more lines)`)
   return out.join("\n")
 }
@@ -101,16 +125,17 @@ export async function runCodeSearch(input: CodeSearchInput): Promise<string> {
 
   const bin = findAstGrep(projectDir)
   if (!bin) {
-    return `Error: ast-grep not found. Install @ast-grep/cli locally or put ast-grep on PATH.`
+    return "Error: ast-grep not found. Install @ast-grep/cli locally or put ast-grep on PATH."
   }
 
   let raw = ""
   let spawnErr: string | null = null
   try {
-    const { stdout, stderr } = await exec(bin, ["run", "--pattern", input.pattern, "--lang", lang, "--json=compact", searchPath], {
-      maxBuffer: 50 * 1024 * 1024,
-      timeout: 60_000,
-    })
+    const { stdout, stderr } = await runAstGrep(
+      bin,
+      ["run", "--pattern", input.pattern, "--lang", lang, "--json=compact", searchPath],
+      { maxBuffer: 50 * 1024 * 1024, timeout: 60_000 },
+    )
     raw = stdout
     if (stderr.trim()) spawnErr = stderr.trim().split(/\r?\n/)[0] ?? null
   } catch (error) {
