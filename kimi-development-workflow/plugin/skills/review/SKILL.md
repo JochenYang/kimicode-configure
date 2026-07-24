@@ -10,9 +10,11 @@ whenToUse: 当用户要求 review、代码审查、检查当前改动、评估�
 ## 范围确定
 
 1. 读取适用的 AGENTS.md 和项目开发规则。
-2. 解析参数：空值=工作区改动，`staged`=暂存区，Git ref/range=对应提交，路径=对应文件/目录；无法判断时向用户说明。
+2. 解析参数：空值=工作区改动，`staged`=暂存区，Git ref/range=对应提交，路径=对应文件/目录；若参数是产品/流程完备性问题且无代码范围，声明为流程/设计审查而非 diff review；无法判断时向用户说明。
 3. 同时检查未暂存 diff、已暂存 diff 和 untracked 文件，除非用户明确限定范围。
-4. 阅读相关调用方、类型、配置、测试和错误处理，不只审查 diff 表面。
+4. 若当前会话已有 `change-plan` 输出或等价计划，提取 Handoff contract（Must-have、Out of scope、Acceptance criteria）；审查时对照实现是否越界或漏做。无 plan 时写「无既有 plan，仅按 diff/调用链审查」。
+5. 阅读相关调用方、类型、配置、测试和错误处理，不只审查 diff 表面。
+6. 若当前会话可用 `kimi-engineering-tools` 的 MCP 工具：对公共 API、关键调用形态用 `codesearch` 核对调用方；对删除/搬迁模块用 `dead_code` 作候选提示（不是删除证明）。工具不可用时明确写「codesearch/dead_code 不可用，仅静态 diff/调用链审查」，不得假装已做机器分析。
 
 ## 审查重点
 
@@ -25,6 +27,7 @@ whenToUse: 当用户要求 review、代码审查、检查当前改动、评估�
 5. 性能：N+1、无界结果、全量扫描、重复计算和阻塞热路径。
 6. 测试是否覆盖关键性质、边界和失败路径。
 7. 可维护性、无关改动、调试残留和错误信息质量。
+8. 相对 plan 的范围漂移：Must-have 未完成、Out of scope 被实现、Acceptance 无对应证据。
 
 ## 输出规则
 
@@ -50,6 +53,15 @@ whenToUse: 当用户要求 review、代码审查、检查当前改动、评估�
 建议：...
 
 ## No blocking findings
+
+## Plan alignment
+aligned / partial / no plan / not applicable
+- Must-have gaps:
+- Out-of-scope expansions:
+
+## Tooling
+codesearch: used / unavailable — summary
+dead_code: used / unavailable / not needed — summary
 
 ## Verified areas
 

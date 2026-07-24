@@ -20,21 +20,21 @@
 
 ### `/skill:change-plan`：编码前规划
 
-把功能、重构或复杂修复整理成可执行计划，明确目标、范围、调用链、风险、验收标准和验证命令。
+把功能、重构或复杂修复整理成可执行计划，明确目标、范围、调用链、风险、验收标准和验证命令，并输出固定 `Handoff contract` 供后续 skill 对照。
 
 它与 Kimi 的 Plan mode 互补：Plan mode 控制会话是否直接实施，`change-plan` 规定计划内容应覆盖什么。它不会自动切换会话模式，也不会修改文件。
 
 ### `/skill:debug`：系统化调试
 
-按“复现、隔离、提出假设、验证、定位根因、最小修复、回归验证”处理 bug、测试失败、构建失败和运行时错误。
+按“复现、隔离、提出假设、验证、定位根因、最小修复、回归验证”处理 bug、测试失败、构建失败和运行时错误。隔离阶段在可用时优先调用 `codesearch`。
 
 ### `/skill:test-changed`：当前改动测试
 
-根据未暂存、已暂存和新增文件，选择最小但足够的测试范围，记录真实执行证据，并说明测试缺口和残余风险。
+根据未暂存、已暂存和新增文件，选择最小但足够的测试范围；若会话中已有 plan，优先对照 Acceptance criteria。记录真实执行证据，并说明测试缺口和残余风险。
 
 ### `/skill:review`：只读代码审查
 
-发现优先、按严重度排序，检查正确性、回归、安全、并发、数据一致性、性能、测试和可维护性，并附文件和行号。
+发现优先、按严重度排序，检查正确性、回归、安全、并发、数据一致性、性能、测试、可维护性，以及相对 plan 的范围漂移；可用时可选调用 `codesearch` / `dead_code`。
 
 ### `/skill:commit-review`：提交前检查
 
@@ -61,7 +61,9 @@
 change-plan → 实现 → test-changed → review → commit-review → release-check
 ```
 
-`commit-review` 在可用时调用 `git_conventions`（`kimi-engineering-tools` 插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 检查。
+- `change-plan` 产出 `Handoff contract`；`test-changed` / `review` 在存在 plan 时对照 Acceptance 与 Out of scope。
+- `debug` / `review` 在可用时可选调用 `codesearch` / `dead_code`；不可用则降级并标明。
+- `commit-review` 在可用时调用 `git_conventions`（`kimi-engineering-tools` 插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 检查。
 
 ## 共同约束
 

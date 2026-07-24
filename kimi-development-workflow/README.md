@@ -27,6 +27,7 @@
 - 定位相关文件、入口、调用链和数据流。
 - 识别兼容性、权限、并发、缓存和数据一致性风险。
 - 拆分实现步骤并定义验收标准和验证命令。
+- 输出固定 `Handoff contract`，供后续 `test-changed` / `review` 对照。
 
 示例：
 
@@ -44,6 +45,8 @@
 复现 → 隔离 → 提出假设 → 验证 → 定位根因 → 最小修复 → 回归验证
 ```
 
+隔离阶段在可用时优先调用 `codesearch` 缩小调用链；工具不可用则降级为文本搜索并在输出中标明。
+
 支持诊断、修复和复验意图：
 
 ```text
@@ -56,11 +59,12 @@
 
 根据当前未暂存、已暂存和新增文件，选择最小但足够的验证范围：
 
+- 若会话中已有 `change-plan`，优先对照其 Acceptance criteria 与 Verification commands。
 - 将改动映射到受影响模块和测试。
 - 优先运行类型检查、目标包测试或最小集成测试。
 - 记录命令、退出码、环境和失败摘要。
 - 区分产品失败、测试失败、环境失败和 flaky。
-- 明确未覆盖的高风险路径。
+- 明确未覆盖的高风险路径与 plan 未满足项。
 
 示例：
 
@@ -79,6 +83,8 @@
 - 并发、事务、幂等性、缓存、时区和数据一致性。
 - 性能问题和测试缺口。
 - 无关改动、调试残留和可维护性问题。
+- 相对既有 plan 的范围漂移（Must-have 缺口、Out of scope 扩张）。
+- 可用时可选调用 `codesearch` / `dead_code`；不可用则明确降级。
 
 示例：
 
@@ -135,8 +141,10 @@
 change-plan → 实现 → test-changed → review → commit-review → release-check
 ```
 
-- `change-plan` 只产出可验证计划，不改代码。
-- 实现阶段可按需使用 `kimi-engineering-tools` 的 MCP 工具 `codesearch` / `dead_code`。
+- `change-plan` 只产出可验证计划与 `Handoff contract`，不改代码。
+- 实现阶段仍由用户/会话自由推进；后续 skill 通过 Handoff 对照防止范围漂移。
+- `test-changed` / `review` 在存在 plan 时必须对照 Acceptance 与 Out of scope。
+- `debug` / `review` 在可用时可选调用 `codesearch` / `dead_code`（`kimi-engineering-tools` MCP）；不可用则降级并标明。
 - `commit-review` 在可用时调用 `git_conventions`（同属该插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 人工检查。
 - `release-check` 只给放行结论，不执行发布。
 

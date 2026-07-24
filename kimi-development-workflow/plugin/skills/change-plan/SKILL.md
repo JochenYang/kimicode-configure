@@ -24,6 +24,7 @@ whenToUse: 当用户提出新功能、重构、架构调整或复杂 bug 修复�
 6. 提出 1 个推荐方案；只有存在实质范围或风险差异时才列备选方案。
 7. 把实现拆成可独立验证的步骤，每一步写明预计变更和验证命令。
 8. 给出失败路径、回滚/恢复方式和残余风险。
+9. 在输出末尾固定「Handoff contract」，供后续 `test-changed` / `review` 对照；字段必须可直接勾选，不要写空泛描述。
 
 ## 输出格式
 
@@ -52,6 +53,16 @@ whenToUse: 当用户提出新功能、重构、架构调整或复杂 bug 修复�
 ## Risks and rollback
 
 ## Open decisions
+
+## Handoff contract
+- Goal: ...
+- Must-have: ...
+- Out of scope: ...
+- Acceptance criteria:
+  - [ ] ...
+- Verification commands:
+  - `...`
+- Do not expand into: ...
 ```
 
 不要修改文件，不要执行提交。若已有明确计划，先指出与当前请求的差异，再给出最小补充计划。
