@@ -129,6 +129,17 @@
 
 它只给出 `GO`、`NO-GO` 或 `CONDITIONAL GO`，不会执行 tag、publish、deploy 或 push。
 
+## 推荐生命周期
+
+```text
+change-plan → 实现 → test-changed → review → commit-review → release-check
+```
+
+- `change-plan` 只产出可验证计划，不改代码。
+- 实现阶段可按需使用 `kimi-engineering-tools` 的 MCP 工具 `codesearch` / `dead_code`。
+- `commit-review` 在可用时调用 `git_conventions`（同属该插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 人工检查。
+- `release-check` 只给放行结论，不执行发布。
+
 ## 共同约束
 
 所有 Skill 都是手动调用的 `flow` Skill：

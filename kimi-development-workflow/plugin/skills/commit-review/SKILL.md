@@ -17,7 +17,8 @@ whenToUse: 当用户准备提交代码、要求检查 staged changes、生成 co
 6. 读取实际执行的测试证据；没有证据时明确要求最短验证，不把用户口述当成已执行结果。
 7. 按项目规则生成分支名和 commit message；subject 使用英文祈使句、小写开头、不加句号。
 8. 若项目要求 body，给出 2-4 条简洁 bullet，说明目的、核心改动和验证。
-9. 最后提出明确确认问题，但不运行 `git add`、`git commit` 或 `git push`。
+9. 若当前会话可用 `git_conventions`（`kimi-engineering-tools` 插件的 MCP 工具）：用提案 message、branch 和 changed files 调用它；输出中的 `ERROR` 必须使结论为 `NOT READY`，`WARN` 写入 Blocking items 或 Scope assessment。若工具不可用，明确写“git_conventions 不可用，仅按 AGENTS.md 人工规则检查”，不得假装已做机器校验。
+10. 最后提出明确确认问题，但不运行 `git add`、`git commit` 或 `git push`。
 
 ## 输出格式
 
@@ -44,6 +45,9 @@ type(scope): subject
 ## Changed files summary
 
 ## Verification evidence
+
+## Convention check
+git_conventions: used / unavailable — summary
 
 ## Confirmation
 是否按该范围准备提交？

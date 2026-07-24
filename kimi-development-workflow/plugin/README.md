@@ -55,6 +55,14 @@
 /skill:release-check v0.2.0
 ```
 
+## 推荐生命周期
+
+```text
+change-plan → 实现 → test-changed → review → commit-review → release-check
+```
+
+`commit-review` 在可用时调用 `git_conventions`（`kimi-engineering-tools` 插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 检查。
+
 ## 共同约束
 
 所有 Skill 都是手动调用的 `flow` Skill：
