@@ -67,3 +67,13 @@ test("recognizes exported functions and variables", async () => {
     assert.match(output, /variable value/)
   })
 })
+
+test("rejects entry that escapes the project root", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, entry: "..", lang: ["typescript"] })
+    assert.match(output, /escapes project root/)
+    assert.doesNotMatch(output, /## Dead Module Candidates/)
+  })
+})

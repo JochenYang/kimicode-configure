@@ -51,3 +51,19 @@ test("uses independent ast-grep discovery for different projects", async () => {
     await fs.rm(second, { recursive: true, force: true })
   }
 })
+
+test("rejects path that escapes the project root", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "kimi-code-search-escape-"))
+  try {
+    await fs.writeFile(path.join(directory, "sample.ts"), "export const x = 1")
+    const output = await runCodeSearch({
+      cwd: directory,
+      path: "..",
+      pattern: "const $A = $B",
+      lang: "typescript",
+    })
+    assert.match(output, /escapes project root/)
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true })
+  }
+})

@@ -3228,8 +3228,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path4) {
-      let input = path4;
+    function removeDotSegments(path5) {
+      let input = path5;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3481,8 +3481,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path4, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path4 && path4 !== "/" ? path4 : void 0;
+        const [path5, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path5 && path5 !== "/" ? path5 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -7366,8 +7366,8 @@ function getErrorMap() {
 
 // node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path: path4, errorMaps, issueData } = params;
-  const fullPath = [...path4, ...issueData.path || []];
+  const { data, path: path5, errorMaps, issueData } = params;
+  const fullPath = [...path5, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -7483,11 +7483,11 @@ var errorUtil;
 
 // node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path4, key) {
+  constructor(parent, value, path5, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path4;
+    this._path = path5;
     this._key = key;
   }
   get path() {
@@ -11124,10 +11124,10 @@ function assignProp(target, prop, value) {
     configurable: true
   });
 }
-function getElementAtPath(obj, path4) {
-  if (!path4)
+function getElementAtPath(obj, path5) {
+  if (!path5)
     return obj;
-  return path4.reduce((acc, key) => acc?.[key], obj);
+  return path5.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -11447,11 +11447,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path4, issues) {
+function prefixIssues(path5, issues) {
   return issues.map((iss) => {
     var _a2;
     (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path4);
+    iss.path.unshift(path5);
     return iss;
   });
 }
@@ -21103,8 +21103,28 @@ var StdioServerTransport = class {
 // src/tools/codesearch.ts
 import { execFile, execFileSync } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
+import path2 from "node:path";
 import { promisify } from "node:util";
+
+// src/path-safety.ts
+import path from "node:path";
+function resolveContainedPath(root, candidate) {
+  const resolvedRoot = path.resolve(root);
+  const resolved = path.resolve(resolvedRoot, candidate);
+  const relative = path.relative(resolvedRoot, resolved);
+  if (relative === "") {
+    return { ok: true, path: resolvedRoot };
+  }
+  if (path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`) || relative.startsWith("../") || relative.startsWith("..\\")) {
+    return {
+      ok: false,
+      error: `Error: path escapes project root: ${candidate} (resolved to ${resolved}, root ${resolvedRoot})`
+    };
+  }
+  return { ok: true, path: resolved };
+}
+
+// src/tools/codesearch.ts
 var exec = promisify(execFile);
 var LANG_ALIASES = {
   typescript: "typescript",
@@ -21144,9 +21164,9 @@ var LANG_ALIASES = {
 };
 var cachedBins = /* @__PURE__ */ new Map();
 function findAstGrep(projectDir) {
-  const cacheKey = path.resolve(projectDir);
+  const cacheKey = path2.resolve(projectDir);
   if (cachedBins.has(cacheKey)) return cachedBins.get(cacheKey) ?? null;
-  const localBin = path.join(
+  const localBin = path2.join(
     cacheKey,
     "node_modules",
     ".bin",
@@ -21195,8 +21215,10 @@ async function runCodeSearch(input) {
     const supported = [...new Set(Object.values(LANG_ALIASES))].join(", ");
     return `Error: unsupported language "${input.lang}". Supported: ${supported}.`;
   }
-  const projectDir = path.resolve(input.cwd ?? process.cwd());
-  const searchPath = path.resolve(projectDir, input.path ?? ".");
+  const projectDir = path2.resolve(input.cwd ?? process.cwd());
+  const contained = resolveContainedPath(projectDir, input.path ?? ".");
+  if (!contained.ok) return contained.error;
+  const searchPath = contained.path;
   if (!fs.existsSync(searchPath)) return `Error: path not found: ${searchPath}`;
   const bin = findAstGrep(projectDir);
   if (!bin) {
@@ -21246,7 +21268,7 @@ async function runCodeSearch(input) {
   if (shown.length === 0) lines.push("  No matches.");
   for (const match2 of shown) {
     const start = match2.range?.start ?? { line: 0, column: 0 };
-    const file = match2.file ? path.relative(projectDir, match2.file) : "?";
+    const file = match2.file ? path2.relative(projectDir, match2.file) : "?";
     lines.push(formatMatch(file, (start.line ?? 0) + 1, (start.column ?? 0) + 1, match2.text ?? ""));
   }
   if (parseErrors.length > 0) {
@@ -21258,7 +21280,7 @@ async function runCodeSearch(input) {
 
 // src/tools/dead-code.ts
 import fs2 from "node:fs/promises";
-import path3 from "node:path";
+import path4 from "node:path";
 
 // node_modules/balanced-match/dist/esm/index.js
 var balanced = (a, b, str) => {
@@ -22316,11 +22338,11 @@ var qmarksTestNoExtDot = ([$0]) => {
   return (f) => f.length === len && f !== "." && f !== "..";
 };
 var defaultPlatform = typeof process === "object" && process ? typeof process.env === "object" && process.env && process.env.__MINIMATCH_TESTING_PLATFORM__ || process.platform : "posix";
-var path2 = {
+var path3 = {
   win32: { sep: "\\" },
   posix: { sep: "/" }
 };
-var sep = defaultPlatform === "win32" ? path2.win32.sep : path2.posix.sep;
+var sep = defaultPlatform === "win32" ? path3.win32.sep : path3.posix.sep;
 minimatch.sep = sep;
 var GLOBSTAR = /* @__PURE__ */ Symbol("globstar **");
 minimatch.GLOBSTAR = GLOBSTAR;
@@ -23162,9 +23184,9 @@ var tsParser = {
   },
   isLocalImport: (rawPath) => /^[./]/.test(rawPath),
   normalizeImportPath(rawPath, fromFile, srcDir) {
-    const resolved = path3.resolve(srcDir, path3.dirname(fromFile), rawPath);
-    const relative = path3.relative(srcDir, resolved);
-    if (relative.startsWith("..") || path3.isAbsolute(relative)) return null;
+    const resolved = path4.resolve(srcDir, path4.dirname(fromFile), rawPath);
+    const relative = path4.relative(srcDir, resolved);
+    if (relative.startsWith("..") || path4.isAbsolute(relative)) return null;
     return stripExtension(relative.replace(/\\/g, "/"));
   }
 };
@@ -23195,11 +23217,11 @@ var pyParser = {
   },
   isLocalImport: (rawPath) => rawPath.startsWith("."),
   normalizeImportPath(rawPath, fromFile, srcDir) {
-    const fromDir = path3.dirname(fromFile);
+    const fromDir = path4.dirname(fromFile);
     const cleaned = rawPath.replace(/^\.+/, "").replace(/\./g, "/");
-    const resolved = rawPath.startsWith(".") ? path3.resolve(srcDir, fromDir, cleaned) : path3.resolve(srcDir, cleaned);
-    const relative = path3.relative(srcDir, resolved);
-    if (relative.startsWith("..") || path3.isAbsolute(relative)) return null;
+    const resolved = rawPath.startsWith(".") ? path4.resolve(srcDir, fromDir, cleaned) : path4.resolve(srcDir, cleaned);
+    const relative = path4.relative(srcDir, resolved);
+    if (relative.startsWith("..") || path4.isAbsolute(relative)) return null;
     return relative.replace(/\\/g, "/");
   }
 };
@@ -23264,9 +23286,9 @@ function makeRegexParser(name, extensions, importPatterns, typePatterns) {
     isLocalImport: () => true,
     normalizeImportPath(rawPath, fromFile, srcDir) {
       const relative = rawPath.includes("::") ? rawPath.replace(/^crate::/, "").replace(/::/g, "/") : rawPath;
-      const resolved = path3.resolve(srcDir, path3.dirname(fromFile), relative);
-      const rel = path3.relative(srcDir, resolved);
-      if (rel.startsWith("..") || path3.isAbsolute(rel)) return null;
+      const resolved = path4.resolve(srcDir, path4.dirname(fromFile), relative);
+      const rel = path4.relative(srcDir, resolved);
+      if (rel.startsWith("..") || path4.isAbsolute(rel)) return null;
       return stripExtension(rel.replace(/\\/g, "/"));
     }
   };
@@ -23285,9 +23307,9 @@ async function listFiles(dir) {
     }
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name)) await walk(path3.join(current, entry.name));
+        if (!SKIP_DIRS.has(entry.name)) await walk(path4.join(current, entry.name));
       } else if (entry.isFile()) {
-        out.push(path3.join(current, entry.name));
+        out.push(path4.join(current, entry.name));
       }
     }
   }
@@ -23308,7 +23330,7 @@ function selectParsers(files, explicitLangs) {
       (parser) => wanted.has(parser.name.toLowerCase()) || parser.extensions.some((ext2) => wanted.has(ext2))
     );
   }
-  const extSet = new Set(files.map((file) => path3.extname(file).slice(1).toLowerCase()));
+  const extSet = new Set(files.map((file) => path4.extname(file).slice(1).toLowerCase()));
   return simpleParsers.filter((parser) => parser.extensions.some((ext2) => extSet.has(ext2)));
 }
 function resolveModuleKey(normalized, moduleKeys) {
@@ -23331,8 +23353,10 @@ function findReachable(graph, roots) {
   return reachable;
 }
 async function runDeadCode(input) {
-  const projectDir = path3.resolve(input.cwd ?? process.cwd());
-  const srcDir = path3.resolve(projectDir, input.entry ?? ".");
+  const projectDir = path4.resolve(input.cwd ?? process.cwd());
+  const contained = resolveContainedPath(projectDir, input.entry ?? ".");
+  if (!contained.ok) return contained.error;
+  const srcDir = contained.path;
   try {
     const stat = await fs2.stat(srcDir);
     if (!stat.isDirectory()) return `Error: ${input.entry ?? "."} is not a directory`;
@@ -23344,23 +23368,23 @@ async function runDeadCode(input) {
     ...input.exclude ?? []
   ];
   const files = (await listFiles(srcDir)).filter(
-    (filePath) => !isExcluded(path3.relative(srcDir, filePath).replace(/\\/g, "/"), excludePatterns)
+    (filePath) => !isExcluded(path4.relative(srcDir, filePath).replace(/\\/g, "/"), excludePatterns)
   );
   const parsers = selectParsers(files, input.lang);
   const extToParser = /* @__PURE__ */ new Map();
   for (const parser of parsers) parser.extensions.forEach((ext2) => extToParser.set(ext2, parser));
-  const sourceFiles = files.filter((filePath) => extToParser.has(path3.extname(filePath).slice(1).toLowerCase()));
+  const sourceFiles = files.filter((filePath) => extToParser.has(path4.extname(filePath).slice(1).toLowerCase()));
   const moduleKeys = new Set(
-    sourceFiles.map((filePath) => stripExtension(path3.relative(srcDir, filePath).replace(/\\/g, "/")))
+    sourceFiles.map((filePath) => stripExtension(path4.relative(srcDir, filePath).replace(/\\/g, "/")))
   );
   const graph = /* @__PURE__ */ new Map();
   const reverse = /* @__PURE__ */ new Map();
   const symbols = [];
   for (const filePath of sourceFiles) {
-    const ext2 = path3.extname(filePath).slice(1).toLowerCase();
+    const ext2 = path4.extname(filePath).slice(1).toLowerCase();
     const parser = extToParser.get(ext2);
     if (!parser) continue;
-    const relFile = path3.relative(srcDir, filePath).replace(/\\/g, "/");
+    const relFile = path4.relative(srcDir, filePath).replace(/\\/g, "/");
     const moduleKey = stripExtension(relFile);
     const content = await fs2.readFile(filePath, "utf8");
     const targets = /* @__PURE__ */ new Set();
@@ -23660,7 +23684,7 @@ function runGitConventions(input) {
 // src/server.ts
 var server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.0"
+  version: "0.2.1"
 });
 server.tool(
   "git_conventions",

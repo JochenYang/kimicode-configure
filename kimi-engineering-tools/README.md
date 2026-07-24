@@ -34,9 +34,13 @@ npm test
 
 ## Tools
 
-- `git_conventions`: validates commit messages and branch naming conventions.
+MCP server key: `engineering-tools` (stdio). Tools:
+
+- `git_conventions`: validates commit messages and branch names. Missing body is WARN by default (`enforce_body=true`); bad body is ERROR.
 - `codesearch`: runs ast-grep structural searches. The target project must provide ast-grep in its `node_modules/.bin` directory or on PATH.
 - `dead_code`: reports modules that are heuristically unreachable from configured entry points. Results are review candidates, not deletion proof.
+
+`codesearch.path`, `dead_code.entry`, and related resolved targets must stay inside the project root from `cwd` (default process cwd). Parent traversal (`..`) and absolute paths outside that root return an error.
 
 ## Verification
 

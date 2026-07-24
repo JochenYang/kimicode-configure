@@ -16,6 +16,8 @@ Self-contained Kimi Code CLI plugin. The runtime bundle includes all JavaScript 
 - `codesearch`: performs structural search with ast-grep. The target project must provide ast-grep locally or on PATH.
 - `dead_code`: reports heuristic dead-module candidates. Results are review input, not deletion proof.
 
+`codesearch.path` and `dead_code.entry` are restricted to the project root resolved from `cwd`. Paths that escape that root are rejected.
+
 ## Runtime requirements
 
 - Node.js 20 or newer on PATH.

@@ -7,7 +7,7 @@ import { runGitConventions } from "./tools/git-conventions.js"
 
 const server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.0",
+  version: "0.2.1",
 })
 
 server.tool(
