@@ -61,7 +61,8 @@
 change-plan → 实现 → test-changed → review → commit-review → release-check
 ```
 
-- `change-plan` 产出 `Handoff contract`；`test-changed` / `review` 在存在 plan 时对照 Acceptance 与 Out of scope。
+- `change-plan` 产出同会话 `Handoff contract`（不默认落盘）；下游 skill 经 Contract resolution 对照或标 unavailable。
+- `test-changed` / `review` / `commit-review` / `release-check` 含 Anti-rationalization（释义 SSOT 在 `test-changed`）；FAIL 时不得 READY/GO。
 - `debug` / `review` 在可用时可选调用 `codesearch` / `dead_code`；不可用则降级并标明。
 - `commit-review` 在可用时调用 `git_conventions`（`kimi-engineering-tools` 插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 检查。
 

@@ -24,7 +24,7 @@ whenToUse: 当用户提出新功能、重构、架构调整或复杂 bug 修复�
 6. 提出 1 个推荐方案；只有存在实质范围或风险差异时才列备选方案。
 7. 把实现拆成可独立验证的步骤，每一步写明预计变更和验证命令。
 8. 给出失败路径、回滚/恢复方式和残余风险。
-9. 在输出末尾固定「Handoff contract」，供后续 `test-changed` / `review` 对照；字段必须可直接勾选，不要写空泛描述。
+9. 在输出末尾固定「Handoff contract」，供**同会话**后续 `test-changed` / `review` / `commit-review` / `release-check` 对照；字段必须可直接勾选，不要写空泛描述。Handoff 是会话内验收契约，**不要求也不默认写入文件**；跨会话长任务交接可改用用户级 handoff skill，不在本 Skill 职责内。
 
 ## 输出格式
 

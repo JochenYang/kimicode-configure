@@ -7,30 +7,60 @@ whenToUse: 当用户要求为当前改动运行测试、补充回归验证或判
 
 请为 `$ARGUMENTS`（若为空则使用当前工作区改动）设计并执行最小有效验证。
 
+本 Skill 是同插件内 **Anti-rationalization ID 释义** 与 **Contract resolution 通例** 的 SSOT；`review` / `commit-review` / `release-check` 引用此处 ID，不重复贴全表。
+
 ## 流程
 
 1. 读取 AGENTS.md、package/build/test 配置和当前 `git status`。
-2. 若当前会话已有 `change-plan` 输出或等价计划，先提取其 Handoff contract（Acceptance criteria、Verification plan/commands、Out of scope）；没有则写「无既有 plan，仅按 diff 验证」。
-3. 获取未暂存、已暂存和新增文件；不要只看 `git diff` 而漏掉 untracked 文件。
-4. 将改动映射到模块、公共 API、数据流和已有测试；若有 plan，优先覆盖 Acceptance criteria 与 Verification commands，并标出落在 Out of scope 的改动。
-5. 先选择最快能证明主张的测试：类型检查、单测、目标包测试、集成测试、构建或运行 smoke test。
-6. 按 Arrange、Act、Assert 检查已有测试是否真的断言行为，而不是只断言不抛错。
-7. 执行测试并记录命令、退出码、环境、耗时和失败摘要。
-8. 若失败，区分产品失败、测试失败、环境失败和 flaky；不要为了绿测修改断言逃避问题。
-9. 根据风险决定是否扩大测试范围；说明未运行的高风险路径，以及 plan 中尚未满足的验收项。
-10. 测试结束后检查副作用、临时文件、生成物和工作区变化。
+2. **Contract resolution**（同会话、不落盘）：
+   - 优先级：`explicit-handoff` → `user-pinned` → `rebuilt-from-context` → `unavailable`。
+   - 重建只填有依据字段，缺则 `unknown`，不编造 Acceptance；写 source 与 confidence（L2/L3 为主）。压缩摘要不证明 Acceptance 已满足。
+   - 无 `explicit-handoff` / `user-pinned` 时 Plan alignment 不得为 `aligned`（最多 `partial` / `rebuilt` / `no plan` / `unavailable`）。`rebuilt` 优先跑可证伪 Acceptance 的命令；`unavailable` 仅按 diff 风险验证。
+3. 列出行为主张（来自 Acceptance 或 diff），每条对应最短命令。
+4. 收集未暂存、已暂存与 untracked；勿漏 untracked。
+5. 映射改动到模块/API/测试；有契约则优先 Acceptance 与 Verification commands，并标 Out of scope 改动。
+6. 选最快能证伪主张的检查（类型/单测/包测/集成/构建/smoke）。
+7. 确认已有测试按 Arrange/Act/Assert 断言行为，而非仅不抛错。
+8. 执行并记录命令、退出码、环境、耗时、失败摘要；结果回指主张或 Acceptance。
+9. 失败时区分产品/测试/环境/flaky；不为绿测改断言逃避。
+10. 按风险决定是否扩大范围；列出未跑高风险路径与未满足验收项。
+11. **Anti-rationalization**：适用 AR-1, AR-2, AR-4, AR-5, AR-6, AR-7。`FAIL` → Recommendation 不得写可合并/可提交，须列 missing acceptance 或证据缺口。
+12. 检查副作用、临时文件、生成物与工作区变化。
+
+## Anti-rationalization（插件 SSOT）
+
+| ID | 不得当作通过的理由 | 正确处理 |
+|----|-------------------|----------|
+| AR-1 | 类型检查/构建/测试绿了 | 只证明执行过命令；须映射到 Acceptance 或行为主张 |
+| AR-2 | 历史 CI / 上次会话已过 | 不等于当前工作区；须本轮证据或标 Unverified |
+| AR-3 | 改动很小 / 只改文档 | 不跳过 Contract resolution 与必要检查 |
+| AR-4 | MCP / 工具不可用 | 降级并写 unavailable；不得暗示已机器分析 |
+| AR-5 | 看起来合理 / 应该没问题 | L3/L4 不得结案为可合并/可提交 |
+| AR-6 | 用户说测过了 | 无命令+退出码则非 L1；标口述 |
+| AR-7 | 与 plan 大方向一致 | 无逐条 Acceptance 对照不得 `aligned` |
+| AR-8 | Out of scope 是顺手小改 | 记入 Out-of-scope changes；影响结论则升级 |
+
+- **PASS**：未用红旗理由放行（场景存在但已正确降级亦可 PASS）。
+- **FAIL**：用红旗当通过依据，或结论与证据等级矛盾。
 
 ## 输出格式
 
 ```markdown
+## Contract resolution
+source: explicit-handoff | user-pinned | rebuilt-from-context | unavailable
+confidence: L1/L2/L3/L4
+- Goal / Must-have / Out of scope / Acceptance / Verification commands:
+
 ## Plan alignment
-aligned / partial / no plan
-- Covered acceptance:
-- Missing acceptance:
+aligned / partial / rebuilt / no plan / unavailable
+- Covered / Missing acceptance:
 - Out-of-scope changes:
 
-## Change-to-test map
+## Claims to verify
+| Claim | Derived from | Command | Result |
+|---|---|---|---|
 
+## Change-to-test map
 | Change | Risk | Test |
 |---|---|---|
 
@@ -39,6 +69,10 @@ aligned / partial / no plan
 
 ## Result
 
+## Anti-rationalization
+Result: PASS | FAIL
+Triggered: none | AR-n, …（仅列触发项；释义见上表）
+
 ## Coverage gaps
 
 ## Residual risks
@@ -46,4 +80,4 @@ aligned / partial / no plan
 ## Recommendation
 ```
 
-默认只运行安全、可重复的验证命令。不要自动删除用户文件、重置 Git、提交或推送。若用户没有要求补测试，不要擅自扩大实现范围；只列出缺失测试和最小建议。
+默认只跑安全可重复验证。不删除用户文件、不重置 Git、不提交/推送。用户未要求则不擅自补实现；只列缺失测试与最小建议。`source=unavailable` 且有非平凡代码改动时，Recommendation 须说明仅完成 diff 风险冒烟。

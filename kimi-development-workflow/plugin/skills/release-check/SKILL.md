@@ -7,23 +7,35 @@ whenToUse: 当用户准备发布版本、创建 tag、上传包、部署或要�
 
 请检查 `$ARGUMENTS`（默认当前仓库和待发布版本）的发布准备状态；默认只读，不执行 tag、publish、deploy 或 push。
 
+Anti-rationalization **ID 释义以 `test-changed` 为 SSOT**（AR-1–AR-8）。本 Skill 结论连动：`FAIL` → **不得 GO**（最高 CONDITIONAL GO 或 NO-GO）。
+
 ## 流程
 
 1. 读取 AGENTS.md、发布文档、CI 配置、包管理配置和版本来源。
 2. 确定发布目标、版本、渠道、受影响组件和兼容范围。
-3. 检查 Git 工作区是否干净，待发布内容是否与预期提交一致。
-4. 对齐 manifest、package、server、应用、schema 和 changelog 等版本来源。
-5. 检查 breaking changes、迁移步骤、配置变化、环境变量、权限和回滚方式。
-6. 执行或读取项目要求的类型检查、测试、构建和 smoke test；区分实际执行与历史 CI 结果。
-7. 检查发布物内容：入口存在、依赖完整、无 `node_modules`、源码泄露、密钥、日志、绝对路径或陈旧 bundle。
-8. 检查文档、安装/升级说明、变更记录和已知限制。
-9. 给出 GO、NO-GO 或 CONDITIONAL GO，并列出阻塞项和最短解除路径。
+3. 可选 **Contract resolution**（同会话、不落盘；通例同 `test-changed`）：有发布相关 Acceptance/范围则列入 Verification；`unavailable` **不单独 NO-GO**；禁止未对照却声称与 plan aligned。
+4. 检查工作区是否干净，待发布内容是否与预期提交一致。
+5. 对齐 manifest/package/server/应用/schema/changelog 等版本来源。
+6. 检查 breaking changes、迁移、配置、环境变量、权限与回滚。
+7. 执行或读取类型检查、测试、构建、smoke；区分本工作区执行与历史 CI（AR-1 / AR-2）。
+8. 检查发布物：入口、依赖、无不当 `node_modules`/源码泄露/密钥/日志/绝对路径/陈旧 bundle。
+9. 检查文档、安装升级说明、变更记录与已知限制。
+10. **Anti-rationalization**：适用 AR-1, AR-2, AR-4, AR-5, AR-6, AR-7（范围/发布物可注 AR-3）。
+11. 给出 GO / NO-GO / CONDITIONAL GO 与阻塞项、最短解除路径。**GO** 仅当：必需检查有本工作区真实证据、无阻塞、且 AR `PASS`。
 
 ## 输出格式
 
 ```markdown
 ## Release decision
 GO / NO-GO / CONDITIONAL GO
+
+## Contract resolution
+source: explicit-handoff | user-pinned | rebuilt-from-context | unavailable
+- Release-relevant acceptance / out of scope:（或 n/a）
+
+## Anti-rationalization
+Result: PASS | FAIL
+Triggered: none | AR-n, …（释义见 test-changed）
 
 ## Target
 
@@ -48,4 +60,4 @@ GO / NO-GO / CONDITIONAL GO
 ## Next action
 ```
 
-只有所有必需检查有真实证据且无阻塞项时才能给出 GO。构建成功不自动证明功能满足，历史 CI 也不等同于当前工作区验证。未经授权不得创建 tag、发布包、部署或推送。
+构建成功不自动证明功能满足；历史 CI ≠ 当前工作区验证。未经授权不得 tag、发布、部署或推送。

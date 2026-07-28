@@ -27,7 +27,7 @@
 - 定位相关文件、入口、调用链和数据流。
 - 识别兼容性、权限、并发、缓存和数据一致性风险。
 - 拆分实现步骤并定义验收标准和验证命令。
-- 输出固定 `Handoff contract`，供后续 `test-changed` / `review` 对照。
+- 输出固定 `Handoff contract`，供同会话后续 `test-changed` / `review` / `commit-review` / `release-check` 对照（不默认落盘）。
 
 示例：
 
@@ -141,9 +141,12 @@
 change-plan → 实现 → test-changed → review → commit-review → release-check
 ```
 
-- `change-plan` 只产出可验证计划与 `Handoff contract`，不改代码。
+- `change-plan` 只产出可验证计划与 `Handoff contract`，不改代码；Handoff 为同会话验收契约，不默认落盘。
 - 实现阶段仍由用户/会话自由推进；后续 skill 通过 Handoff 对照防止范围漂移。
-- `test-changed` / `review` 在存在 plan 时必须对照 Acceptance 与 Out of scope。
+- `test-changed` / `review` / `commit-review` / `release-check` 先做 Contract resolution（explicit-handoff → user-pinned → rebuilt-from-context → unavailable）；压缩后靠重建或标 unavailable，不靠写盘。
+- `commit-review` / `release-check` 在可解析时对照契约，否则写 `unavailable`，不得假装已对齐 plan。
+- 验证类 skill 输出含 Anti-rationalization（ID 释义以 `test-changed` 为 SSOT；其余 skill 只写适用 ID 与结论连动）；`FAIL` 时 `commit-review` 不得 READY，`release-check` 不得 GO。
+- `test-changed` / `review` 在存在可解析契约时必须对照 Acceptance 与 Out of scope；无 explicit-handoff/user-pinned 时不得标 `aligned`。
 - `debug` / `review` 在可用时可选调用 `codesearch` / `dead_code`（`kimi-engineering-tools` MCP）；不可用则降级并标明。
 - `commit-review` 在可用时调用 `git_conventions`（同属该插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 人工检查。
 - `release-check` 只给放行结论，不执行发布。
