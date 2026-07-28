@@ -1,7 +1,7 @@
 import fs from "node:fs/promises"
 import path from "node:path"
 import { minimatch } from "minimatch"
-import { resolveContainedPath } from "../path-safety.js"
+import { resolveProjectTarget } from "../path-safety.js"
 
 const SKIP_DIRS = new Set([
   "node_modules",
@@ -332,15 +332,18 @@ function findReachable(graph: Map<string, Set<string>>, roots: string[]): Set<st
 }
 
 export async function runDeadCode(input: DeadCodeInput): Promise<string> {
-  const projectDir = path.resolve(input.cwd ?? process.cwd())
-  const contained = resolveContainedPath(projectDir, input.entry ?? ".")
-  if (!contained.ok) return contained.error
-  const srcDir = contained.path
+  const resolved = resolveProjectTarget({
+    cwd: input.cwd,
+    target: input.entry,
+    defaultTarget: ".",
+  })
+  if (!resolved.ok) return resolved.error
+  const { projectDir, targetPath: srcDir } = resolved.result
   try {
     const stat = await fs.stat(srcDir)
     if (!stat.isDirectory()) return `Error: ${input.entry ?? "."} is not a directory`
   } catch {
-    return `Error: ${input.entry ?? "."} not found`
+    return `Error: ${input.entry ?? srcDir} not found`
   }
 
   const excludePatterns = [

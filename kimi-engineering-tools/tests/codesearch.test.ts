@@ -67,3 +67,42 @@ test("rejects path that escapes the project root", async () => {
     await fs.rm(directory, { recursive: true, force: true })
   }
 })
+
+test("searches absolute path when process cwd is unrelated (plugin-dir scenario)", async () => {
+  const workspace = await fs.mkdtemp(path.join(os.tmpdir(), "kimi-code-search-ws-"))
+  const pluginLike = await fs.mkdtemp(path.join(os.tmpdir(), "kimi-code-search-plugin-"))
+  try {
+    if (process.platform === "win32") {
+      const binDirectory = path.join(workspace, "node_modules", ".bin")
+      await fs.mkdir(binDirectory, { recursive: true })
+      await fs.writeFile(path.join(binDirectory, "ast-grep.cmd"), "@echo off\r\necho []\r\n")
+    }
+    await fs.writeFile(path.join(workspace, "sample.ts"), "export const x = 1")
+
+    const previous = process.cwd()
+    process.chdir(pluginLike)
+    try {
+      const byCwd = await runCodeSearch({
+        cwd: workspace,
+        path: ".",
+        pattern: "const $A = $B",
+        lang: "typescript",
+      })
+      assert.doesNotMatch(byCwd, /path not found/)
+      assert.doesNotMatch(byCwd, /escapes project root/)
+
+      const byAbsolutePath = await runCodeSearch({
+        path: workspace,
+        pattern: "const $A = $B",
+        lang: "typescript",
+      })
+      assert.doesNotMatch(byAbsolutePath, /path not found/)
+      assert.doesNotMatch(byAbsolutePath, /escapes project root/)
+    } finally {
+      process.chdir(previous)
+    }
+  } finally {
+    await fs.rm(workspace, { recursive: true, force: true })
+    await fs.rm(pluginLike, { recursive: true, force: true })
+  }
+})

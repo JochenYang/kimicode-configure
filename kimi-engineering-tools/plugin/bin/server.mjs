@@ -21123,6 +21123,44 @@ function resolveContainedPath(root, candidate) {
   }
   return { ok: true, path: resolved };
 }
+function looksLikePluginInstallDir(dir) {
+  const normalized = dir.replace(/\\/g, "/").toLowerCase();
+  return normalized.includes("/.kimi-code/plugins/") || normalized.includes("/plugins/managed/");
+}
+function absolutePathHint(processCwd) {
+  if (!looksLikePluginInstallDir(processCwd)) return "";
+  return ` Hint: this MCP server's process cwd is the plugin install dir (${processCwd}). Pass absolute cwd (workspace root) and/or absolute path/entry \u2014 relative paths resolve against the plugin dir, not the user workspace.`;
+}
+function resolveProjectTarget(input) {
+  const processCwd = path.resolve(input.processCwd ?? process.cwd());
+  const target = input.target ?? input.defaultTarget ?? ".";
+  const hasExplicitCwd = typeof input.cwd === "string" && input.cwd.trim() !== "";
+  let projectDir;
+  if (hasExplicitCwd) {
+    const cwdValue = input.cwd.trim();
+    projectDir = path.isAbsolute(cwdValue) ? path.resolve(cwdValue) : path.resolve(processCwd, cwdValue);
+  } else if (path.isAbsolute(target)) {
+    const absoluteTarget = path.resolve(target);
+    return { ok: true, result: { projectDir: absoluteTarget, targetPath: absoluteTarget } };
+  } else {
+    projectDir = processCwd;
+  }
+  const contained = resolveContainedPath(projectDir, target);
+  if (!contained.ok) {
+    return {
+      ok: false,
+      error: contained.error + absolutePathHint(processCwd)
+    };
+  }
+  return {
+    ok: true,
+    result: { projectDir, targetPath: contained.path }
+  };
+}
+function pathNotFoundError(searchPath, processCwd) {
+  const cwd = path.resolve(processCwd ?? process.cwd());
+  return `Error: path not found: ${searchPath}.${absolutePathHint(cwd)}`;
+}
 
 // src/tools/codesearch.ts
 var exec = promisify(execFile);
@@ -21215,11 +21253,14 @@ async function runCodeSearch(input) {
     const supported = [...new Set(Object.values(LANG_ALIASES))].join(", ");
     return `Error: unsupported language "${input.lang}". Supported: ${supported}.`;
   }
-  const projectDir = path2.resolve(input.cwd ?? process.cwd());
-  const contained = resolveContainedPath(projectDir, input.path ?? ".");
-  if (!contained.ok) return contained.error;
-  const searchPath = contained.path;
-  if (!fs.existsSync(searchPath)) return `Error: path not found: ${searchPath}`;
+  const resolved = resolveProjectTarget({
+    cwd: input.cwd,
+    target: input.path,
+    defaultTarget: "."
+  });
+  if (!resolved.ok) return resolved.error;
+  const { projectDir, targetPath: searchPath } = resolved.result;
+  if (!fs.existsSync(searchPath)) return pathNotFoundError(searchPath);
   const bin = findAstGrep(projectDir);
   if (!bin) {
     return "Error: ast-grep not found. Install @ast-grep/cli locally or put ast-grep on PATH.";
@@ -23353,15 +23394,18 @@ function findReachable(graph, roots) {
   return reachable;
 }
 async function runDeadCode(input) {
-  const projectDir = path4.resolve(input.cwd ?? process.cwd());
-  const contained = resolveContainedPath(projectDir, input.entry ?? ".");
-  if (!contained.ok) return contained.error;
-  const srcDir = contained.path;
+  const resolved = resolveProjectTarget({
+    cwd: input.cwd,
+    target: input.entry,
+    defaultTarget: "."
+  });
+  if (!resolved.ok) return resolved.error;
+  const { projectDir, targetPath: srcDir } = resolved.result;
   try {
     const stat = await fs2.stat(srcDir);
     if (!stat.isDirectory()) return `Error: ${input.entry ?? "."} is not a directory`;
   } catch {
-    return `Error: ${input.entry ?? "."} not found`;
+    return `Error: ${input.entry ?? srcDir} not found`;
   }
   const excludePatterns = [
     ...input.include_default_excludes === false ? [] : DEFAULT_EXCLUDES,
@@ -23684,7 +23728,7 @@ function runGitConventions(input) {
 // src/server.ts
 var server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.1"
+  version: "0.2.2"
 });
 server.tool(
   "git_conventions",
@@ -23713,9 +23757,13 @@ or in the current project's node_modules/.bin directory.`,
   {
     pattern: external_exports.string().describe("AST pattern, e.g. 'class $NAME' or 'console.log($$$)'."),
     lang: external_exports.string().describe("Language name or alias, e.g. typescript, tsx, js, python, rust, go."),
-    path: external_exports.string().optional().describe("Directory to search, relative to cwd. Defaults to current directory."),
+    path: external_exports.string().optional().describe(
+      "Directory to search. Prefer an absolute path when this server runs as a plugin (process cwd is the plugin install dir). Relative paths resolve against cwd. Defaults to cwd."
+    ),
     maxResults: external_exports.number().int().positive().max(250).optional().describe("Maximum matches to display. Defaults to 30."),
-    cwd: external_exports.string().optional().describe("Working directory. Defaults to MCP process cwd.")
+    cwd: external_exports.string().optional().describe(
+      "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin)."
+    )
   },
   async (input) => ({
     content: [{ type: "text", text: await runCodeSearch(input) }]
@@ -23729,13 +23777,17 @@ This is a heuristic static analysis tool. Treat results as review candidates,
 not proof that code can be deleted. Dynamic imports, framework routes, plugin
 entrypoints, and CLI entrypoints can be false positives.`,
   {
-    entry: external_exports.string().optional().describe("Source directory to analyze, relative to cwd. Defaults to '.'."),
+    entry: external_exports.string().optional().describe(
+      "Source directory to analyze. Prefer an absolute path under plugin MCP. Relative paths resolve against cwd. Defaults to cwd."
+    ),
     entry_points: external_exports.array(external_exports.string()).optional().describe("Module keys that should never be flagged as dead."),
     min_exports: external_exports.number().int().positive().optional().describe("Minimum exported symbols in a dead module to report. Defaults to 1."),
     lang: external_exports.array(external_exports.string()).optional().describe("Explicit languages/extensions, e.g. ['typescript'] or ['ts', 'tsx']."),
     exclude: external_exports.array(external_exports.string()).optional().describe("Additional glob patterns to exclude, e.g. ['packages/plugin/**', '**/*.generated.ts']."),
     include_default_excludes: external_exports.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and index files."),
-    cwd: external_exports.string().optional().describe("Working directory. Defaults to MCP process cwd.")
+    cwd: external_exports.string().optional().describe(
+      "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin)."
+    )
   },
   async (input) => ({
     content: [{ type: "text", text: await runDeadCode(input) }]

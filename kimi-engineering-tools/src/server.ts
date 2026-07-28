@@ -7,7 +7,7 @@ import { runGitConventions } from "./tools/git-conventions.js"
 
 const server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.1",
+  version: "0.2.2",
 })
 
 server.tool(
@@ -38,9 +38,19 @@ or in the current project's node_modules/.bin directory.`,
   {
     pattern: z.string().describe("AST pattern, e.g. 'class $NAME' or 'console.log($$$)'."),
     lang: z.string().describe("Language name or alias, e.g. typescript, tsx, js, python, rust, go."),
-    path: z.string().optional().describe("Directory to search, relative to cwd. Defaults to current directory."),
+    path: z
+      .string()
+      .optional()
+      .describe(
+        "Directory to search. Prefer an absolute path when this server runs as a plugin (process cwd is the plugin install dir). Relative paths resolve against cwd. Defaults to cwd.",
+      ),
     maxResults: z.number().int().positive().max(250).optional().describe("Maximum matches to display. Defaults to 30."),
-    cwd: z.string().optional().describe("Working directory. Defaults to MCP process cwd."),
+    cwd: z
+      .string()
+      .optional()
+      .describe(
+        "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin).",
+      ),
   },
   async (input) => ({
     content: [{ type: "text", text: await runCodeSearch(input) }],
@@ -55,13 +65,23 @@ This is a heuristic static analysis tool. Treat results as review candidates,
 not proof that code can be deleted. Dynamic imports, framework routes, plugin
 entrypoints, and CLI entrypoints can be false positives.`,
   {
-    entry: z.string().optional().describe("Source directory to analyze, relative to cwd. Defaults to '.'."),
+    entry: z
+      .string()
+      .optional()
+      .describe(
+        "Source directory to analyze. Prefer an absolute path under plugin MCP. Relative paths resolve against cwd. Defaults to cwd.",
+      ),
     entry_points: z.array(z.string()).optional().describe("Module keys that should never be flagged as dead."),
     min_exports: z.number().int().positive().optional().describe("Minimum exported symbols in a dead module to report. Defaults to 1."),
     lang: z.array(z.string()).optional().describe("Explicit languages/extensions, e.g. ['typescript'] or ['ts', 'tsx']."),
     exclude: z.array(z.string()).optional().describe("Additional glob patterns to exclude, e.g. ['packages/plugin/**', '**/*.generated.ts']."),
     include_default_excludes: z.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and index files."),
-    cwd: z.string().optional().describe("Working directory. Defaults to MCP process cwd."),
+    cwd: z
+      .string()
+      .optional()
+      .describe(
+        "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin).",
+      ),
   },
   async (input) => ({
     content: [{ type: "text", text: await runDeadCode(input) }],

@@ -18,6 +18,8 @@ Self-contained Kimi Code CLI plugin. The runtime bundle includes all JavaScript 
 
 `codesearch.path` and `dead_code.entry` are restricted to the project root resolved from `cwd`. Paths that escape that root are rejected.
 
+Because this plugin's MCP process cwd is the managed plugin directory, always pass an **absolute workspace path** via `cwd` and/or absolute `path`/`entry`. Relative-only calls resolve against the plugin install dir and fail.
+
 ## Runtime requirements
 
 - Node.js 20 or newer on PATH.

@@ -2,7 +2,7 @@ import { execFile, execFileSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { promisify } from "node:util"
-import { resolveContainedPath } from "../path-safety.js"
+import { pathNotFoundError, resolveProjectTarget } from "../path-safety.js"
 
 const exec = promisify(execFile)
 
@@ -120,11 +120,14 @@ export async function runCodeSearch(input: CodeSearchInput): Promise<string> {
     return `Error: unsupported language "${input.lang}". Supported: ${supported}.`
   }
 
-  const projectDir = path.resolve(input.cwd ?? process.cwd())
-  const contained = resolveContainedPath(projectDir, input.path ?? ".")
-  if (!contained.ok) return contained.error
-  const searchPath = contained.path
-  if (!fs.existsSync(searchPath)) return `Error: path not found: ${searchPath}`
+  const resolved = resolveProjectTarget({
+    cwd: input.cwd,
+    target: input.path,
+    defaultTarget: ".",
+  })
+  if (!resolved.ok) return resolved.error
+  const { projectDir, targetPath: searchPath } = resolved.result
+  if (!fs.existsSync(searchPath)) return pathNotFoundError(searchPath)
 
   const bin = findAstGrep(projectDir)
   if (!bin) {

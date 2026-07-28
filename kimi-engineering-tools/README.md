@@ -40,7 +40,9 @@ MCP server key: `engineering-tools` (stdio). Tools:
 - `codesearch`: runs ast-grep structural searches. The target project must provide ast-grep in its `node_modules/.bin` directory or on PATH.
 - `dead_code`: reports modules that are heuristically unreachable from configured entry points. Results are review candidates, not deletion proof.
 
-`codesearch.path`, `dead_code.entry`, and related resolved targets must stay inside the project root from `cwd` (default process cwd). Parent traversal (`..`) and absolute paths outside that root return an error.
+`codesearch.path`, `dead_code.entry`, and related resolved targets must stay inside the project root from `cwd`.
+
+**Plugin install note:** Kimi Code pins a plugin MCP server's process cwd to the managed plugin directory (`~/.kimi-code/plugins/managed/...`). Relative `path` / `entry` without an absolute `cwd` therefore resolve under the plugin tree and usually fail with `path not found`. Pass an **absolute workspace `cwd`**, and/or an **absolute `path`/`entry`**. Parent traversal (`..`) and absolute paths outside an explicit `cwd` root still return an error.
 
 ## Verification
 
