@@ -7,7 +7,7 @@ whenToUse: 当用户准备发布版本、创建 tag、上传包、部署或要�
 
 请检查 `$ARGUMENTS`（默认当前仓库和待发布版本）的发布准备状态；默认只读，不执行 tag、publish、deploy 或 push。
 
-Anti-rationalization **ID 释义以 `test-changed` 为 SSOT**（AR-1–AR-8）。本 Skill 结论连动：`FAIL` → **不得 GO**（最高 CONDITIONAL GO 或 NO-GO）。
+Anti-rationalization **ID 释义以 `test-changed` 为 SSOT**（AR-1–AR-10）。本 Skill 结论连动：`FAIL` → **不得 GO**（最高 CONDITIONAL GO 或 NO-GO）。
 
 ## 流程
 
@@ -20,7 +20,7 @@ Anti-rationalization **ID 释义以 `test-changed` 为 SSOT**（AR-1–AR-8）�
 7. 执行或读取类型检查、测试、构建、smoke；区分本工作区执行与历史 CI（AR-1 / AR-2）。
 8. 检查发布物：入口、依赖、无不当 `node_modules`/源码泄露/密钥/日志/绝对路径/陈旧 bundle。
 9. 检查文档、安装升级说明、变更记录与已知限制。
-10. **Anti-rationalization**：适用 AR-1, AR-2, AR-4, AR-5, AR-6, AR-7（范围/发布物可注 AR-3）。
+10. **Anti-rationalization**：适用 AR-1, AR-2, AR-4, AR-5, AR-6, AR-7, AR-9, AR-10（范围/发布物可注 AR-3）。
 11. 给出 GO / NO-GO / CONDITIONAL GO 与阻塞项、最短解除路径。**GO** 仅当：必需检查有本工作区真实证据、无阻塞、且 AR `PASS`。
 
 ## 输出格式
@@ -35,7 +35,8 @@ source: explicit-handoff | user-pinned | rebuilt-from-context | unavailable
 
 ## Anti-rationalization
 Result: PASS | FAIL
-Triggered: none | AR-n, …（释义见 test-changed）
+Triggered: none | AR-n, …
+ID 标签速查：AR-1(命令绿≠验收) AR-2(历史≠当前) AR-3(小改不跳过) AR-4(工具不可用降级) AR-5(看似合理≠结案) AR-6(口述≠L1) AR-7(大方向≠aligned) AR-8(顺手小改记录) AR-9(部分≠全部) AR-10(AI自证需外部证据)；释义见 test-changed
 
 ## Target
 

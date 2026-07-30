@@ -1,6 +1,6 @@
 # Kimi Development Workflow
 
-这是一个面向日常软件开发的 Kimi Code 工作流插件。它只包含 Skills，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
+这是一个面向日常软件开发的 Kimi Code 工作流插件，包含 Skills 与 Agents，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
 
 ## 安装
 
@@ -44,6 +44,21 @@
 
 检查版本、Changelog、构建、测试、发布物、兼容性、安全配置和回滚条件，输出 `GO`、`NO-GO` 或 `CONDITIONAL GO`，不执行发布或部署。
 
+### `/skill:doc-gen`：文档生成
+
+生成或更新 API 文档、CHANGELOG、README、用户文档和迁移指南。API 文档从类型签名/路由/导出符号提取，每条附 `file:line`；CHANGELOG 按 Keep a Changelog 规范从提交/diff 生成；迁移指南与 release-check 的 breaking change 清单对齐。每条声明须可回指代码，无依据的标注 `unverified`。只写文档文件，不改代码逻辑。
+
+## Agents
+
+插件 `agents/` 目录提供 14 个专长子代理，由主 Agent 自动发现并按任务委派（通过 Agent 工具），各自带工具权限隔离：
+
+- 只读分析：`explore`（代码定位）、`reviewer`（审查）、`detective`（根因）、`guard`（安全）、`oracle`（反方顾问）、`perf`（性能）
+- 实现：`builder`（通用）、`frontend`（Web 前端）、`mobile`（移动端）、`miniapp`（小程序）、`ai-app`（AI agent 应用）、`dba`（数据库与查询）、`tester`（TDD）、`ops`（部署运维）
+
+只读类禁 Bash/Write/Edit；实现类按职责配置 Read/Grep/Glob + Bash/Write/Edit/FetchURL 的子集（dba 禁 Bash 只写迁移脚本），`frontend`/`mobile`/`miniapp`/`ai-app` 额外允许 `mcp__*__codesearch`。具体权限与专长见各 agent 文件。
+
+agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECONDARY_MODEL` 并配置 `[secondary_model].model` 时，子代理自动走次级模型（主模型留给主会话做规划/决策）；不启用时继承主模型。需强推理的 agent（如 `oracle`）可单独声明 `model_preference: primary` 保留主模型。
+
 ## 常用示例
 
 ```text
@@ -53,18 +68,20 @@
 /skill:review staged
 /skill:commit-review
 /skill:release-check v0.2.0
+/skill:doc-gen 给订单模块生成 API 文档
 ```
 
 ## 推荐生命周期
 
 ```text
-change-plan → 实现 → test-changed → review → commit-review → release-check
+change-plan → 实现 → test-changed → review → commit-review → release-check → doc-gen
 ```
 
 - `change-plan` 产出同会话 `Handoff contract`（不默认落盘）；下游 skill 经 Contract resolution 对照或标 unavailable。
 - `test-changed` / `review` / `commit-review` / `release-check` 含 Anti-rationalization（释义 SSOT 在 `test-changed`）；FAIL 时不得 READY/GO。
 - `debug` / `review` 在可用时可选调用 `codesearch` / `dead_code`；不可用则降级并标明。
 - `commit-review` 在可用时调用 `git_conventions`（`kimi-engineering-tools` 插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 检查。
+- `doc-gen` 在发布后或独立触发，生成/更新文档，不改代码逻辑。
 
 ## 共同约束
 

@@ -13,7 +13,7 @@ whenToUse: 当用户要求为当前改动运行测试、补充回归验证或判
 
 1. 读取 AGENTS.md、package/build/test 配置和当前 `git status`。
 2. **Contract resolution**（同会话、不落盘）：
-   - 优先级：`explicit-handoff` → `user-pinned` → `rebuilt-from-context` → `unavailable`。
+   - 优先级：`explicit-handoff`（本会话 `change-plan` 的 Handoff contract）→ `user-pinned`（用户当前明确写下的 Goal / Must-have / Out of scope / Acceptance / 验证命令，例如"按这几条验收"或"我们定好的范围是…"）→ `rebuilt-from-context`（从压缩后工作摘要中的目标与约束、当前 diff 意图、已讨论但未写成 Handoff 的边界重建最小集）→ `unavailable`。
    - 重建只填有依据字段，缺则 `unknown`，不编造 Acceptance；写 source 与 confidence（L2/L3 为主）。压缩摘要不证明 Acceptance 已满足。
    - 无 `explicit-handoff` / `user-pinned` 时 Plan alignment 不得为 `aligned`（最多 `partial` / `rebuilt` / `no plan` / `unavailable`）。`rebuilt` 优先跑可证伪 Acceptance 的命令；`unavailable` 仅按 diff 风险验证。
 3. 列出行为主张（来自 Acceptance 或 diff），每条对应最短命令。
@@ -24,7 +24,7 @@ whenToUse: 当用户要求为当前改动运行测试、补充回归验证或判
 8. 执行并记录命令、退出码、环境、耗时、失败摘要；结果回指主张或 Acceptance。
 9. 失败时区分产品/测试/环境/flaky；不为绿测改断言逃避。
 10. 按风险决定是否扩大范围；列出未跑高风险路径与未满足验收项。
-11. **Anti-rationalization**：适用 AR-1, AR-2, AR-4, AR-5, AR-6, AR-7。`FAIL` → Recommendation 不得写可合并/可提交，须列 missing acceptance 或证据缺口。
+11. **Anti-rationalization**：适用全表 AR-1~AR-10。`FAIL` → Recommendation 不得写可合并/可提交，须列 missing acceptance 或证据缺口。
 12. 检查副作用、临时文件、生成物与工作区变化。
 
 ## Anti-rationalization（插件 SSOT）
@@ -39,6 +39,8 @@ whenToUse: 当用户要求为当前改动运行测试、补充回归验证或判
 | AR-6 | 用户说测过了 | 无命令+退出码则非 L1；标口述 |
 | AR-7 | 与 plan 大方向一致 | 无逐条 Acceptance 对照不得 `aligned` |
 | AR-8 | Out of scope 是顺手小改 | 记入 Out-of-scope changes；影响结论则升级 |
+| AR-9 | 部分测试通过即声称全部 | 须列出跳过/忽略的测试数及理由 |
+| AR-10 | AI 自称已确认逻辑正确 | 须有外部命令证据或 file:line 引用 |
 
 - **PASS**：未用红旗理由放行（场景存在但已正确降级亦可 PASS）。
 - **FAIL**：用红旗当通过依据，或结论与证据等级矛盾。

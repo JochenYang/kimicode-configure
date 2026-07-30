@@ -7,7 +7,7 @@ whenToUse: 当用户要求 review、代码审查、检查当前改动、评估�
 
 只读审查 `$ARGUMENTS`（若为空则审查当前工作区改动）。参数可指定 `staged`、Git ref/range、文件路径或安全、测试、性能、并发等关注点。
 
-Anti-rationalization **ID 释义以 `test-changed` 为 SSOT**（AR-1–AR-8）；本 Skill 只写适用 ID 与结论连动。
+Anti-rationalization **ID 释义以 `test-changed` 为 SSOT**（AR-1–AR-10）；本 Skill 只写适用 ID 与结论连动。
 
 ## 范围确定
 
@@ -19,7 +19,7 @@ Anti-rationalization **ID 释义以 `test-changed` 为 SSOT**（AR-1–AR-8）�
    - 重建不编造 Acceptance；无 explicit/user-pinned 不得 `aligned`。`rebuilt` → 最多 `partial`/`rebuilt`；`unavailable` → `no plan`/`unavailable`，仍可做 diff 审查。
 5. 阅读调用方、类型、配置、测试与错误处理，不只看 diff 表面。
 6. 可用时：`codesearch` 核公共 API 调用方；删除/搬迁可用 `dead_code` 作候选（非删除证明）。不可用则写 unavailable，不得假装已机器分析。
-7. **Anti-rationalization**：适用 AR-1, AR-3, AR-4, AR-5, AR-7, AR-8（有测试主张时加 AR-2, AR-6）。`FAIL` → 不得把「无 Findings」暗示可合；无 L1 逐条对照时 alignment 不得 `aligned`；须有证据/范围相关 P2，或缺口写入 Residual risks 且不暗示可合。
+7. **Anti-rationalization**：适用 AR-1, AR-3, AR-4, AR-5, AR-7, AR-8, AR-9, AR-10（有测试主张时加 AR-2, AR-6）。`FAIL` → 不得把「无 Findings」暗示可合；无 L1 逐条对照时 alignment 不得 `aligned`；须有证据/范围相关 P2，或缺口写入 Residual risks 且不暗示可合。
 
 ## 审查重点
 
@@ -61,7 +61,8 @@ aligned / partial / rebuilt / no plan / unavailable / not applicable
 
 ## Anti-rationalization
 Result: PASS | FAIL
-Triggered: none | AR-n, …（释义见 test-changed）
+Triggered: none | AR-n, …
+ID 标签速查：AR-1(命令绿≠验收) AR-2(历史≠当前) AR-3(小改不跳过) AR-4(工具不可用降级) AR-5(看似合理≠结案) AR-6(口述≠L1) AR-7(大方向≠aligned) AR-8(顺手小改记录) AR-9(部分≠全部) AR-10(AI自证需外部证据)；释义见 test-changed
 
 ## Tooling
 codesearch: used / unavailable — summary
