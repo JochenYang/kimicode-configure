@@ -55,7 +55,7 @@
 - 只读分析：`explore`（代码定位）、`reviewer`（审查）、`detective`（根因）、`guard`（安全）、`oracle`（反方顾问）、`perf`（性能）
 - 实现：`builder`（通用）、`frontend`（Web 前端）、`mobile`（移动端）、`miniapp`（小程序）、`ai-app`（AI agent 应用）、`dba`（数据库与查询）、`tester`（TDD）、`ops`（部署运维）
 
-只读类禁 Bash/Write/Edit；实现类按职责配置 Read/Grep/Glob + Bash/Write/Edit/FetchURL 的子集（dba 禁 Bash 只写迁移脚本），`frontend`/`mobile`/`miniapp`/`ai-app` 额外允许 `mcp__*__codesearch`。具体权限与专长见各 agent 文件。
+只读类禁 Bash/Write/Edit；实现类按职责配置 Read/Grep/Glob + Bash/Write/Edit/FetchURL 的子集（dba 禁 Bash 只写迁移脚本），需要代码结构搜索的 agent（`explore`/`reviewer`/`detective`/`guard`/`builder`/`frontend`/`mobile`/`miniapp`/`ai-app`）额外允许 `mcp__*__codesearch`；`reviewer`/`detective` 额外允许 `mcp__*__dead_code`。具体权限与专长见各 agent 文件。
 
 agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECONDARY_MODEL` 并配置 `[secondary_model].model` 时，子代理自动走次级模型（主模型留给主会话做规划/决策）；不启用时继承主模型。需强推理的 agent（如 `oracle`）可单独声明 `model_preference: primary` 保留主模型。
 

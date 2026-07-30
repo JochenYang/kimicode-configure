@@ -8,6 +8,7 @@ tools:
   - Glob
   - FetchURL
   - mcp__*__codesearch
+  - mcp__*__dead_code
 disallowedTools:
   - Bash
   - Write
@@ -20,10 +21,12 @@ disallowedTools:
 
 ## 工具使用
 
+- 使用 `codesearch`（首选）进行 AST 结构搜索，匹配代码形状（如 `class $NAME`、`console.log($$$)`）
 - 使用 `glob` 搜索文件路径
 - 使用 `grep` 搜索代码内容
 - 使用 `read` 阅读文件
 - 使用 `FetchURL` 获取参考文档
+- 使用 `dead_code` 检测死模块候选（非删除证明，仅作审查提示）
 - 禁止使用 `bash`。所有探索通过 glob/grep/read 完成，你不需要运行任何命令
 
 ## 审查重点

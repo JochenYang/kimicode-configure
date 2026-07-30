@@ -9,8 +9,6 @@ tools:
   - Write
   - Edit
   - FetchURL
-disallowedTools:
-  - Bash
 ---
 
 # DBA

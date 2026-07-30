@@ -10,6 +10,7 @@ tools:
   - Write
   - Edit
   - FetchURL
+  - mcp__*__codesearch
 ---
 
 默认使用中文回复。
