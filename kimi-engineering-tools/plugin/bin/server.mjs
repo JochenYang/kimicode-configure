@@ -23174,17 +23174,183 @@ var DEFAULT_EXCLUDES = [
   "**/mocks/**",
   "**/generated/**",
   "**/__generated__/**",
+  "**/gen/**",
+  "**/*.gen.*",
+  "**/icons/**",
   "**/examples/**",
   "**/example/**"
 ];
 function lineAt(content, index) {
   return content.slice(0, index).split("\n").length;
 }
+function commentsAndLiteralsMask(content, lang) {
+  const mask = new Uint8Array(content.length).fill(1);
+  const n = content.length;
+  const erase = (from, to) => {
+    for (let k = from; k < Math.min(to, n); k++) mask[k] = 0;
+  };
+  let i = 0;
+  if (lang === "python") {
+    while (i < n) {
+      const c = content[i];
+      if (c === "#") {
+        while (i < n && content[i] !== "\n") {
+          mask[i] = 0;
+          i++;
+        }
+      } else if (c === "'" || c === '"') {
+        const quote = c;
+        const triple = content[i + 1] === quote && content[i + 2] === quote;
+        const len = triple ? 3 : 1;
+        erase(i, i + len);
+        i += len;
+        while (i < n) {
+          const ch = content[i];
+          if (ch === "\\") {
+            erase(i, i + 2);
+            i += 2;
+          } else if (triple ? ch === quote && content[i + 1] === quote && content[i + 2] === quote : ch === quote) {
+            erase(i, i + (triple ? 3 : 1));
+            i += triple ? 3 : 1;
+            break;
+          } else {
+            erase(i, i + 1);
+            i++;
+          }
+        }
+      } else {
+        i++;
+      }
+    }
+  } else {
+    const skipQuoted = (quote) => {
+      erase(i, i + 1);
+      i++;
+      while (i < n) {
+        const ch = content[i];
+        if (ch === "\\") {
+          erase(i, i + 2);
+          i += 2;
+        } else if (ch === quote) {
+          erase(i, i + 1);
+          i++;
+          return;
+        } else {
+          erase(i, i + 1);
+          i++;
+        }
+      }
+    };
+    const skipTemplate = () => {
+      erase(i, i + 1);
+      i++;
+      let depth = 0;
+      while (i < n) {
+        const ch = content[i];
+        if (ch === "\\") {
+          erase(i, i + 2);
+          i += 2;
+        } else if (depth === 0 && ch === "`") {
+          erase(i, i + 1);
+          i++;
+          return;
+        } else if (ch === "$" && content[i + 1] === "{") {
+          erase(i, i + 2);
+          i += 2;
+          depth = 1;
+        } else if (depth > 0) {
+          if (ch === "{") depth++;
+          else if (ch === "}") depth--;
+          else if (ch === "'" || ch === '"') {
+            skipQuoted(ch);
+            continue;
+          } else if (ch === "`") {
+            skipTemplate();
+            continue;
+          }
+          erase(i, i + 1);
+          i++;
+        } else {
+          erase(i, i + 1);
+          i++;
+        }
+      }
+    };
+    while (i < n) {
+      const c = content[i];
+      const next = content[i + 1];
+      if (c === "/" && next === "/") {
+        while (i < n && content[i] !== "\n") {
+          mask[i] = 0;
+          i++;
+        }
+      } else if (c === "/" && next === "*") {
+        erase(i, i + 2);
+        i += 2;
+        while (i < n && !(content[i] === "*" && content[i + 1] === "/")) {
+          erase(i, i + 1);
+          i++;
+        }
+        if (i < n) {
+          erase(i, i + 2);
+          i += 2;
+        }
+      } else if (c === "'" || c === '"') {
+        skipQuoted(c);
+      } else if (c === "`") {
+        skipTemplate();
+      } else {
+        i++;
+      }
+    }
+  }
+  return mask;
+}
+function hasLiveCode(mask, from, to) {
+  for (let k = from; k < to && k < mask.length; k++) {
+    if (mask[k] === 1) return true;
+  }
+  return false;
+}
+function stripCommentsAndLiterals(content, lang) {
+  const mask = commentsAndLiteralsMask(content, lang);
+  const out = content.split("");
+  for (let i = 0; i < content.length; i++) {
+    if (mask[i] === 0 && out[i] !== "\n") out[i] = " ";
+  }
+  return out.join("");
+}
+function computeLineStartDepths(content) {
+  const depths = [0];
+  let depth = 0;
+  for (let i = 0; i < content.length; i++) {
+    const c = content[i];
+    if (c === "\n") {
+      depths.push(depth);
+    } else if (c === "{") {
+      depth++;
+    } else if (c === "}") {
+      depth = Math.max(0, depth - 1);
+    }
+  }
+  return depths;
+}
+function isTopLevelExport(stripped, index, lineDepths) {
+  let k = index;
+  while (k > 0 && stripped[k - 1] !== "\n") k--;
+  let depth = lineDepths[lineAt(stripped, index) - 1] ?? 0;
+  for (let j = k; j < index; j++) {
+    if (stripped[j] === "{") depth++;
+    else if (stripped[j] === "}") depth = Math.max(0, depth - 1);
+  }
+  return depth === 0;
+}
 var tsParser = {
   name: "TypeScript",
   extensions: ["ts", "tsx", "js", "jsx", "mjs", "cjs"],
   extractImports(content) {
     const imports = [];
+    const mask = commentsAndLiteralsMask(content, "c");
     const patterns = [
       /import\s+(?:type\s+)?(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
       /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
@@ -23194,14 +23360,17 @@ var tsParser = {
     for (const re of patterns) {
       let match2;
       while ((match2 = re.exec(content)) !== null) {
-        const rawPath = match2[1] ?? "";
-        imports.push({ rawPath });
+        if (hasLiveCode(mask, match2.index, match2.index + 1)) {
+          imports.push({ rawPath: match2[1] ?? "" });
+        }
       }
     }
     return imports;
   },
   parseTypeDefs(content) {
     const defs = [];
+    const code = stripCommentsAndLiterals(content, "c");
+    const lineDepths = computeLineStartDepths(code);
     const patterns = [
       [/(export\s+)?interface\s+(\w+)/g, "interface", 2],
       [/(export\s+)?type\s+(\w+)\s*=/g, "type", 2],
@@ -23212,12 +23381,14 @@ var tsParser = {
     ];
     for (const [re, kind, nameIndex] of patterns) {
       let match2;
-      while ((match2 = re.exec(content)) !== null) {
+      while ((match2 = re.exec(code)) !== null) {
+        const exported = Boolean(match2[1]);
+        if (exported && !isTopLevelExport(code, match2.index, lineDepths)) continue;
         defs.push({
           name: match2[nameIndex] ?? "",
           kind,
-          exported: Boolean(match2[1]),
-          line: lineAt(content, match2.index)
+          exported,
+          line: lineAt(code, match2.index)
         });
       }
     }
@@ -23235,23 +23406,26 @@ var pyParser = {
   extensions: ["py"],
   extractImports(content) {
     const imports = [];
+    const mask = commentsAndLiteralsMask(content, "python");
     const patterns = [/^import\s+([.\w]+)/gm, /^from\s+([.\w]+)\s+import\s+[.\w,\s]+/gm];
     for (const re of patterns) {
       let match2;
       while ((match2 = re.exec(content)) !== null) {
-        const rawPath = match2[1] ?? "";
-        imports.push({ rawPath });
+        if (hasLiveCode(mask, match2.index, match2.index + 1)) {
+          imports.push({ rawPath: match2[1] ?? "" });
+        }
       }
     }
     return imports;
   },
   parseTypeDefs(content) {
     const defs = [];
+    const code = stripCommentsAndLiterals(content, "python");
     const re = /(?:^|\n)class\s+(\w+)\s*(?:\([^)]*\))?\s*:/g;
     let match2;
-    while ((match2 = re.exec(content)) !== null) {
+    while ((match2 = re.exec(code)) !== null) {
       const name = match2[1] ?? "";
-      defs.push({ name, kind: "class", exported: !name.startsWith("_"), line: lineAt(content, match2.index) + 1 });
+      defs.push({ name, kind: "class", exported: !name.startsWith("_"), line: lineAt(code, match2.index) + 1 });
     }
     return defs;
   },
@@ -23298,25 +23472,29 @@ function makeRegexParser(name, extensions, importPatterns, typePatterns) {
     extensions,
     extractImports(content) {
       const imports = [];
+      const mask = commentsAndLiteralsMask(content, "c");
       for (const re of importPatterns) {
         let match2;
         while ((match2 = re.exec(content)) !== null) {
-          imports.push({ rawPath: match2[1] ?? "" });
+          if (hasLiveCode(mask, match2.index, match2.index + 1)) {
+            imports.push({ rawPath: match2[1] ?? "" });
+          }
         }
       }
       return imports;
     },
     parseTypeDefs(content) {
       const defs = [];
+      const code = stripCommentsAndLiterals(content, "c");
       for (const [re, kind] of typePatterns) {
         let match2;
-        while ((match2 = re.exec(content)) !== null) {
+        while ((match2 = re.exec(code)) !== null) {
           const nameIndex = match2.length > 2 ? 2 : 1;
           defs.push({
             name: match2[nameIndex] ?? "",
             kind,
             exported: match2[1] === "pub " || match2[1] === "public " || match2.length === 2,
-            line: lineAt(content, match2.index)
+            line: lineAt(code, match2.index)
           });
         }
       }
@@ -23377,6 +23555,87 @@ function normalizeEntryPoint(raw, srcDir, moduleKeys) {
   const keys = [value];
   if (!value.endsWith("/index") && moduleKeys.has(`${value}/index`)) keys.push(`${value}/index`);
   return keys;
+}
+function collectExportPaths(value, out) {
+  if (typeof value === "string") {
+    if (value.startsWith("./") && !value.endsWith(".json")) out.push(value.slice(2));
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectExportPaths(item, out);
+  } else if (value !== null && typeof value === "object") {
+    for (const item of Object.values(value)) collectExportPaths(item, out);
+  }
+}
+async function readPackageEntryKeys(srcDir) {
+  const packageDirs = [""];
+  try {
+    const entries = await fs2.readdir(path4.join(srcDir, "packages"), { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) packageDirs.push(path4.join("packages", entry.name));
+    }
+  } catch {
+  }
+  const keys = [];
+  for (const dir of packageDirs) {
+    let pkg;
+    try {
+      pkg = JSON.parse(await fs2.readFile(path4.join(srcDir, dir, "package.json"), "utf8"));
+    } catch {
+      continue;
+    }
+    if (pkg === null || typeof pkg !== "object") continue;
+    const record2 = pkg;
+    const rawPaths = [];
+    collectExportPaths(record2.exports, rawPaths);
+    for (const field of ["main", "module", "types"]) {
+      if (typeof record2[field] === "string") rawPaths.push(record2[field]);
+    }
+    for (const rawPath of rawPaths) {
+      let rel = path4.relative(srcDir, path4.resolve(srcDir, dir, rawPath)).replace(/\\/g, "/");
+      if (rel.startsWith("..") || path4.isAbsolute(rel) || rel.includes("node_modules")) continue;
+      if (rel.startsWith("dist/")) rel = "src/" + rel.slice("dist/".length);
+      const key = stripExtension(rel.replace(/\.d\.(ts|tsx)$/, ".$1"));
+      if (key) keys.push(key);
+    }
+  }
+  return [...new Set(keys)];
+}
+var NEXT_APP_ROUTE_FILES = /* @__PURE__ */ new Set([
+  "page",
+  "layout",
+  "route",
+  "loading",
+  "error",
+  "not-found",
+  "template",
+  "default"
+]);
+var ENTRY_SUBDIR_NAMES = /* @__PURE__ */ new Set(["app", "core", "cli", "server", "lib", "cmd", "routes", "views", "pages", "main", "entries"]);
+var ELECTRON_ROLE_RE = /^(?:src|packages\/[^/]+(?:\/src)?)\/(main|preload|renderer)(?:\/index)?$/;
+function detectStructuralEntries(moduleKeys) {
+  const entries = /* @__PURE__ */ new Set();
+  for (const key of moduleKeys) {
+    const appIdx = key.indexOf("/app/");
+    if (appIdx !== -1 && NEXT_APP_ROUTE_FILES.has(key.slice(appIdx + 5).split("/")[0] ?? "")) {
+      entries.add(key);
+    }
+    if (key.includes("/pages/")) entries.add(key);
+    if (ELECTRON_ROLE_RE.test(key)) entries.add(key);
+    if (key.endsWith("/index")) {
+      const segs = key.split("/");
+      const subdir = segs[segs.length - 2] ?? "";
+      if (!ENTRY_SUBDIR_NAMES.has(subdir)) continue;
+      if (segs[0] === "packages") {
+        const pkg = segs[1] ?? "";
+        if (moduleKeys.has(`packages/${pkg}/index`) || moduleKeys.has(`packages/${pkg}/src/index`)) continue;
+      } else if (segs[0] === "src") {
+        if (moduleKeys.has("src/index")) continue;
+      } else if (segs.length === 2) {
+        if (moduleKeys.has("index")) continue;
+      }
+      entries.add(key);
+    }
+  }
+  return [...entries];
 }
 function selectParsers(files, explicitLangs) {
   if (explicitLangs && explicitLangs.length > 0) {
@@ -23465,25 +23724,50 @@ async function runDeadCode(input) {
     }
   }
   if (graph.size === 0) return `No source files found in ${input.entry ?? "."}`;
-  const entryPoints = [];
+  const explicitKeys = [];
   let rejectedEntries = 0;
   for (const entry of [...DEFAULT_ENTRIES, ...input.entry_points ?? []]) {
     const keys = normalizeEntryPoint(entry, srcDir, moduleKeys);
     if (keys.length === 0) rejectedEntries++;
-    else entryPoints.push(...keys);
+    else explicitKeys.push(...keys);
   }
-  const uniqueEntryPoints = [...new Set(entryPoints)];
-  const roots = [...graph.keys()].filter((module) => isEntryPoint(module, uniqueEntryPoints));
+  const exportsKeys = await readPackageEntryKeys(srcDir);
+  const structuralKeys = detectStructuralEntries(moduleKeys);
+  const uniqueEntryPoints = [.../* @__PURE__ */ new Set([...explicitKeys, ...exportsKeys, ...structuralKeys])];
+  const matches = (patterns) => [...graph.keys()].filter((module) => isEntryPoint(module, patterns));
+  const roots = matches(uniqueEntryPoints);
+  const explicitRoots = matches([...new Set(explicitKeys)]);
+  const exportsRoots = matches(exportsKeys);
+  const structuralRoots = matches(structuralKeys);
   const minExports = input.min_exports ?? 1;
   const reachable = findReachable(graph, roots);
   const candidates = roots.length > 0 ? [...graph.keys()].filter((module) => !reachable.has(module)) : [...graph.keys()].filter((module) => (reverse.get(module)?.size ?? 0) === 0);
-  const deadModules = candidates.filter((module) => !isEntryPoint(module, uniqueEntryPoints)).map((module) => ({ module, exportedSymbols: symbols.filter((symbol) => symbol.module === module) })).filter((item) => item.exportedSymbols.length >= minExports).sort((a, b) => b.exportedSymbols.length - a.exportedSymbols.length || a.module.localeCompare(b.module));
+  const confidenceOf = (module) => {
+    if (roots.length === 0) return "low";
+    return (reverse.get(module)?.size ?? 0) === 0 ? "high" : "medium";
+  };
+  const confidenceRank = { high: 3, medium: 2, low: 1 };
+  const deadModules = candidates.filter((module) => !isEntryPoint(module, uniqueEntryPoints)).map((module) => ({
+    module,
+    exportedSymbols: symbols.filter((symbol) => symbol.module === module),
+    confidence: confidenceOf(module)
+  })).filter((item) => item.exportedSymbols.length >= minExports);
+  const minConfidence = input.min_confidence ?? "low";
+  const filtered = deadModules.filter((item) => confidenceRank[item.confidence] >= confidenceRank[minConfidence]).sort(
+    (a, b) => confidenceRank[b.confidence] - confidenceRank[a.confidence] || b.exportedSymbols.length - a.exportedSymbols.length || a.module.localeCompare(b.module)
+  );
   const mode = roots.length > 0 ? `unreachable from ${roots.length} entry point(s)` : "zero inbound dependencies (no configured entry point matched)";
   const parts = [`## Dead Module Candidates: ${input.entry ?? "."}`];
   parts.push(
-    `Languages: ${parsers.map((parser) => parser.name).join(", ") || "none"} | Modules: ${graph.size} | Exported symbols: ${symbols.length} | Candidates: ${deadModules.length}`
+    `Languages: ${parsers.map((parser) => parser.name).join(", ") || "none"} | Modules: ${graph.size} | Exported symbols: ${symbols.length} | Candidates: ${filtered.length}${filtered.length !== deadModules.length ? ` (${deadModules.length} before min_confidence=${minConfidence})` : ""}`
   );
   parts.push(`Analysis: ${mode}`);
+  parts.push(
+    `Entry points: ${roots.length} matched (built-in/explicit: ${explicitRoots.length}, package exports: ${exportsRoots.length}, structural: ${structuralRoots.length})`
+  );
+  if (exportsRoots.length > 0) {
+    parts.push(`Public API (package.json exports): ${exportsRoots.join(", ")}`);
+  }
   if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`);
   parts.push("");
   if (roots.length === 0) {
@@ -23498,25 +23782,52 @@ async function runDeadCode(input) {
     parts.push("  The candidates below use the weak 'zero inbound dependencies' heuristic and include false positives.");
     parts.push("");
   }
-  if (deadModules.length === 0) {
-    parts.push("No dead-module candidates detected. This heuristic result is not proof that no dead code exists.");
+  if (filtered.length === 0) {
+    if (deadModules.length > 0) {
+      parts.push(
+        `No candidates at min_confidence=${minConfidence}; ${deadModules.length} lower-confidence candidate(s) filtered out.`
+      );
+    } else {
+      parts.push("No dead-module candidates detected. This heuristic result is not proof that no dead code exists.");
+    }
     return parts.join("\n");
   }
-  const totalDeadExports = deadModules.reduce((sum, module) => sum + module.exportedSymbols.length, 0);
+  const totalDeadExports = filtered.reduce((sum, item) => sum + item.exportedSymbols.length, 0);
+  const counts = { high: 0, medium: 0, low: 0 };
+  for (const item of filtered) counts[item.confidence]++;
   parts.push("### Summary");
-  parts.push(`  Candidate modules: ${deadModules.length} | Candidate exports: ${totalDeadExports} / ${symbols.length}`);
-  parts.push("", "### Candidate Modules");
-  for (const deadModule of deadModules.slice(0, 30)) {
-    parts.push(`  ${deadModule.module}/ (${deadModule.exportedSymbols.length} exported symbols)`);
-    for (const symbol of deadModule.exportedSymbols.slice(0, 10)) {
-      parts.push(`    - ${symbol.kind} ${symbol.name} (${symbol.file}:${symbol.line})`);
-    }
-    if (deadModule.exportedSymbols.length > 10) {
-      parts.push(`    ... and ${deadModule.exportedSymbols.length - 10} more`);
+  parts.push(
+    `  Candidate modules: ${filtered.length} | Candidate exports: ${totalDeadExports} / ${symbols.length} | High: ${counts.high} | Medium: ${counts.medium} | Low: ${counts.low}`
+  );
+  parts.push("", "### Candidates by package");
+  const packageOf = (module) => {
+    const segs = module.split("/");
+    if (segs[0] === "packages" && segs.length > 2) return `${segs[0]}/${segs[1]}`;
+    if (segs.length > 1) return segs[0];
+    return "(root)";
+  };
+  const groups = /* @__PURE__ */ new Map();
+  for (const item of filtered.slice(0, 30)) {
+    const group = packageOf(item.module);
+    const list = groups.get(group);
+    if (list) list.push(item);
+    else groups.set(group, [item]);
+  }
+  for (const [group, items] of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    parts.push(`${group} (${items.length} module${items.length > 1 ? "s" : ""})`);
+    for (const item of items) {
+      parts.push(`  ${item.module}/ [${item.confidence}] (${item.exportedSymbols.length} exported symbols)`);
+      for (const symbol of item.exportedSymbols.slice(0, 10)) {
+        parts.push(`    - ${symbol.kind} ${symbol.name} (${symbol.file}:${symbol.line})`);
+      }
+      if (item.exportedSymbols.length > 10) {
+        parts.push(`    ... and ${item.exportedSymbols.length - 10} more`);
+      }
     }
   }
   parts.push(
     "",
+    "Confidence: high = zero in-tree references; medium = referenced only by other unreachable modules; low = zero-inbound heuristic (no entry point matched).",
     "Note: dynamic imports, path aliases, framework routes, plugin entrypoints, and CLI entrypoints can produce false positives."
   );
   return parts.join("\n");
@@ -23816,6 +24127,7 @@ entrypoints, and CLI entrypoints can be false positives.`,
     ),
     entry_points: external_exports.array(external_exports.string()).optional().describe("Module keys that count as live entry points. Relative to the analyzed directory, extension optional (e.g. 'src/main', 'packages/a/src/index.ts'); absolute paths are mapped inside automatically. Merged with built-in defaults."),
     min_exports: external_exports.number().int().positive().optional().describe("Minimum exported symbols in a dead module to report. Defaults to 1."),
+    min_confidence: external_exports.enum(["high", "medium", "low"]).optional().describe("Minimum confidence to report. high = zero in-tree references, medium = referenced only by unreachable modules, low = zero-inbound heuristic. Defaults to low."),
     lang: external_exports.array(external_exports.string()).optional().describe("Explicit languages/extensions, e.g. ['typescript'] or ['ts', 'tsx']."),
     exclude: external_exports.array(external_exports.string()).optional().describe("Additional glob patterns to exclude, e.g. ['packages/plugin/**', '**/*.generated.ts']."),
     include_default_excludes: external_exports.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and examples."),

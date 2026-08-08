@@ -159,3 +159,146 @@ test("rejects entry that escapes the project root", async () => {
     assert.doesNotMatch(output, /## Dead Module Candidates/)
   })
 })
+
+test("import-looking text in comments, strings, and templates does not create edges", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "docs.ts": [
+      '// import { B } from "./b"',
+      'const tip = \'import { B } from "./b"\'',
+      "const tpl = `import { B } from './b'`",
+      "export class Docs {}",
+    ].join("\n"),
+    "b.ts": "export class B {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    // b.ts 没有真实引用，必须仍被判为候选（错误实现下 docs→b 边会把它标记为可达）
+    assert.match(output, /b\//)
+    assert.match(output, /\[high\]/)
+  })
+})
+
+test("python: import text inside docstrings is ignored", async () => {
+  await withProject({
+    "main.py": "print(1)",
+    "doc.py": '"""\nfrom b import B\n"""\nclass Doc:\n    pass',
+    "b.py": "class B:\n    pass",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["python"] })
+    // docstring 里的 from-import 不得让 b.py 变为可达；两个模块都是孤立候选
+    assert.match(output, /b\//)
+    assert.match(output, /doc\//)
+  })
+})
+
+test("exports inside namespace blocks are not top-level symbols", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "ns.ts": "export namespace N {\n  export class Inner {}\n}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    // Inner 不是模块级导出 → ns.ts 没有导出符号 → 不满足 min_exports，不应成为候选
+    assert.doesNotMatch(output, /ns\//)
+  })
+})
+
+test("default excludes skip generated and icon modules", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "src/gen/schema.ts": "export class GenSchema {}",
+    "src/model.gen.ts": "export class GenModel {}",
+    "src/icons/logo.ts": "export class Logo {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /Modules: 1/)
+    assert.doesNotMatch(output, /GenSchema|GenModel|Logo/)
+  })
+})
+
+test("package.json exports act as entry points", async () => {
+  await withProject({
+    "package.json": JSON.stringify({ name: "app", exports: { ".": "./src/index.ts" } }),
+    "src/index.ts": 'export * from "./lib/helper"',
+    "src/lib/helper.ts": "export class Helper {}",
+    "src/orphan.ts": "export class Orphan {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /package exports: 1/)
+    assert.match(output, /Public API \(package.json exports\): src\/index/)
+    assert.doesNotMatch(output, /helper\//)
+    assert.match(output, /orphan/)
+  })
+})
+
+test("package.json main remaps dist output back to src", async () => {
+  await withProject({
+    "package.json": JSON.stringify({ name: "app", main: "./dist/index.js" }),
+    "src/index.ts": "export class Entry {}",
+    "src/other.ts": "export class Other {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.doesNotMatch(output, /src\/index\//)
+    assert.match(output, /other/)
+  })
+})
+
+test("structural entries: Next.js app router pages are entry points", async () => {
+  await withProject({
+    "src/app/page.tsx": 'import { Widget } from "../components/widget"\nexport default function Page() { return Widget() }',
+    "src/components/widget.tsx": "export function Widget() { return null }",
+    "src/other.ts": "export class Other {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /structural: 1/)
+    assert.doesNotMatch(output, /widget\//)
+    assert.match(output, /other/)
+  })
+})
+
+test("structural entries: Electron main/preload/renderer layout", async () => {
+  await withProject({
+    "packages/desktop/src/main/index.ts": "export class Main {}",
+    "packages/desktop/src/preload.ts": "export class Preload {}",
+    "packages/desktop/src/renderer.ts": "export class Renderer {}",
+    "packages/desktop/src/shared/ipc.ts": "export class Ipc {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /structural: 3/)
+    // shared/ipc 无任何入口引用 → 仍应是候选
+    assert.match(output, /shared\/ipc/)
+  })
+})
+
+test("structural entries: package subdirectory indices when no root index exists", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "packages/console/app/index.ts": "export class ConsoleApp {}",
+    "packages/console/core/index.ts": 'import { ConsoleApp } from "../app"\nexport class Core {}',
+    "packages/console/util/format.ts": "export class Format {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /structural: 2/)
+    assert.doesNotMatch(output, /console\/core\//)
+    assert.doesNotMatch(output, /console\/app\//)
+    assert.match(output, /console\/util\/format/)
+  })
+})
+
+test("min_confidence filters candidates by reference strength", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "a.ts": 'import { B } from "./b"\nexport class A {}',
+    "b.ts": "export class B {}",
+  }, async (directory) => {
+    const all = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(all, /\[high\]/)
+    assert.match(all, /\[medium\]/)
+    assert.match(all, /High: 1 \| Medium: 1/)
+    assert.match(all, /### Candidates by package/)
+
+    const highOnly = await runDeadCode({ cwd: directory, lang: ["typescript"], min_confidence: "high" })
+    assert.match(highOnly, /a\//)
+    assert.doesNotMatch(highOnly, /b\//)
+    assert.match(highOnly, /2 before min_confidence=high/)
+  })
+})
