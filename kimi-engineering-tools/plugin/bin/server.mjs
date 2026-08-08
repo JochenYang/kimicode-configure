@@ -24234,7 +24234,7 @@ function runGitConventions(input) {
 // src/server.ts
 var server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.2"
+  version: "0.2.6"
 });
 server.tool(
   "git_conventions",

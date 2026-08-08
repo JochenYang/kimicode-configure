@@ -5,9 +5,13 @@ import { runCodeSearch } from "./tools/codesearch.js"
 import { runDeadCode } from "./tools/dead-code.js"
 import { runGitConventions } from "./tools/git-conventions.js"
 
+// Injected by scripts/bundle.mjs from package.json so the reported server
+// version never drifts from the published plugin version.
+declare const __PLUGIN_VERSION__: string
+
 const server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.2",
+  version: __PLUGIN_VERSION__,
 })
 
 server.tool(
