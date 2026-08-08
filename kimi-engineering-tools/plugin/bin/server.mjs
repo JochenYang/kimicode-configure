@@ -23335,6 +23335,38 @@ function commentsAndLiteralsMask(content, lang) {
           erase(i, i + 2);
           i += 2;
         }
+      } else if (c === "r" && content[i + 1] === "#") {
+        let hashes = 0;
+        let quoteAt = i + 1;
+        while (quoteAt < n && content[quoteAt] === "#") {
+          hashes++;
+          quoteAt++;
+        }
+        if (content[quoteAt] === '"') {
+          let k = quoteAt + 1;
+          while (k < n) {
+            if (content[k] === '"') {
+              let h = k + 1;
+              let matched = 0;
+              while (h < n && content[h] === "#" && matched < hashes) {
+                matched++;
+                h++;
+              }
+              if (matched === hashes) {
+                erase(i, h);
+                i = h;
+                break;
+              }
+            }
+            k++;
+          }
+          if (k >= n) {
+            erase(i, n);
+            i = n;
+          }
+        } else {
+          i++;
+        }
       } else if (c === "'" || c === '"') {
         skipQuoted(c);
       } else if (c === "`") {
@@ -23497,23 +23529,24 @@ var simpleParsers = [
   makeRegexParser(
     "Rust",
     ["rs"],
-    [/^use\s+([\w:]+).*;/gm, /^mod\s+(\w+)\s*[;{]/gm],
-    [[/(pub\s+)?struct\s+(\w+)/g, "struct"], [/(pub\s+)?enum\s+(\w+)/g, "enum"], [/(pub\s+)?trait\s+(\w+)/g, "interface"]]
+    [/^[ \t]*use\s+([\w:]+).*;/gm, /^[ \t]*mod\s+(\w+)\s*[;{]/gm],
+    [[/(pub\s+)?struct\s+(\w+)/g, "struct"], [/(pub\s+)?enum\s+(\w+)/g, "enum"], [/(pub\s+)?trait\s+(\w+)/g, "interface"]],
+    true
   ),
   makeRegexParser(
     "C#",
     ["cs"],
-    [/^using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
+    [/^[ \t]*using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
     [[/(public\s+)?(?:class|record)\s+(\w+)/g, "class"], [/(public\s+)?struct\s+(\w+)/g, "struct"], [/(public\s+)?interface\s+(\w+)/g, "interface"], [/(public\s+)?enum\s+(\w+)/g, "enum"]]
   ),
   makeRegexParser(
     "C++",
     ["cpp", "cxx", "cc", "c", "hpp", "hxx", "h", "hh"],
-    [/^#\s*include\s*"([^"]+)"/gm],
+    [/^[ \t]*#\s*include\s*"([^"]+)"/gm],
     [[/(?:class|struct)\s+(\w+)\s*[{:\n]/g, "struct"], [/(?:enum\s+class|enum)\s+(\w+)/g, "enum"]]
   )
 ];
-function makeRegexParser(name, extensions, importPatterns, typePatterns) {
+function makeRegexParser(name, extensions, importPatterns, typePatterns, stripFinalSegment = false) {
   return {
     name,
     extensions,
@@ -23549,7 +23582,8 @@ function makeRegexParser(name, extensions, importPatterns, typePatterns) {
       return defs;
     },
     normalizeImportPath(rawPath, fromFile, srcDir) {
-      const relative = rawPath.includes("::") ? rawPath.replace(/^crate::/, "").replace(/::/g, "/") : rawPath;
+      const pathPart = stripFinalSegment ? rawPath.replace(/:{1,2}[\w]+$/, "") : rawPath;
+      const relative = pathPart.includes("::") ? pathPart.replace(/^crate::/, "").replace(/::/g, "/") : pathPart;
       const resolved = path4.resolve(srcDir, path4.dirname(fromFile), relative);
       const rel = path4.relative(srcDir, resolved);
       if (rel.startsWith("..") || path4.isAbsolute(rel)) return null;
@@ -23613,12 +23647,20 @@ function collectExportPaths(value, out) {
     for (const item of Object.values(value)) collectExportPaths(item, out);
   }
 }
+var BUILD_DIRS = /* @__PURE__ */ new Set(["dist", "lib", "build", "out"]);
 async function readPackageEntryKeys(srcDir, moduleKeys) {
   const packageDirs = [""];
   try {
     const entries = await fs2.readdir(path4.join(srcDir, "packages"), { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.isDirectory()) packageDirs.push(path4.join("packages", entry.name));
+      if (!entry.isDirectory()) continue;
+      packageDirs.push(path4.join("packages", entry.name));
+      if (entry.name.startsWith("@")) {
+        const scoped = await fs2.readdir(path4.join(srcDir, "packages", entry.name), { withFileTypes: true });
+        for (const sub of scoped) {
+          if (sub.isDirectory()) packageDirs.push(path4.join("packages", entry.name, sub.name));
+        }
+      }
     }
   } catch {
   }
@@ -23641,9 +23683,11 @@ async function readPackageEntryKeys(srcDir, moduleKeys) {
       let rel = path4.relative(srcDir, path4.resolve(srcDir, dir, rawPath)).replace(/\\/g, "/");
       if (rel.startsWith("..") || path4.isAbsolute(rel) || rel.includes("node_modules")) continue;
       let key = stripExtension(rel.replace(/\.d\.(ts|tsx)$/, ".$1"));
-      const buildDir = /^(dist|lib|build|out)\//.exec(rel);
-      if (buildDir) {
-        const mirror = `src/${rel.slice(buildDir[1].length + 1)}`;
+      const segments = rel.split("/");
+      const srcIdx = segments.indexOf("src");
+      const buildIdx = segments.findIndex((seg) => BUILD_DIRS.has(seg));
+      if (buildIdx !== -1 && (srcIdx === -1 || buildIdx < srcIdx)) {
+        const mirror = [...segments.slice(0, buildIdx), "src", ...segments.slice(buildIdx + 1)].join("/");
         const mirrorKey = stripExtension(mirror.replace(/\.d\.(ts|tsx)$/, ".$1"));
         const base = mirrorKey.slice(mirrorKey.lastIndexOf("/") + 1);
         key = moduleKeys.has(mirrorKey) ? mirrorKey : `src/${base}`;
@@ -23652,6 +23696,42 @@ async function readPackageEntryKeys(srcDir, moduleKeys) {
     }
   }
   return [...new Set(keys)];
+}
+async function readTsconfigAliases(srcDir) {
+  const aliases = [];
+  for (const dir of [srcDir, path4.dirname(srcDir)]) {
+    if (!dir) continue;
+    let raw;
+    try {
+      raw = await fs2.readFile(path4.join(dir, "tsconfig.json"), "utf8");
+    } catch {
+      continue;
+    }
+    let config2;
+    try {
+      config2 = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    for (const [key, targets] of Object.entries(config2.compilerOptions?.paths ?? {})) {
+      const target = targets?.[0];
+      if (typeof target !== "string") continue;
+      const prefix = key.replace(/\*$/, "");
+      if (!prefix) continue;
+      aliases.push({ prefix, target: target.replace(/\*$/, "") });
+    }
+    break;
+  }
+  aliases.sort((a, b) => b.prefix.length - a.prefix.length);
+  return aliases;
+}
+function resolveAlias(rawPath, aliases) {
+  for (const alias of aliases) {
+    if (rawPath.startsWith(alias.prefix)) {
+      return alias.target + rawPath.slice(alias.prefix.length);
+    }
+  }
+  return null;
 }
 var NEXT_APP_ROUTE_FILES = /* @__PURE__ */ new Set([
   "page",
@@ -23664,9 +23744,9 @@ var NEXT_APP_ROUTE_FILES = /* @__PURE__ */ new Set([
   "default"
 ]);
 var ENTRY_SUBDIR_NAMES = /* @__PURE__ */ new Set(["app", "core", "cli", "server", "lib", "cmd", "routes", "views", "pages", "main", "entries"]);
-var ELECTRON_ROLE_RE = /^(?:src|packages\/[^/]+(?:\/src)?)\/(main|preload|renderer)(?:\/index)?$/;
+var ELECTRON_ROLE_RE = /^(?:src|packages\/[^/]+(?:\/src)?|packages\/@[^/]+\/[^/]+(?:\/src)?)\/(main|preload|renderer)(?:\/index)?$/;
 function isAtFrameworkRoot(segs, dir) {
-  return segs[0] === dir || segs[0] === "src" && segs[1] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === "src" && segs[3] === dir;
+  return segs[0] === dir || segs[0] === "src" && segs[1] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === "src" && segs[3] === dir || segs[0] === "packages" && segs[1]?.startsWith("@") && segs[2] !== void 0 && segs[3] === dir || segs[0] === "packages" && segs[1]?.startsWith("@") && segs[2] === "src" && segs[3] !== void 0 && segs[4] === dir;
 }
 function detectStructuralEntries(moduleKeys) {
   const entries = /* @__PURE__ */ new Set();
@@ -23682,13 +23762,16 @@ function detectStructuralEntries(moduleKeys) {
       const subdir = segs[segs.length - 2] ?? "";
       if (!ENTRY_SUBDIR_NAMES.has(subdir)) continue;
       const subdirAt = segs.length - 2;
+      const scoped = segs[0] === "packages" && segs[1]?.startsWith("@");
       const atRoot = subdirAt === 0;
       const atSrcRoot = subdirAt === 1 && segs[0] === "src";
       const atPkgRoot = subdirAt === 2 && segs[0] === "packages";
       const atPkgSrcRoot = subdirAt === 3 && segs[0] === "packages" && segs[2] === "src";
-      if (!(atRoot || atSrcRoot || atPkgRoot || atPkgSrcRoot)) continue;
-      if (atPkgRoot || atPkgSrcRoot) {
-        const pkg = segs[1] ?? "";
+      const atScopeRoot = subdirAt === 4 && scoped;
+      const atScopeSrcRoot = subdirAt === 5 && scoped && segs[3] === "src";
+      if (!(atRoot || atSrcRoot || atPkgRoot || atPkgSrcRoot || atScopeRoot || atScopeSrcRoot)) continue;
+      if (atPkgRoot || atPkgSrcRoot || atScopeRoot || atScopeSrcRoot) {
+        const pkg = scoped ? `${segs[1]}/${segs[2]}` : segs[1] ?? "";
         if (moduleKeys.has(`packages/${pkg}/index`) || moduleKeys.has(`packages/${pkg}/src/index`)) continue;
       } else if (atSrcRoot) {
         if (moduleKeys.has("src/index")) continue;
@@ -23759,6 +23842,7 @@ async function runDeadCode(input) {
   const moduleKeys = new Set(
     sourceFiles.map((filePath) => stripExtension(path4.relative(srcDir, filePath).replace(/\\/g, "/")))
   );
+  const aliases = await readTsconfigAliases(srcDir);
   const graph = /* @__PURE__ */ new Map();
   const reverse = /* @__PURE__ */ new Map();
   const symbols = [];
@@ -23772,7 +23856,12 @@ async function runDeadCode(input) {
     const mask = commentsAndLiteralsMask(content, parser.maskLang);
     const targets = /* @__PURE__ */ new Set();
     for (const decl of parser.extractImports(content, mask)) {
-      const normalized = parser.normalizeImportPath(decl.rawPath, relFile, srcDir);
+      const aliased = resolveAlias(decl.rawPath, aliases);
+      const normalized = parser.normalizeImportPath(
+        aliased ?? decl.rawPath,
+        aliased === null ? relFile : "",
+        srcDir
+      );
       if (!normalized) continue;
       const target = resolveModuleKey(normalized, moduleKeys);
       if (moduleKeys.has(target)) targets.add(target);

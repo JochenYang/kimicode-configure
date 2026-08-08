@@ -384,3 +384,50 @@ test("package.json main pointing at lib/ resolves to src", async () => {
     assert.match(output, /other/)
   })
 })
+
+test("rust: indented use, item imports, and raw strings resolve correctly", async () => {
+  await withProject({
+    "main.rs": "mod helper;",
+    "helper.rs": [
+      "fn run() {",
+      "    use crate::shared::Thing;",
+      "    let raw = r#\"use crate::fake::Ghost;\"#;",
+      "    let _ = (Thing, raw);",
+      "}",
+      "pub fn entry() { run() }",
+    ].join("\n"),
+    "shared.rs": "pub struct Thing;",
+    "fake.rs": "pub struct Ghost;",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["rust"] })
+    // 缩进 use + 符号剥离：shared 可达；原始字符串中的 use 不建边 → fake 是候选
+    assert.doesNotMatch(output, /shared\//)
+    assert.doesNotMatch(output, /helper\//)
+    assert.match(output, /fake\//)
+  })
+})
+
+test("tsconfig path aliases resolve to real modules", async () => {
+  await withProject({
+    "tsconfig.json": JSON.stringify({ compilerOptions: { paths: { "@/*": ["src/*"] } } }),
+    "src/main.ts": 'import { Helper } from "@/lib/helper"\nexport class Main { h = Helper }',
+    "src/lib/helper.ts": "export class Helper {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.doesNotMatch(output, /helper\//)
+  })
+})
+
+test("scoped packages expose package.json main as an entry", async () => {
+  await withProject({
+    "packages/@scope/core/package.json": JSON.stringify({ name: "@scope/core", main: "./dist/index.js" }),
+    "packages/@scope/core/src/index.ts": 'export * from "./util"',
+    "packages/@scope/core/src/util.ts": "export class Util {}",
+    "packages/@scope/core/src/orphan.ts": "export class Orphan {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /package exports: 1/)
+    assert.doesNotMatch(output, /util\//)
+    assert.match(output, /orphan/)
+  })
+})

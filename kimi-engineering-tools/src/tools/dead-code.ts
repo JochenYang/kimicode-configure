@@ -219,6 +219,31 @@ function commentsAndLiteralsMask(content: string, lang: "c" | "python"): Uint8Ar
         i += 2
         while (i < n && !(content[i] === "*" && content[i + 1] === "/")) { erase(i, i + 1); i++ }
         if (i < n) { erase(i, i + 2); i += 2 }
+      } else if (c === "r" && content[i + 1] === "#") {
+        // Rust raw string r#"..."# (r##"..."##, ...). Raw identifiers (r#type)
+        // don't reach this branch: the char after the #'s must be a quote.
+        let hashes = 0
+        let quoteAt = i + 1
+        while (quoteAt < n && content[quoteAt] === "#") { hashes++; quoteAt++ }
+        if (content[quoteAt] === '"') {
+          let k = quoteAt + 1
+          while (k < n) {
+            if (content[k] === '"') {
+              let h = k + 1
+              let matched = 0
+              while (h < n && content[h] === "#" && matched < hashes) { matched++; h++ }
+              if (matched === hashes) {
+                erase(i, h)
+                i = h
+                break
+              }
+            }
+            k++
+          }
+          if (k >= n) { erase(i, n); i = n }
+        } else {
+          i++
+        }
       } else if (c === "'" || c === '"') {
         skipQuoted(c)
       } else if (c === "`") {
@@ -401,19 +426,20 @@ const simpleParsers: Parser[] = [
   makeRegexParser(
     "Rust",
     ["rs"],
-    [/^use\s+([\w:]+).*;/gm, /^mod\s+(\w+)\s*[;{]/gm],
+    [/^[ \t]*use\s+([\w:]+).*;/gm, /^[ \t]*mod\s+(\w+)\s*[;{]/gm],
     [[/(pub\s+)?struct\s+(\w+)/g, "struct"], [/(pub\s+)?enum\s+(\w+)/g, "enum"], [/(pub\s+)?trait\s+(\w+)/g, "interface"]],
+    true,
   ),
   makeRegexParser(
     "C#",
     ["cs"],
-    [/^using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
+    [/^[ \t]*using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
     [[/(public\s+)?(?:class|record)\s+(\w+)/g, "class"], [/(public\s+)?struct\s+(\w+)/g, "struct"], [/(public\s+)?interface\s+(\w+)/g, "interface"], [/(public\s+)?enum\s+(\w+)/g, "enum"]],
   ),
   makeRegexParser(
     "C++",
     ["cpp", "cxx", "cc", "c", "hpp", "hxx", "h", "hh"],
-    [/^#\s*include\s*"([^"]+)"/gm],
+    [/^[ \t]*#\s*include\s*"([^"]+)"/gm],
     [[/(?:class|struct)\s+(\w+)\s*[{:\n]/g, "struct"], [/(?:enum\s+class|enum)\s+(\w+)/g, "enum"]],
   ),
 ]
@@ -423,6 +449,7 @@ function makeRegexParser(
   extensions: string[],
   importPatterns: RegExp[],
   typePatterns: Array<[RegExp, SymbolKind]>,
+  stripFinalSegment = false,
 ): Parser {
   return {
     name,
@@ -459,9 +486,12 @@ function makeRegexParser(
       return defs
     },
     normalizeImportPath(rawPath, fromFile, srcDir) {
-      const relative = rawPath.includes("::")
-        ? rawPath.replace(/^crate::/, "").replace(/::/g, "/")
-        : rawPath
+      // Rust `use a::b::Item;` names the imported item last; drop it to keep the
+      // module edge (a::b). `use a::b;` degrades to a — harmless, usually external.
+      const pathPart = stripFinalSegment ? rawPath.replace(/:{1,2}[\w]+$/, "") : rawPath
+      const relative = pathPart.includes("::")
+        ? pathPart.replace(/^crate::/, "").replace(/::/g, "/")
+        : pathPart
       const resolved = path.resolve(srcDir, path.dirname(fromFile), relative)
       const rel = path.relative(srcDir, resolved)
       if (rel.startsWith("..") || path.isAbsolute(rel)) return null
@@ -542,6 +572,8 @@ function collectExportPaths(value: unknown, out: string[]): void {
   }
 }
 
+const BUILD_DIRS = new Set(["dist", "lib", "build", "out"])
+
 /**
  * Read the project package.json (plus every packages/<pkg>/package.json) and turn
  * `exports`/`main`/`module`/`types` targets into module keys. Build output
@@ -554,7 +586,15 @@ async function readPackageEntryKeys(srcDir: string, moduleKeys: Set<string>): Pr
   try {
     const entries = await fs.readdir(path.join(srcDir, "packages"), { withFileTypes: true })
     for (const entry of entries) {
-      if (entry.isDirectory()) packageDirs.push(path.join("packages", entry.name))
+      if (!entry.isDirectory()) continue
+      packageDirs.push(path.join("packages", entry.name))
+      if (entry.name.startsWith("@")) {
+        // Scoped workspaces: packages/@scope/<name>
+        const scoped = await fs.readdir(path.join(srcDir, "packages", entry.name), { withFileTypes: true })
+        for (const sub of scoped) {
+          if (sub.isDirectory()) packageDirs.push(path.join("packages", entry.name, sub.name))
+        }
+      }
     }
   } catch {
     // No packages/ directory at this level.
@@ -578,9 +618,14 @@ async function readPackageEntryKeys(srcDir: string, moduleKeys: Set<string>): Pr
       let rel = path.relative(srcDir, path.resolve(srcDir, dir, rawPath)).replace(/\\/g, "/")
       if (rel.startsWith("..") || path.isAbsolute(rel) || rel.includes("node_modules")) continue
       let key = stripExtension(rel.replace(/\.d\.(ts|tsx)$/, ".$1"))
-      const buildDir = /^(dist|lib|build|out)\//.exec(rel)
-      if (buildDir) {
-        const mirror = `src/${rel.slice(buildDir[1].length + 1)}`
+      // Build output usually mirrors src/ in source-only scans. Locate the build
+      // segment anywhere in the package path (packages/foo/dist/x.js), but never
+      // remap a build-named segment that lives under an existing src/.
+      const segments = rel.split("/")
+      const srcIdx = segments.indexOf("src")
+      const buildIdx = segments.findIndex((seg) => BUILD_DIRS.has(seg))
+      if (buildIdx !== -1 && (srcIdx === -1 || buildIdx < srcIdx)) {
+        const mirror = [...segments.slice(0, buildIdx), "src", ...segments.slice(buildIdx + 1)].join("/")
         const mirrorKey = stripExtension(mirror.replace(/\.d\.(ts|tsx)$/, ".$1"))
         const base = mirrorKey.slice(mirrorKey.lastIndexOf("/") + 1)
         key = moduleKeys.has(mirrorKey) ? mirrorKey : `src/${base}`
@@ -589,6 +634,53 @@ async function readPackageEntryKeys(srcDir: string, moduleKeys: Set<string>): Pr
     }
   }
   return [...new Set(keys)]
+}
+
+/**
+ * Read compilerOptions.paths from the nearest tsconfig.json (the analyzed dir,
+ * then its parent) so `@/x`-style aliases resolve to real modules. Supports the
+ * common `"@/*": ["src/*"]` star-suffix form; longest prefix wins.
+ */
+async function readTsconfigAliases(srcDir: string): Promise<Array<{ prefix: string; target: string }>> {
+  const aliases: Array<{ prefix: string; target: string }> = []
+  for (const dir of [srcDir, path.dirname(srcDir)]) {
+    if (!dir) continue
+    let raw: string
+    try {
+      raw = await fs.readFile(path.join(dir, "tsconfig.json"), "utf8")
+    } catch {
+      continue
+    }
+    let config: { compilerOptions?: { paths?: Record<string, string[]> } }
+    try {
+      config = JSON.parse(raw) as typeof config
+    } catch {
+      continue
+    }
+    for (const [key, targets] of Object.entries(config.compilerOptions?.paths ?? {})) {
+      const target = targets?.[0]
+      if (typeof target !== "string") continue
+      const prefix = key.replace(/\*$/, "")
+      if (!prefix) continue
+      aliases.push({ prefix, target: target.replace(/\*$/, "") })
+    }
+    break // first readable tsconfig wins
+  }
+  aliases.sort((a, b) => b.prefix.length - a.prefix.length)
+  return aliases
+}
+
+/** Rewrite an aliased import path to its real relative path, or null when no alias matches. */
+function resolveAlias(
+  rawPath: string,
+  aliases: Array<{ prefix: string; target: string }>,
+): string | null {
+  for (const alias of aliases) {
+    if (rawPath.startsWith(alias.prefix)) {
+      return alias.target + rawPath.slice(alias.prefix.length)
+    }
+  }
+  return null
 }
 
 const NEXT_APP_ROUTE_FILES = new Set([
@@ -603,19 +695,23 @@ const NEXT_APP_ROUTE_FILES = new Set([
 ])
 const ENTRY_SUBDIR_NAMES = new Set(["app", "core", "cli", "server", "lib", "cmd", "routes", "views", "pages", "main", "entries"])
 // Electron: src/main|preload|renderer (with optional package prefix and /index).
-const ELECTRON_ROLE_RE = /^(?:src|packages\/[^/]+(?:\/src)?)\/(main|preload|renderer)(?:\/index)?$/
+const ELECTRON_ROLE_RE =
+  /^(?:src|packages\/[^/]+(?:\/src)?|packages\/@[^/]+\/[^/]+(?:\/src)?)\/(main|preload|renderer)(?:\/index)?$/
 
 /**
  * True when `dir` is the second segment of the module key and the first segment
- * is a legal framework root: the project root, `src/`, `packages/<pkg>/`, or
- * `packages/<pkg>/src/`. Keeps src/components/app/page.tsx-style false positives out.
+ * is a legal framework root: the project root, `src/`, `packages/<pkg>/`,
+ * `packages/<pkg>/src/`, or the scoped `packages/@scope/<pkg>` variants. Keeps
+ * src/components/app/page.tsx-style false positives out.
  */
 function isAtFrameworkRoot(segs: string[], dir: string): boolean {
   return (
     segs[0] === dir ||
     (segs[0] === "src" && segs[1] === dir) ||
     (segs[0] === "packages" && segs[1] !== undefined && segs[2] === dir) ||
-    (segs[0] === "packages" && segs[1] !== undefined && segs[2] === "src" && segs[3] === dir)
+    (segs[0] === "packages" && segs[1] !== undefined && segs[2] === "src" && segs[3] === dir) ||
+    (segs[0] === "packages" && segs[1]?.startsWith("@") && segs[2] !== undefined && segs[3] === dir) ||
+    (segs[0] === "packages" && segs[1]?.startsWith("@") && segs[2] === "src" && segs[3] !== undefined && segs[4] === dir)
   )
 }
 
@@ -641,14 +737,17 @@ function detectStructuralEntries(moduleKeys: Set<string>): string[] {
       if (!ENTRY_SUBDIR_NAMES.has(subdir)) continue
       // The subdirectory must sit at a legal entry location (root, src/, package root).
       const subdirAt = segs.length - 2
+      const scoped = segs[0] === "packages" && segs[1]?.startsWith("@")
       const atRoot = subdirAt === 0
       const atSrcRoot = subdirAt === 1 && segs[0] === "src"
       const atPkgRoot = subdirAt === 2 && segs[0] === "packages"
       const atPkgSrcRoot = subdirAt === 3 && segs[0] === "packages" && segs[2] === "src"
-      if (!(atRoot || atSrcRoot || atPkgRoot || atPkgSrcRoot)) continue
+      const atScopeRoot = subdirAt === 4 && scoped
+      const atScopeSrcRoot = subdirAt === 5 && scoped && segs[3] === "src"
+      if (!(atRoot || atSrcRoot || atPkgRoot || atPkgSrcRoot || atScopeRoot || atScopeSrcRoot)) continue
       // Only when the package/root itself has no index entry.
-      if (atPkgRoot || atPkgSrcRoot) {
-        const pkg = segs[1] ?? ""
+      if (atPkgRoot || atPkgSrcRoot || atScopeRoot || atScopeSrcRoot) {
+        const pkg = scoped ? `${segs[1]}/${segs[2]}` : segs[1] ?? ""
         if (moduleKeys.has(`packages/${pkg}/index`) || moduleKeys.has(`packages/${pkg}/src/index`)) continue
       } else if (atSrcRoot) {
         if (moduleKeys.has("src/index")) continue
@@ -726,6 +825,7 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
   const moduleKeys = new Set(
     sourceFiles.map((filePath) => stripExtension(path.relative(srcDir, filePath).replace(/\\/g, "/"))),
   )
+  const aliases = await readTsconfigAliases(srcDir)
   const graph = new Map<string, Set<string>>()
   const reverse = new Map<string, Set<string>>()
   const symbols: ExportedSymbol[] = []
@@ -746,7 +846,12 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
       // `from pkg.mod import x`, TS `packages/a/src/b`, tsconfig path aliases). Resolve
       // them against srcDir and keep the edge only when it lands on a real module key,
       // so npm/stdlib/unresolved aliases are naturally skipped.
-      const normalized = parser.normalizeImportPath(decl.rawPath, relFile, srcDir)
+      const aliased = resolveAlias(decl.rawPath, aliases)
+      const normalized = parser.normalizeImportPath(
+        aliased ?? decl.rawPath,
+        aliased === null ? relFile : "",
+        srcDir,
+      )
       if (!normalized) continue
       const target = resolveModuleKey(normalized, moduleKeys)
       if (moduleKeys.has(target)) targets.add(target)
