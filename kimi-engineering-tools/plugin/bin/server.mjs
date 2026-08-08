@@ -23648,22 +23648,26 @@ function collectExportPaths(value, out) {
   }
 }
 var BUILD_DIRS = /* @__PURE__ */ new Set(["dist", "lib", "build", "out"]);
-async function readPackageEntryKeys(srcDir, moduleKeys) {
-  const packageDirs = [""];
+async function collectPackageDirs(srcDir) {
+  const dirs = [""];
   try {
     const entries = await fs2.readdir(path4.join(srcDir, "packages"), { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      packageDirs.push(path4.join("packages", entry.name));
+      dirs.push(path4.join("packages", entry.name));
       if (entry.name.startsWith("@")) {
         const scoped = await fs2.readdir(path4.join(srcDir, "packages", entry.name), { withFileTypes: true });
         for (const sub of scoped) {
-          if (sub.isDirectory()) packageDirs.push(path4.join("packages", entry.name, sub.name));
+          if (sub.isDirectory()) dirs.push(path4.join("packages", entry.name, sub.name));
         }
       }
     }
   } catch {
   }
+  return dirs;
+}
+async function readPackageEntryKeys(srcDir, moduleKeys) {
+  const packageDirs = await collectPackageDirs(srcDir);
   const keys = [];
   for (const dir of packageDirs) {
     let pkg;
@@ -23733,6 +23737,34 @@ function resolveAlias(rawPath, aliases) {
   }
   return null;
 }
+async function readPackageNames(srcDir) {
+  const names = [];
+  for (const dir of await collectPackageDirs(srcDir)) {
+    if (!dir) continue;
+    let pkg;
+    try {
+      pkg = JSON.parse(await fs2.readFile(path4.join(srcDir, dir, "package.json"), "utf8"));
+    } catch {
+      continue;
+    }
+    const name = pkg?.name;
+    if (typeof name === "string" && name) names.push([name, dir]);
+  }
+  names.sort((a, b) => b[0].length - a[0].length);
+  return names;
+}
+function resolvePackageImport(rawPath, packageNames, moduleKeys) {
+  for (const [name, dir] of packageNames) {
+    if (rawPath !== name && !rawPath.startsWith(`${name}/`)) continue;
+    const rest = rawPath === name ? "" : rawPath.slice(name.length + 1);
+    for (const base of [`${dir}/src`, dir]) {
+      const candidate = stripExtension(base + (rest ? `/${rest}` : ""));
+      if (moduleKeys.has(candidate) || moduleKeys.has(`${candidate}/index`)) return candidate;
+    }
+    return null;
+  }
+  return null;
+}
 var NEXT_APP_ROUTE_FILES = /* @__PURE__ */ new Set([
   "page",
   "layout",
@@ -23782,6 +23814,15 @@ function detectStructuralEntries(moduleKeys) {
     }
   }
   return [...entries];
+}
+function isSinglePackageDir(srcDir) {
+  const underPackages = (dir) => {
+    const parent = path4.basename(path4.dirname(dir));
+    if (parent === "packages") return true;
+    return parent.startsWith("@") && path4.basename(path4.dirname(path4.dirname(dir))) === "packages";
+  };
+  if (underPackages(srcDir)) return true;
+  return path4.basename(srcDir) === "src" && underPackages(path4.dirname(srcDir));
 }
 function selectParsers(files, explicitLangs) {
   if (explicitLangs && explicitLangs.length > 0) {
@@ -23843,6 +23884,7 @@ async function runDeadCode(input) {
     sourceFiles.map((filePath) => stripExtension(path4.relative(srcDir, filePath).replace(/\\/g, "/")))
   );
   const aliases = await readTsconfigAliases(srcDir);
+  const packageNames = await readPackageNames(srcDir);
   const graph = /* @__PURE__ */ new Map();
   const reverse = /* @__PURE__ */ new Map();
   const symbols = [];
@@ -23856,12 +23898,10 @@ async function runDeadCode(input) {
     const mask = commentsAndLiteralsMask(content, parser.maskLang);
     const targets = /* @__PURE__ */ new Set();
     for (const decl of parser.extractImports(content, mask)) {
-      const aliased = resolveAlias(decl.rawPath, aliases);
-      const normalized = parser.normalizeImportPath(
-        aliased ?? decl.rawPath,
-        aliased === null ? relFile : "",
-        srcDir
-      );
+      const packaged = resolvePackageImport(decl.rawPath, packageNames, moduleKeys);
+      const aliased = packaged === null ? resolveAlias(decl.rawPath, aliases) : null;
+      const importPath = packaged ?? aliased ?? decl.rawPath;
+      const normalized = parser.normalizeImportPath(importPath, importPath === decl.rawPath ? relFile : "", srcDir);
       if (!normalized) continue;
       const target = resolveModuleKey(normalized, moduleKeys);
       if (moduleKeys.has(target)) targets.add(target);
@@ -23928,6 +23968,11 @@ async function runDeadCode(input) {
   );
   if (exportsRoots.length > 0) {
     parts.push(`Public API (package.json exports): ${exportsRoots.join(", ")}`);
+  }
+  if (isSinglePackageDir(srcDir)) {
+    parts.push(
+      `Scan scope: single package (${path4.basename(srcDir)}) \u2014 referrers in other packages are outside this tree; verify candidates repo-wide.`
+    );
   }
   if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`);
   parts.push("");
@@ -24234,7 +24279,7 @@ function runGitConventions(input) {
 // src/server.ts
 var server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.6"
+  version: "0.2.7"
 });
 server.tool(
   "git_conventions",

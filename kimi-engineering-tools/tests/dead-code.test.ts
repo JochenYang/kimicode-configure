@@ -431,3 +431,45 @@ test("scoped packages expose package.json main as an entry", async () => {
     assert.match(output, /orphan/)
   })
 })
+
+test("workspace package names resolve cross-package imports", async () => {
+  await withProject({
+    "packages/core/package.json": JSON.stringify({ name: "@opencode-ai/core" }),
+    "packages/core/src/index.ts": 'export * from "./widget"',
+    "packages/core/src/widget.ts": "export class Widget {}",
+    "packages/app/package.json": JSON.stringify({ name: "@opencode-ai/app" }),
+    "packages/app/src/main.ts":
+      'import { Widget } from "@opencode-ai/core/widget"\nexport class App { w = Widget }',
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    // app 的包名 import 建边 → widget 可达；core/src/index 是默认入口
+    assert.doesNotMatch(output, /widget\//)
+    assert.doesNotMatch(output, /core\/src\/index/)
+    // 单包提示不应出现（扫的是仓库根）
+    assert.doesNotMatch(output, /cross-package referrers/)
+  })
+})
+
+test("cross-package imports work for packages without a src/ mirror", async () => {
+  await withProject({
+    "packages/tool/package.json": JSON.stringify({ name: "@tool/pkg" }),
+    "packages/tool/index.ts": "export class ToolBase {}",
+    "packages/app/package.json": JSON.stringify({ name: "app" }),
+    "packages/app/src/main.ts": 'import { ToolBase } from "@tool/pkg/index"\nexport class App { t = ToolBase }',
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.doesNotMatch(output, /tool\/index/)
+  })
+})
+
+test("single-package scans warn that cross-package referrers are invisible", async () => {
+  await withProject({
+    "packages/effect/package.json": JSON.stringify({ name: "@scope/effect" }),
+    "packages/effect/src/main.ts": "export class EffectMain {}",
+    "packages/other/src/ref.ts": "export class Ref {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, entry: "packages/effect", lang: ["typescript"] })
+    assert.match(output, /referrers in other packages/)
+    assert.match(output, /single package/)
+  })
+})

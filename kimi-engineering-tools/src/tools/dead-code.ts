@@ -575,6 +575,30 @@ function collectExportPaths(value: unknown, out: string[]): void {
 const BUILD_DIRS = new Set(["dist", "lib", "build", "out"])
 
 /**
+ * Collect package directories under packages/ (scoped two-level layout
+ * packages/@scope/<name> included), relative to srcDir.
+ */
+async function collectPackageDirs(srcDir: string): Promise<string[]> {
+  const dirs = [""]
+  try {
+    const entries = await fs.readdir(path.join(srcDir, "packages"), { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      dirs.push(path.join("packages", entry.name))
+      if (entry.name.startsWith("@")) {
+        const scoped = await fs.readdir(path.join(srcDir, "packages", entry.name), { withFileTypes: true })
+        for (const sub of scoped) {
+          if (sub.isDirectory()) dirs.push(path.join("packages", entry.name, sub.name))
+        }
+      }
+    }
+  } catch {
+    // No packages/ directory at this level.
+  }
+  return dirs
+}
+
+/**
  * Read the project package.json (plus every packages/<pkg>/package.json) and turn
  * `exports`/`main`/`module`/`types` targets into module keys. Build output
  * (dist/lib/build/out) is remapped to src/ since the scan only indexes source
@@ -582,23 +606,7 @@ const BUILD_DIRS = new Set(["dist", "lib", "build", "out"])
  * package.json describes this tree.
  */
 async function readPackageEntryKeys(srcDir: string, moduleKeys: Set<string>): Promise<string[]> {
-  const packageDirs = [""]
-  try {
-    const entries = await fs.readdir(path.join(srcDir, "packages"), { withFileTypes: true })
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue
-      packageDirs.push(path.join("packages", entry.name))
-      if (entry.name.startsWith("@")) {
-        // Scoped workspaces: packages/@scope/<name>
-        const scoped = await fs.readdir(path.join(srcDir, "packages", entry.name), { withFileTypes: true })
-        for (const sub of scoped) {
-          if (sub.isDirectory()) packageDirs.push(path.join("packages", entry.name, sub.name))
-        }
-      }
-    }
-  } catch {
-    // No packages/ directory at this level.
-  }
+  const packageDirs = await collectPackageDirs(srcDir)
   const keys: string[] = []
   for (const dir of packageDirs) {
     let pkg: unknown
@@ -683,6 +691,50 @@ function resolveAlias(
   return null
 }
 
+/**
+ * Collect workspace package names (package.json `name`) mapped to their
+ * packages/<pkg> directories, longest name first. Lets `@scope/pkg/x` imports
+ * resolve to real modules when the whole repo is scanned.
+ */
+async function readPackageNames(srcDir: string): Promise<Array<[string, string]>> {
+  const names: Array<[string, string]> = []
+  for (const dir of await collectPackageDirs(srcDir)) {
+    if (!dir) continue
+    let pkg: unknown
+    try {
+      pkg = JSON.parse(await fs.readFile(path.join(srcDir, dir, "package.json"), "utf8"))
+    } catch {
+      continue
+    }
+    const name = (pkg as Record<string, unknown> | null)?.name
+    if (typeof name === "string" && name) names.push([name, dir])
+  }
+  names.sort((a, b) => b[0].length - a[0].length)
+  return names
+}
+
+/**
+ * Resolve a `@scope/pkg/...` import to its module key inside packages/<pkg>.
+ * Tries the src/ mirror first, then the package root (packages without src/).
+ * Returns null when the package is unknown or no source file matches.
+ */
+function resolvePackageImport(
+  rawPath: string,
+  packageNames: Array<[string, string]>,
+  moduleKeys: Set<string>,
+): string | null {
+  for (const [name, dir] of packageNames) {
+    if (rawPath !== name && !rawPath.startsWith(`${name}/`)) continue
+    const rest = rawPath === name ? "" : rawPath.slice(name.length + 1)
+    for (const base of [`${dir}/src`, dir]) {
+      const candidate = stripExtension(base + (rest ? `/${rest}` : ""))
+      if (moduleKeys.has(candidate) || moduleKeys.has(`${candidate}/index`)) return candidate
+    }
+    return null // package exists but the target is not in this tree
+  }
+  return null
+}
+
 const NEXT_APP_ROUTE_FILES = new Set([
   "page",
   "layout",
@@ -760,6 +812,21 @@ function detectStructuralEntries(moduleKeys: Set<string>): string[] {
   return [...entries]
 }
 
+/**
+ * True when the analyzed directory is a single package inside a monorepo
+ * (packages/<pkg>, packages/<pkg>/src, or scoped variants). Cross-package
+ * referrers then live outside the scan and candidates need repo-wide checks.
+ */
+function isSinglePackageDir(srcDir: string): boolean {
+  const underPackages = (dir: string): boolean => {
+    const parent = path.basename(path.dirname(dir))
+    if (parent === "packages") return true
+    return parent.startsWith("@") && path.basename(path.dirname(path.dirname(dir))) === "packages"
+  }
+  if (underPackages(srcDir)) return true
+  return path.basename(srcDir) === "src" && underPackages(path.dirname(srcDir))
+}
+
 function selectParsers(files: string[], explicitLangs?: string[]): Parser[] {
   if (explicitLangs && explicitLangs.length > 0) {
     const wanted = new Set(explicitLangs.map((lang) => lang.toLowerCase()))
@@ -826,6 +893,7 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
     sourceFiles.map((filePath) => stripExtension(path.relative(srcDir, filePath).replace(/\\/g, "/"))),
   )
   const aliases = await readTsconfigAliases(srcDir)
+  const packageNames = await readPackageNames(srcDir)
   const graph = new Map<string, Set<string>>()
   const reverse = new Map<string, Set<string>>()
   const symbols: ExportedSymbol[] = []
@@ -843,15 +911,14 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
 
     for (const decl of parser.extractImports(content, mask)) {
       // Non-relative imports may still be in-tree absolute paths (Python src-layout
-      // `from pkg.mod import x`, TS `packages/a/src/b`, tsconfig path aliases). Resolve
-      // them against srcDir and keep the edge only when it lands on a real module key,
-      // so npm/stdlib/unresolved aliases are naturally skipped.
-      const aliased = resolveAlias(decl.rawPath, aliases)
-      const normalized = parser.normalizeImportPath(
-        aliased ?? decl.rawPath,
-        aliased === null ? relFile : "",
-        srcDir,
-      )
+      // `from pkg.mod import x`, TS `packages/a/src/b`, tsconfig path aliases,
+      // workspace package names like `@scope/pkg/x`). Resolve them against srcDir
+      // and keep the edge only when it lands on a real module key, so
+      // npm/stdlib/unresolved aliases are naturally skipped.
+      const packaged = resolvePackageImport(decl.rawPath, packageNames, moduleKeys)
+      const aliased = packaged === null ? resolveAlias(decl.rawPath, aliases) : null
+      const importPath = packaged ?? aliased ?? decl.rawPath
+      const normalized = parser.normalizeImportPath(importPath, importPath === decl.rawPath ? relFile : "", srcDir)
       if (!normalized) continue
       const target = resolveModuleKey(normalized, moduleKeys)
       if (moduleKeys.has(target)) targets.add(target)
@@ -947,6 +1014,11 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
   )
   if (exportsRoots.length > 0) {
     parts.push(`Public API (package.json exports): ${exportsRoots.join(", ")}`)
+  }
+  if (isSinglePackageDir(srcDir)) {
+    parts.push(
+      `Scan scope: single package (${path.basename(srcDir)}) — referrers in other packages are outside this tree; verify candidates repo-wide.`,
+    )
   }
   if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`)
   parts.push("")
