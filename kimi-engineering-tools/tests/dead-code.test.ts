@@ -302,3 +302,85 @@ test("min_confidence filters candidates by reference strength", async () => {
     assert.match(highOnly, /2 before min_confidence=high/)
   })
 })
+
+test("python: consecutive from-imports on adjacent lines all create edges", async () => {
+  await withProject({
+    "main.py": "from pkg.util import Util\nfrom pkg.other import Other\nprint(Util, Other)",
+    "pkg/__init__.py": "",
+    "pkg/util.py": "class Util:\n    pass",
+    "pkg/other.py": "class Other:\n    pass",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["python"] })
+    assert.match(output, /Candidates: 0/)
+  })
+})
+
+test("python: from pkg import X resolves through __init__.py", async () => {
+  await withProject({
+    "main.py": "from pkg import Util\nprint(Util)",
+    "pkg/__init__.py": "from .util import Util",
+    "pkg/util.py": "class Util:\n    pass",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["python"] })
+    assert.doesNotMatch(output, /__init__/)
+    assert.doesNotMatch(output, /util/)
+  })
+})
+
+test("root-level Next.js app/ layout entries are detected", async () => {
+  await withProject({
+    "app/page.tsx": 'import { Widget } from "../components/widget"\nexport default function Page() { return Widget() }',
+    "components/widget.tsx": "export function Widget() { return null }",
+    "other.ts": "export class Other {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /structural: 1/)
+    assert.doesNotMatch(output, /widget\//)
+    assert.match(output, /other/)
+  })
+})
+
+test("regex literals do not pollute brace depth or swallow imports", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "parser.ts": [
+      "const open = /\\{/",
+      "const charClass = /[/*]/",
+      'import { Widget } from "./widget"',
+      "export class Parser { w = Widget }",
+    ].join("\n"),
+    "widget.ts": "export class Widget {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    // 正则里的 { 不污染顶层判定，/[/*]/ 不吞掉后续 import：
+    // widget 被 parser 真实引用 → medium 而非 high
+    assert.match(output, /class Parser/)
+    assert.match(output, /widget\/ \[medium\]/)
+    assert.match(output, /parser\//)
+  })
+})
+
+test("deep non-root app/pages dirs are not structural entries", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "src/lib/pages/helper.ts": "export class Helper {}",
+    "src/components/app/index.ts": "export class AppShell {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.match(output, /structural: 0/)
+    assert.match(output, /src\/lib\/pages\/helper/)
+    assert.match(output, /src\/components\/app\/index/)
+  })
+})
+
+test("package.json main pointing at lib/ resolves to src", async () => {
+  await withProject({
+    "package.json": JSON.stringify({ name: "app", main: "./lib/index.js" }),
+    "src/index.ts": "export class Entry {}",
+    "src/other.ts": "export class Other {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.doesNotMatch(output, /src\/index\//)
+    assert.match(output, /other/)
+  })
+})

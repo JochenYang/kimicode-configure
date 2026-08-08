@@ -23223,6 +23223,43 @@ function commentsAndLiteralsMask(content, lang) {
       }
     }
   } else {
+    const isRegexStart = (at) => {
+      let j = at - 1;
+      while (j >= 0 && /\s/.test(content[j] ?? "")) j--;
+      if (j < 0 || content[j] === "\n") return true;
+      if ("=(,:[!&|?{};".includes(content[j] ?? "")) return true;
+      const word = content.slice(Math.max(0, j - 20), j + 1).match(/([A-Za-z_$][\w$]*)$/)?.[1];
+      return Boolean(
+        word && /^(return|case|throw|typeof|instanceof|in|of|delete|void|yield|new)$/.test(word)
+      );
+    };
+    const skipRegex = () => {
+      let end = i + 1;
+      let inClass = false;
+      while (end < n) {
+        const ch = content[end];
+        if (ch === "\\") {
+          end += 2;
+          continue;
+        }
+        if (ch === "[") {
+          inClass = true;
+          end++;
+          continue;
+        }
+        if (ch === "]") {
+          inClass = false;
+          end++;
+          continue;
+        }
+        if (!inClass && ch === "/") break;
+        if (ch === "\n") return;
+        end++;
+      }
+      if (end >= n) return;
+      erase(i, end + 1);
+      i = end + 1;
+    };
     const skipQuoted = (quote) => {
       erase(i, i + 1);
       i++;
@@ -23267,6 +23304,9 @@ function commentsAndLiteralsMask(content, lang) {
           } else if (ch === "`") {
             skipTemplate();
             continue;
+          } else if (ch === "/" && isRegexStart(i)) {
+            skipRegex();
+            continue;
           }
           erase(i, i + 1);
           i++;
@@ -23299,6 +23339,8 @@ function commentsAndLiteralsMask(content, lang) {
         skipQuoted(c);
       } else if (c === "`") {
         skipTemplate();
+      } else if (c === "/" && isRegexStart(i)) {
+        skipRegex();
       } else {
         i++;
       }
@@ -23312,11 +23354,11 @@ function hasLiveCode(mask, from, to) {
   }
   return false;
 }
-function stripCommentsAndLiterals(content, lang) {
-  const mask = commentsAndLiteralsMask(content, lang);
+function stripCommentsAndLiterals(content, lang, mask) {
+  const m = mask ?? commentsAndLiteralsMask(content, lang);
   const out = content.split("");
   for (let i = 0; i < content.length; i++) {
-    if (mask[i] === 0 && out[i] !== "\n") out[i] = " ";
+    if (m[i] === 0 && out[i] !== "\n") out[i] = " ";
   }
   return out.join("");
 }
@@ -23348,11 +23390,12 @@ function isTopLevelExport(stripped, index, lineDepths) {
 var tsParser = {
   name: "TypeScript",
   extensions: ["ts", "tsx", "js", "jsx", "mjs", "cjs"],
-  extractImports(content) {
+  maskLang: "c",
+  extractImports(content, mask) {
     const imports = [];
-    const mask = commentsAndLiteralsMask(content, "c");
+    const m = mask ?? commentsAndLiteralsMask(content, "c");
     const patterns = [
-      /import\s+(?:type\s+)?(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
+      /import\s*(?:type\s+)?(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
       /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
       /export\s+(?:type\s+)?(?:\{[^}]*\}|\*)\s+from\s+['"]([^'"]+)['"]/g,
       /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
@@ -23360,16 +23403,16 @@ var tsParser = {
     for (const re of patterns) {
       let match2;
       while ((match2 = re.exec(content)) !== null) {
-        if (hasLiveCode(mask, match2.index, match2.index + 1)) {
+        if (hasLiveCode(m, match2.index, match2.index + 1)) {
           imports.push({ rawPath: match2[1] ?? "" });
         }
       }
     }
     return imports;
   },
-  parseTypeDefs(content) {
+  parseTypeDefs(content, mask) {
     const defs = [];
-    const code = stripCommentsAndLiterals(content, "c");
+    const code = stripCommentsAndLiterals(content, "c", mask);
     const lineDepths = computeLineStartDepths(code);
     const patterns = [
       [/(export\s+)?interface\s+(\w+)/g, "interface", 2],
@@ -23404,23 +23447,27 @@ var tsParser = {
 var pyParser = {
   name: "Python",
   extensions: ["py"],
-  extractImports(content) {
+  maskLang: "python",
+  extractImports(content, mask) {
     const imports = [];
-    const mask = commentsAndLiteralsMask(content, "python");
-    const patterns = [/^import\s+([.\w]+)/gm, /^from\s+([.\w]+)\s+import\s+[.\w,\s]+/gm];
+    const m = mask ?? commentsAndLiteralsMask(content, "python");
+    const patterns = [
+      /^import\s+([.\w]+)/gm,
+      /^from\s+([.\w]+)\s+import\s+[.\w]+(?:\s+as\s+[.\w]+)?(?:\s*,\s*[.\w]+(?:\s+as\s+[.\w]+)?)*/gm
+    ];
     for (const re of patterns) {
       let match2;
       while ((match2 = re.exec(content)) !== null) {
-        if (hasLiveCode(mask, match2.index, match2.index + 1)) {
+        if (hasLiveCode(m, match2.index, match2.index + 1)) {
           imports.push({ rawPath: match2[1] ?? "" });
         }
       }
     }
     return imports;
   },
-  parseTypeDefs(content) {
+  parseTypeDefs(content, mask) {
     const defs = [];
-    const code = stripCommentsAndLiterals(content, "python");
+    const code = stripCommentsAndLiterals(content, "python", mask);
     const re = /(?:^|\n)class\s+(\w+)\s*(?:\([^)]*\))?\s*:/g;
     let match2;
     while ((match2 = re.exec(code)) !== null) {
@@ -23456,7 +23503,7 @@ var simpleParsers = [
   makeRegexParser(
     "C#",
     ["cs"],
-    [/^using\s+(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
+    [/^using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
     [[/(public\s+)?(?:class|record)\s+(\w+)/g, "class"], [/(public\s+)?struct\s+(\w+)/g, "struct"], [/(public\s+)?interface\s+(\w+)/g, "interface"], [/(public\s+)?enum\s+(\w+)/g, "enum"]]
   ),
   makeRegexParser(
@@ -23470,22 +23517,23 @@ function makeRegexParser(name, extensions, importPatterns, typePatterns) {
   return {
     name,
     extensions,
-    extractImports(content) {
+    maskLang: "c",
+    extractImports(content, mask) {
       const imports = [];
-      const mask = commentsAndLiteralsMask(content, "c");
+      const m = mask ?? commentsAndLiteralsMask(content, "c");
       for (const re of importPatterns) {
         let match2;
         while ((match2 = re.exec(content)) !== null) {
-          if (hasLiveCode(mask, match2.index, match2.index + 1)) {
+          if (hasLiveCode(m, match2.index, match2.index + 1)) {
             imports.push({ rawPath: match2[1] ?? "" });
           }
         }
       }
       return imports;
     },
-    parseTypeDefs(content) {
+    parseTypeDefs(content, mask) {
       const defs = [];
-      const code = stripCommentsAndLiterals(content, "c");
+      const code = stripCommentsAndLiterals(content, "c", mask);
       for (const [re, kind] of typePatterns) {
         let match2;
         while ((match2 = re.exec(code)) !== null) {
@@ -23550,8 +23598,8 @@ function normalizeEntryPoint(raw, srcDir, moduleKeys) {
   } else {
     value = trimmed.replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/^\/+/, "");
   }
-  value = stripExtension(value);
-  if (!value) return [];
+  value = path4.posix.normalize(stripExtension(value.replace(/\.d\.(ts|tsx)$/, ".$1"))).replace(/^\.\//, "");
+  if (!value || value === "." || value.startsWith("..")) return [];
   const keys = [value];
   if (!value.endsWith("/index") && moduleKeys.has(`${value}/index`)) keys.push(`${value}/index`);
   return keys;
@@ -23565,7 +23613,7 @@ function collectExportPaths(value, out) {
     for (const item of Object.values(value)) collectExportPaths(item, out);
   }
 }
-async function readPackageEntryKeys(srcDir) {
+async function readPackageEntryKeys(srcDir, moduleKeys) {
   const packageDirs = [""];
   try {
     const entries = await fs2.readdir(path4.join(srcDir, "packages"), { withFileTypes: true });
@@ -23592,8 +23640,14 @@ async function readPackageEntryKeys(srcDir) {
     for (const rawPath of rawPaths) {
       let rel = path4.relative(srcDir, path4.resolve(srcDir, dir, rawPath)).replace(/\\/g, "/");
       if (rel.startsWith("..") || path4.isAbsolute(rel) || rel.includes("node_modules")) continue;
-      if (rel.startsWith("dist/")) rel = "src/" + rel.slice("dist/".length);
-      const key = stripExtension(rel.replace(/\.d\.(ts|tsx)$/, ".$1"));
+      let key = stripExtension(rel.replace(/\.d\.(ts|tsx)$/, ".$1"));
+      const buildDir = /^(dist|lib|build|out)\//.exec(rel);
+      if (buildDir) {
+        const mirror = `src/${rel.slice(buildDir[1].length + 1)}`;
+        const mirrorKey = stripExtension(mirror.replace(/\.d\.(ts|tsx)$/, ".$1"));
+        const base = mirrorKey.slice(mirrorKey.lastIndexOf("/") + 1);
+        key = moduleKeys.has(mirrorKey) ? mirrorKey : `src/${base}`;
+      }
       if (key) keys.push(key);
     }
   }
@@ -23611,25 +23665,34 @@ var NEXT_APP_ROUTE_FILES = /* @__PURE__ */ new Set([
 ]);
 var ENTRY_SUBDIR_NAMES = /* @__PURE__ */ new Set(["app", "core", "cli", "server", "lib", "cmd", "routes", "views", "pages", "main", "entries"]);
 var ELECTRON_ROLE_RE = /^(?:src|packages\/[^/]+(?:\/src)?)\/(main|preload|renderer)(?:\/index)?$/;
+function isAtFrameworkRoot(segs, dir) {
+  return segs[0] === dir || segs[0] === "src" && segs[1] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === "src" && segs[3] === dir;
+}
 function detectStructuralEntries(moduleKeys) {
   const entries = /* @__PURE__ */ new Set();
   for (const key of moduleKeys) {
-    const appIdx = key.indexOf("/app/");
-    if (appIdx !== -1 && NEXT_APP_ROUTE_FILES.has(key.slice(appIdx + 5).split("/")[0] ?? "")) {
-      entries.add(key);
+    const segs = key.split("/");
+    if (isAtFrameworkRoot(segs, "app")) {
+      const appAt = segs.indexOf("app");
+      if (NEXT_APP_ROUTE_FILES.has(segs[appAt + 1] ?? "")) entries.add(key);
     }
-    if (key.includes("/pages/")) entries.add(key);
+    if (isAtFrameworkRoot(segs, "pages")) entries.add(key);
     if (ELECTRON_ROLE_RE.test(key)) entries.add(key);
     if (key.endsWith("/index")) {
-      const segs = key.split("/");
       const subdir = segs[segs.length - 2] ?? "";
       if (!ENTRY_SUBDIR_NAMES.has(subdir)) continue;
-      if (segs[0] === "packages") {
+      const subdirAt = segs.length - 2;
+      const atRoot = subdirAt === 0;
+      const atSrcRoot = subdirAt === 1 && segs[0] === "src";
+      const atPkgRoot = subdirAt === 2 && segs[0] === "packages";
+      const atPkgSrcRoot = subdirAt === 3 && segs[0] === "packages" && segs[2] === "src";
+      if (!(atRoot || atSrcRoot || atPkgRoot || atPkgSrcRoot)) continue;
+      if (atPkgRoot || atPkgSrcRoot) {
         const pkg = segs[1] ?? "";
         if (moduleKeys.has(`packages/${pkg}/index`) || moduleKeys.has(`packages/${pkg}/src/index`)) continue;
-      } else if (segs[0] === "src") {
+      } else if (atSrcRoot) {
         if (moduleKeys.has("src/index")) continue;
-      } else if (segs.length === 2) {
+      } else if (atRoot && segs.length === 2) {
         if (moduleKeys.has("index")) continue;
       }
       entries.add(key);
@@ -23651,6 +23714,8 @@ function resolveModuleKey(normalized, moduleKeys) {
   if (moduleKeys.has(normalized)) return normalized;
   const indexModule = `${normalized.replace(/\/$/, "")}/index`;
   if (moduleKeys.has(indexModule)) return indexModule;
+  const initModule = `${normalized.replace(/\/$/, "")}/__init__`;
+  if (moduleKeys.has(initModule)) return initModule;
   return normalized;
 }
 function findReachable(graph, roots) {
@@ -23704,8 +23769,9 @@ async function runDeadCode(input) {
     const relFile = path4.relative(srcDir, filePath).replace(/\\/g, "/");
     const moduleKey = stripExtension(relFile);
     const content = await fs2.readFile(filePath, "utf8");
+    const mask = commentsAndLiteralsMask(content, parser.maskLang);
     const targets = /* @__PURE__ */ new Set();
-    for (const decl of parser.extractImports(content)) {
+    for (const decl of parser.extractImports(content, mask)) {
       const normalized = parser.normalizeImportPath(decl.rawPath, relFile, srcDir);
       if (!normalized) continue;
       const target = resolveModuleKey(normalized, moduleKeys);
@@ -23717,13 +23783,19 @@ async function runDeadCode(input) {
       if (!reverse.has(target)) reverse.set(target, /* @__PURE__ */ new Set());
       reverse.get(target)?.add(moduleKey);
     }
-    for (const def of parser.parseTypeDefs(content)) {
+    for (const def of parser.parseTypeDefs(content, mask)) {
       if (def.exported && def.name) {
         symbols.push({ name: def.name, kind: def.kind, module: moduleKey, file: relFile, line: def.line });
       }
     }
   }
   if (graph.size === 0) return `No source files found in ${input.entry ?? "."}`;
+  const symbolsByModule = /* @__PURE__ */ new Map();
+  for (const symbol of symbols) {
+    const list = symbolsByModule.get(symbol.module);
+    if (list) list.push(symbol);
+    else symbolsByModule.set(symbol.module, [symbol]);
+  }
   const explicitKeys = [];
   let rejectedEntries = 0;
   for (const entry of [...DEFAULT_ENTRIES, ...input.entry_points ?? []]) {
@@ -23731,7 +23803,7 @@ async function runDeadCode(input) {
     if (keys.length === 0) rejectedEntries++;
     else explicitKeys.push(...keys);
   }
-  const exportsKeys = await readPackageEntryKeys(srcDir);
+  const exportsKeys = await readPackageEntryKeys(srcDir, moduleKeys);
   const structuralKeys = detectStructuralEntries(moduleKeys);
   const uniqueEntryPoints = [.../* @__PURE__ */ new Set([...explicitKeys, ...exportsKeys, ...structuralKeys])];
   const matches = (patterns) => [...graph.keys()].filter((module) => isEntryPoint(module, patterns));
@@ -23749,7 +23821,7 @@ async function runDeadCode(input) {
   const confidenceRank = { high: 3, medium: 2, low: 1 };
   const deadModules = candidates.filter((module) => !isEntryPoint(module, uniqueEntryPoints)).map((module) => ({
     module,
-    exportedSymbols: symbols.filter((symbol) => symbol.module === module),
+    exportedSymbols: symbolsByModule.get(module) ?? [],
     confidence: confidenceOf(module)
   })).filter((item) => item.exportedSymbols.length >= minExports);
   const minConfidence = input.min_confidence ?? "low";
