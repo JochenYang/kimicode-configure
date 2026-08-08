@@ -109,7 +109,7 @@ Install:
 /plugins info kimi-development-workflow
 ```
 
-This plugin contains six manual `flow` Skills and no MCP server, Hook, Command, Node.js runtime, or background process:
+This plugin contains seven manual `flow` Skills and no MCP server, Hook, Command, Node.js runtime, or background process:
 
 - `/skill:change-plan`: converts a clear development goal into an executable and verifiable implementation plan.
 - `/skill:debug`: reproduces, isolates, tests hypotheses, applies the smallest fix, and verifies it.
@@ -117,6 +117,7 @@ This plugin contains six manual `flow` Skills and no MCP server, Hook, Command, 
 - `/skill:review`: performs a read-only, findings-first code review with file and line references.
 - `/skill:commit-review`: checks commit readiness and proposes a compliant branch and commit message.
 - `/skill:release-check`: checks release readiness without tagging, publishing, deploying, or pushing.
+- `/skill:doc-gen`: generates or updates API docs, CHANGELOG, README, user docs, and migration guides from code, with each claim linked back to `file:line`.
 
 `change-plan` complements Plan mode: Plan mode controls session behavior and clarification, while the Skill defines the engineering content, scope, risks, acceptance criteria, and verification steps of a plan.
 

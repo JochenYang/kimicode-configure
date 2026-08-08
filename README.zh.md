@@ -107,7 +107,7 @@ npm test
 /plugins info kimi-development-workflow
 ```
 
-该插件包含 6 个手动 `flow` Skill，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程：
+该插件包含 7 个手动 `flow` Skill，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程：
 
 - `/skill:change-plan`：将明确的开发目标转换为可执行、可验证的实施计划。
 - `/skill:debug`：复现、隔离、验证假设、最小修复并回归验证。
@@ -115,6 +115,7 @@ npm test
 - `/skill:review`：执行只读、发现优先、附文件和行号的代码审查。
 - `/skill:commit-review`：检查提交准备状态并生成符合规范的分支和提交信息提案。
 - `/skill:release-check`：检查发布准备状态，但不创建 tag、不发布、不部署、不推送。
+- `/skill:doc-gen`：从代码生成或更新 API 文档、CHANGELOG、README、用户文档和迁移指南，每条声明回指 `file:line`。
 
 `change-plan` 与 Plan mode 互补：Plan mode 控制会话交互和需求澄清，Skill 负责规定工程计划中的范围、风险、验收标准和验证步骤。
 
