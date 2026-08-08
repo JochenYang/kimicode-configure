@@ -23,8 +23,9 @@ async function listFiles(directory, root = directory) {
 }
 
 const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"))
+const pkg = JSON.parse(await fs.readFile(path.resolve("package.json"), "utf8"))
 assert.equal(manifest.name, "kimi-engineering-tools")
-assert.equal(manifest.version, "0.2.2")
+assert.equal(manifest.version, pkg.version, "plugin manifest version must match package.json")
 assert.deepEqual(manifest.mcpServers?.["engineering-tools"], {
   command: "node",
   args: ["./bin/server.mjs"],

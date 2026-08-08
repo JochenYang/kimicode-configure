@@ -68,6 +68,88 @@ test("recognizes exported functions and variables", async () => {
   })
 })
 
+test("entry_points accept extensions, ./ prefixes, and absolute paths", async () => {
+  await withProject({
+    "packages/opencode/src/index.ts": 'export * from "./tui"',
+    "packages/opencode/src/tui.ts": "export class Tui {}",
+    "index.ts": 'import { Tui } from "./packages/opencode/src/tui"\nexport const m = Tui',
+  }, async (directory) => {
+    for (const entryPoints of [
+      ["packages/opencode/src/index.ts"],
+      ["./packages/opencode/src/index.ts"],
+      ["packages\\opencode\\src\\index.ts"],
+      ["packages/opencode/src/index"],
+      [path.join(directory, "packages", "opencode", "src", "index.ts")],
+    ]) {
+      const output = await runDeadCode({ cwd: directory, lang: ["typescript"], entry_points: entryPoints })
+      assert.match(output, /unreachable from \d+ entry point\(s\)/, `not matched: ${JSON.stringify(entryPoints)}`)
+      assert.doesNotMatch(output, /zero inbound dependencies/, `fell back: ${JSON.stringify(entryPoints)}`)
+      assert.doesNotMatch(output, /tui\//, `tui flagged: ${JSON.stringify(entryPoints)}`)
+    }
+  })
+})
+
+test("type-only imports keep modules reachable", async () => {
+  await withProject({
+    "src/index.ts": 'import type { Tui } from "./tui"\nexport const start = (t: Tui) => t',
+    "src/tui.ts": "export class Tui {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"] })
+    assert.doesNotMatch(output, /tui\//)
+    assert.match(output, /Candidates: 0/)
+  })
+})
+
+test("user entry_points merge with built-in defaults instead of replacing them", async () => {
+  await withProject({
+    "main.ts": "export class Main {}",
+    "orphan.ts": "export class Orphan {}",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"], entry_points: ["main.ts"] })
+    // "main" 默认入口仍然生效，只有 orphan 被判死
+    assert.match(output, /unreachable from 1 entry point\(s\)/)
+    assert.doesNotMatch(output, /Main/)
+    assert.match(output, /orphan/)
+  })
+})
+
+test("warns when no entry point matches and falls back to inbound heuristic", async () => {
+  await withProject({
+    "a.ts": "export class A {}",
+    "b.ts": 'import { A } from "./a"\nexport class B { a = A }',
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["typescript"], entry_points: ["nope/entry.ts"] })
+    assert.match(output, /No configured entry point matched/)
+    assert.match(output, /zero inbound dependencies/)
+    assert.match(output, /false positives/)
+  })
+})
+
+test("entry_point that escapes the project root is ignored with a notice", async () => {
+  const outside = await fs.mkdtemp(path.join(os.tmpdir(), "kimi-dead-outside-"))
+  try {
+    await withProject({
+      "a.ts": "export class A {}",
+    }, async (directory) => {
+      const output = await runDeadCode({ cwd: directory, lang: ["typescript"], entry_points: [outside] })
+      assert.match(output, /ignored for resolving outside the project/)
+    })
+  } finally {
+    await fs.rm(outside, { recursive: true, force: true })
+  }
+})
+
+test("python absolute imports are tracked as in-tree dependencies", async () => {
+  await withProject({
+    "main.py": "from pkg.util import Util\nprint(Util)",
+    "pkg/__init__.py": "",
+    "pkg/util.py": "class Util:\n    pass",
+  }, async (directory) => {
+    const output = await runDeadCode({ cwd: directory, lang: ["python"] })
+    assert.doesNotMatch(output, /pkg\/util/)
+  })
+})
+
 test("rejects entry that escapes the project root", async () => {
   await withProject({
     "main.ts": "export class Main {}",

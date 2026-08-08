@@ -57,7 +57,6 @@ type SymbolKind = "interface" | "type" | "enum" | "class" | "struct" | "function
 
 interface ImportDecl {
   rawPath: string
-  isLocal: boolean
 }
 
 interface TypeDef {
@@ -72,7 +71,6 @@ interface Parser {
   extensions: string[]
   extractImports(content: string): ImportDecl[]
   parseTypeDefs(content: string): TypeDef[]
-  isLocalImport(rawPath: string): boolean
   normalizeImportPath(rawPath: string, fromFile: string, srcDir: string): string | null
 }
 
@@ -104,7 +102,7 @@ const tsParser: Parser = {
   extractImports(content) {
     const imports: ImportDecl[] = []
     const patterns = [
-      /import\s+(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
+      /import\s+(?:type\s+)?(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
       /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
       /export\s+(?:type\s+)?(?:\{[^}]*\}|\*)\s+from\s+['"]([^'"]+)['"]/g,
       /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
@@ -113,7 +111,7 @@ const tsParser: Parser = {
       let match: RegExpExecArray | null
       while ((match = re.exec(content)) !== null) {
         const rawPath = match[1] ?? ""
-        imports.push({ rawPath, isLocal: /^[./]/.test(rawPath) })
+        imports.push({ rawPath })
       }
     }
     return imports
@@ -141,7 +139,6 @@ const tsParser: Parser = {
     }
     return defs
   },
-  isLocalImport: (rawPath) => /^[./]/.test(rawPath),
   normalizeImportPath(rawPath, fromFile, srcDir) {
     const resolved = path.resolve(srcDir, path.dirname(fromFile), rawPath)
     const relative = path.relative(srcDir, resolved)
@@ -160,7 +157,7 @@ const pyParser: Parser = {
       let match: RegExpExecArray | null
       while ((match = re.exec(content)) !== null) {
         const rawPath = match[1] ?? ""
-        imports.push({ rawPath, isLocal: rawPath.startsWith(".") })
+        imports.push({ rawPath })
       }
     }
     return imports
@@ -175,7 +172,6 @@ const pyParser: Parser = {
     }
     return defs
   },
-  isLocalImport: (rawPath) => rawPath.startsWith("."),
   normalizeImportPath(rawPath, fromFile, srcDir) {
     const fromDir = path.dirname(fromFile)
     const cleaned = rawPath.replace(/^\.+/, "").replace(/\./g, "/")
@@ -231,7 +227,7 @@ function makeRegexParser(
       for (const re of importPatterns) {
         let match: RegExpExecArray | null
         while ((match = re.exec(content)) !== null) {
-          imports.push({ rawPath: match[1] ?? "", isLocal: true })
+          imports.push({ rawPath: match[1] ?? "" })
         }
       }
       return imports
@@ -252,7 +248,6 @@ function makeRegexParser(
       }
       return defs
     },
-    isLocalImport: () => true,
     normalizeImportPath(rawPath, fromFile, srcDir) {
       const relative = rawPath.includes("::")
         ? rawPath.replace(/^crate::/, "").replace(/::/g, "/")
@@ -297,6 +292,30 @@ function isExcluded(relFile: string, patterns: string[]): boolean {
 
 function isEntryPoint(module: string, entryPoints: string[]): boolean {
   return entryPoints.some((entry) => entry === module || minimatch(module, entry, { dot: true }))
+}
+
+/**
+ * Normalize a user-provided entry point to a module key (relative to srcDir, extension stripped).
+ * Accepts file extensions (`src/main.ts`), `./` prefixes, backslashes, or absolute paths
+ * (mapped inside srcDir automatically). Directory entries also get their `/index` key,
+ * mirroring how imports are resolved.
+ */
+function normalizeEntryPoint(raw: string, srcDir: string, moduleKeys: Set<string>): string[] {
+  const trimmed = raw.trim()
+  if (!trimmed) return []
+  let value: string
+  if (path.isAbsolute(trimmed)) {
+    const rel = path.relative(srcDir, path.resolve(trimmed))
+    if (rel.startsWith("..") || path.isAbsolute(rel)) return []
+    value = rel.replace(/\\/g, "/")
+  } else {
+    value = trimmed.replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/^\/+/, "")
+  }
+  value = stripExtension(value)
+  if (!value) return []
+  const keys = [value]
+  if (!value.endsWith("/index") && moduleKeys.has(`${value}/index`)) keys.push(`${value}/index`)
+  return keys
 }
 
 function selectParsers(files: string[], explicitLangs?: string[]): Parser[] {
@@ -375,9 +394,14 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
     const targets = new Set<string>()
 
     for (const decl of parser.extractImports(content)) {
-      if (!decl.isLocal && !parser.isLocalImport(decl.rawPath)) continue
+      // Non-relative imports may still be in-tree absolute paths (Python src-layout
+      // `from pkg.mod import x`, TS `packages/a/src/b`, tsconfig path aliases). Resolve
+      // them against srcDir and keep the edge only when it lands on a real module key,
+      // so npm/stdlib/unresolved aliases are naturally skipped.
       const normalized = parser.normalizeImportPath(decl.rawPath, relFile, srcDir)
-      if (normalized) targets.add(resolveModuleKey(normalized, moduleKeys))
+      if (!normalized) continue
+      const target = resolveModuleKey(normalized, moduleKeys)
+      if (moduleKeys.has(target)) targets.add(target)
     }
 
     graph.set(moduleKey, targets)
@@ -396,8 +420,16 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
 
   if (graph.size === 0) return `No source files found in ${input.entry ?? "."}`
 
-  const entryPoints = input.entry_points ?? DEFAULT_ENTRIES
-  const roots = [...graph.keys()].filter((module) => isEntryPoint(module, entryPoints))
+  // Merge entry_points with built-in defaults so a single user entry never drops them all.
+  const entryPoints: string[] = []
+  let rejectedEntries = 0
+  for (const entry of [...DEFAULT_ENTRIES, ...(input.entry_points ?? [])]) {
+    const keys = normalizeEntryPoint(entry, srcDir, moduleKeys)
+    if (keys.length === 0) rejectedEntries++
+    else entryPoints.push(...keys)
+  }
+  const uniqueEntryPoints = [...new Set(entryPoints)]
+  const roots = [...graph.keys()].filter((module) => isEntryPoint(module, uniqueEntryPoints))
   const minExports = input.min_exports ?? 1
   const reachable = findReachable(graph, roots)
   const candidates = roots.length > 0
@@ -405,7 +437,7 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
     : [...graph.keys()].filter((module) => (reverse.get(module)?.size ?? 0) === 0)
 
   const deadModules = candidates
-    .filter((module) => !isEntryPoint(module, entryPoints))
+    .filter((module) => !isEntryPoint(module, uniqueEntryPoints))
     .map((module) => ({ module, exportedSymbols: symbols.filter((symbol) => symbol.module === module) }))
     .filter((item) => item.exportedSymbols.length >= minExports)
     .sort((a, b) => b.exportedSymbols.length - a.exportedSymbols.length || a.module.localeCompare(b.module))
@@ -420,6 +452,23 @@ export async function runDeadCode(input: DeadCodeInput): Promise<string> {
   parts.push(`Analysis: ${mode}`)
   if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`)
   parts.push("")
+
+  if (roots.length === 0) {
+    parts.push(
+      `⚠ No configured entry point matched any module (checked ${uniqueEntryPoints.length} pattern(s)${
+        rejectedEntries > 0 ? `, ${rejectedEntries} ignored for resolving outside the project` : ""
+      }).`,
+    )
+    parts.push("  Module keys are relative to the analyzed directory and carry no file extension,")
+    parts.push('  e.g. "src/main" or "packages/a/src/index". Absolute paths are mapped inside automatically.')
+    parts.push(
+      `  First modules: ${[...graph.keys()].slice(0, 6).join(", ")}${
+        graph.size > 6 ? `, ... (${graph.size} total)` : ""
+      }`,
+    )
+    parts.push("  The candidates below use the weak 'zero inbound dependencies' heuristic and include false positives.")
+    parts.push("")
+  }
 
   if (deadModules.length === 0) {
     parts.push("No dead-module candidates detected. This heuristic result is not proof that no dead code exists.")

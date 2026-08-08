@@ -23186,7 +23186,7 @@ var tsParser = {
   extractImports(content) {
     const imports = [];
     const patterns = [
-      /import\s+(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
+      /import\s+(?:type\s+)?(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
       /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
       /export\s+(?:type\s+)?(?:\{[^}]*\}|\*)\s+from\s+['"]([^'"]+)['"]/g,
       /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
@@ -23195,7 +23195,7 @@ var tsParser = {
       let match2;
       while ((match2 = re.exec(content)) !== null) {
         const rawPath = match2[1] ?? "";
-        imports.push({ rawPath, isLocal: /^[./]/.test(rawPath) });
+        imports.push({ rawPath });
       }
     }
     return imports;
@@ -23223,7 +23223,6 @@ var tsParser = {
     }
     return defs;
   },
-  isLocalImport: (rawPath) => /^[./]/.test(rawPath),
   normalizeImportPath(rawPath, fromFile, srcDir) {
     const resolved = path4.resolve(srcDir, path4.dirname(fromFile), rawPath);
     const relative = path4.relative(srcDir, resolved);
@@ -23241,7 +23240,7 @@ var pyParser = {
       let match2;
       while ((match2 = re.exec(content)) !== null) {
         const rawPath = match2[1] ?? "";
-        imports.push({ rawPath, isLocal: rawPath.startsWith(".") });
+        imports.push({ rawPath });
       }
     }
     return imports;
@@ -23256,7 +23255,6 @@ var pyParser = {
     }
     return defs;
   },
-  isLocalImport: (rawPath) => rawPath.startsWith("."),
   normalizeImportPath(rawPath, fromFile, srcDir) {
     const fromDir = path4.dirname(fromFile);
     const cleaned = rawPath.replace(/^\.+/, "").replace(/\./g, "/");
@@ -23303,7 +23301,7 @@ function makeRegexParser(name, extensions, importPatterns, typePatterns) {
       for (const re of importPatterns) {
         let match2;
         while ((match2 = re.exec(content)) !== null) {
-          imports.push({ rawPath: match2[1] ?? "", isLocal: true });
+          imports.push({ rawPath: match2[1] ?? "" });
         }
       }
       return imports;
@@ -23324,7 +23322,6 @@ function makeRegexParser(name, extensions, importPatterns, typePatterns) {
       }
       return defs;
     },
-    isLocalImport: () => true,
     normalizeImportPath(rawPath, fromFile, srcDir) {
       const relative = rawPath.includes("::") ? rawPath.replace(/^crate::/, "").replace(/::/g, "/") : rawPath;
       const resolved = path4.resolve(srcDir, path4.dirname(fromFile), relative);
@@ -23363,6 +23360,23 @@ function isExcluded(relFile, patterns) {
 }
 function isEntryPoint(module, entryPoints) {
   return entryPoints.some((entry) => entry === module || minimatch(module, entry, { dot: true }));
+}
+function normalizeEntryPoint(raw, srcDir, moduleKeys) {
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  let value;
+  if (path4.isAbsolute(trimmed)) {
+    const rel = path4.relative(srcDir, path4.resolve(trimmed));
+    if (rel.startsWith("..") || path4.isAbsolute(rel)) return [];
+    value = rel.replace(/\\/g, "/");
+  } else {
+    value = trimmed.replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/^\/+/, "");
+  }
+  value = stripExtension(value);
+  if (!value) return [];
+  const keys = [value];
+  if (!value.endsWith("/index") && moduleKeys.has(`${value}/index`)) keys.push(`${value}/index`);
+  return keys;
 }
 function selectParsers(files, explicitLangs) {
   if (explicitLangs && explicitLangs.length > 0) {
@@ -23433,9 +23447,10 @@ async function runDeadCode(input) {
     const content = await fs2.readFile(filePath, "utf8");
     const targets = /* @__PURE__ */ new Set();
     for (const decl of parser.extractImports(content)) {
-      if (!decl.isLocal && !parser.isLocalImport(decl.rawPath)) continue;
       const normalized = parser.normalizeImportPath(decl.rawPath, relFile, srcDir);
-      if (normalized) targets.add(resolveModuleKey(normalized, moduleKeys));
+      if (!normalized) continue;
+      const target = resolveModuleKey(normalized, moduleKeys);
+      if (moduleKeys.has(target)) targets.add(target);
     }
     graph.set(moduleKey, targets);
     if (!reverse.has(moduleKey)) reverse.set(moduleKey, /* @__PURE__ */ new Set());
@@ -23450,12 +23465,19 @@ async function runDeadCode(input) {
     }
   }
   if (graph.size === 0) return `No source files found in ${input.entry ?? "."}`;
-  const entryPoints = input.entry_points ?? DEFAULT_ENTRIES;
-  const roots = [...graph.keys()].filter((module) => isEntryPoint(module, entryPoints));
+  const entryPoints = [];
+  let rejectedEntries = 0;
+  for (const entry of [...DEFAULT_ENTRIES, ...input.entry_points ?? []]) {
+    const keys = normalizeEntryPoint(entry, srcDir, moduleKeys);
+    if (keys.length === 0) rejectedEntries++;
+    else entryPoints.push(...keys);
+  }
+  const uniqueEntryPoints = [...new Set(entryPoints)];
+  const roots = [...graph.keys()].filter((module) => isEntryPoint(module, uniqueEntryPoints));
   const minExports = input.min_exports ?? 1;
   const reachable = findReachable(graph, roots);
   const candidates = roots.length > 0 ? [...graph.keys()].filter((module) => !reachable.has(module)) : [...graph.keys()].filter((module) => (reverse.get(module)?.size ?? 0) === 0);
-  const deadModules = candidates.filter((module) => !isEntryPoint(module, entryPoints)).map((module) => ({ module, exportedSymbols: symbols.filter((symbol) => symbol.module === module) })).filter((item) => item.exportedSymbols.length >= minExports).sort((a, b) => b.exportedSymbols.length - a.exportedSymbols.length || a.module.localeCompare(b.module));
+  const deadModules = candidates.filter((module) => !isEntryPoint(module, uniqueEntryPoints)).map((module) => ({ module, exportedSymbols: symbols.filter((symbol) => symbol.module === module) })).filter((item) => item.exportedSymbols.length >= minExports).sort((a, b) => b.exportedSymbols.length - a.exportedSymbols.length || a.module.localeCompare(b.module));
   const mode = roots.length > 0 ? `unreachable from ${roots.length} entry point(s)` : "zero inbound dependencies (no configured entry point matched)";
   const parts = [`## Dead Module Candidates: ${input.entry ?? "."}`];
   parts.push(
@@ -23464,6 +23486,18 @@ async function runDeadCode(input) {
   parts.push(`Analysis: ${mode}`);
   if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`);
   parts.push("");
+  if (roots.length === 0) {
+    parts.push(
+      `\u26A0 No configured entry point matched any module (checked ${uniqueEntryPoints.length} pattern(s)${rejectedEntries > 0 ? `, ${rejectedEntries} ignored for resolving outside the project` : ""}).`
+    );
+    parts.push("  Module keys are relative to the analyzed directory and carry no file extension,");
+    parts.push('  e.g. "src/main" or "packages/a/src/index". Absolute paths are mapped inside automatically.');
+    parts.push(
+      `  First modules: ${[...graph.keys()].slice(0, 6).join(", ")}${graph.size > 6 ? `, ... (${graph.size} total)` : ""}`
+    );
+    parts.push("  The candidates below use the weak 'zero inbound dependencies' heuristic and include false positives.");
+    parts.push("");
+  }
   if (deadModules.length === 0) {
     parts.push("No dead-module candidates detected. This heuristic result is not proof that no dead code exists.");
     return parts.join("\n");
@@ -23780,11 +23814,11 @@ entrypoints, and CLI entrypoints can be false positives.`,
     entry: external_exports.string().optional().describe(
       "Source directory to analyze. Prefer an absolute path under plugin MCP. Relative paths resolve against cwd. Defaults to cwd."
     ),
-    entry_points: external_exports.array(external_exports.string()).optional().describe("Module keys that should never be flagged as dead."),
+    entry_points: external_exports.array(external_exports.string()).optional().describe("Module keys that count as live entry points. Relative to the analyzed directory, extension optional (e.g. 'src/main', 'packages/a/src/index.ts'); absolute paths are mapped inside automatically. Merged with built-in defaults."),
     min_exports: external_exports.number().int().positive().optional().describe("Minimum exported symbols in a dead module to report. Defaults to 1."),
     lang: external_exports.array(external_exports.string()).optional().describe("Explicit languages/extensions, e.g. ['typescript'] or ['ts', 'tsx']."),
     exclude: external_exports.array(external_exports.string()).optional().describe("Additional glob patterns to exclude, e.g. ['packages/plugin/**', '**/*.generated.ts']."),
-    include_default_excludes: external_exports.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and index files."),
+    include_default_excludes: external_exports.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and examples."),
     cwd: external_exports.string().optional().describe(
       "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin)."
     )

@@ -71,11 +71,11 @@ entrypoints, and CLI entrypoints can be false positives.`,
       .describe(
         "Source directory to analyze. Prefer an absolute path under plugin MCP. Relative paths resolve against cwd. Defaults to cwd.",
       ),
-    entry_points: z.array(z.string()).optional().describe("Module keys that should never be flagged as dead."),
+    entry_points: z.array(z.string()).optional().describe("Module keys that count as live entry points. Relative to the analyzed directory, extension optional (e.g. 'src/main', 'packages/a/src/index.ts'); absolute paths are mapped inside automatically. Merged with built-in defaults."),
     min_exports: z.number().int().positive().optional().describe("Minimum exported symbols in a dead module to report. Defaults to 1."),
     lang: z.array(z.string()).optional().describe("Explicit languages/extensions, e.g. ['typescript'] or ['ts', 'tsx']."),
     exclude: z.array(z.string()).optional().describe("Additional glob patterns to exclude, e.g. ['packages/plugin/**', '**/*.generated.ts']."),
-    include_default_excludes: z.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and index files."),
+    include_default_excludes: z.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and examples."),
     cwd: z
       .string()
       .optional()
