@@ -53,7 +53,7 @@
 插件 `agents/` 目录提供 14 个专长子代理，由主 Agent 自动发现并按任务委派（通过 Agent 工具），各自带工具权限隔离：
 
 - 只读分析：`explore`（代码定位）、`reviewer`（审查）、`detective`（根因）、`guard`（安全）、`oracle`（反方顾问）、`perf`（性能）
-- 实现：`builder`（通用）、`frontend`（Web 前端）、`mobile`（移动端）、`miniapp`（小程序）、`ai-app`（AI agent 应用）、`dba`（数据库与查询）、`tester`（TDD）、`ops`（部署运维）
+- 实现：`backend`（后端服务）、`builder`（通用）、`frontend`（Web 前端）、`mobile`（移动端）、`miniapp`（小程序）、`ai-app`（AI agent 应用）、`dba`（数据库与查询）、`tester`（TDD）、`ops`（部署运维）
 
 只读类禁 Bash/Write/Edit；实现类按职责配置 Read/Grep/Glob + Bash/Write/Edit/FetchURL 的子集（dba 禁 Bash 只写迁移脚本），需要代码结构搜索的 agent（`explore`/`reviewer`/`detective`/`guard`/`builder`/`frontend`/`mobile`/`miniapp`/`ai-app`）额外允许 `mcp__*__codesearch`；`reviewer`/`detective` 额外允许 `mcp__*__dead_code`。具体权限与专长见各 agent 文件。
 
