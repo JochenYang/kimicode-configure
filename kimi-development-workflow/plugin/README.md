@@ -50,12 +50,13 @@
 
 ## Agents
 
-插件 `agents/` 目录提供 16 个专长子代理，由主 Agent 自动发现并按任务委派（通过 Agent 工具），各自带工具权限隔离：
+插件 `agents/` 目录提供 21 个专长子代理，由主 Agent 自动发现并按任务委派（通过 Agent 工具），各自带工具权限隔离：
 
 - 只读分析：`explore`（代码定位）、`reviewer`（审查）、`detective`（根因）、`guard`（安全）、`oracle`（反方顾问）、`perf`（性能）、`integrator`（跨层集成一致性）
 - 实现：`backend`（后端服务）、`builder`（通用）、`frontend`（Web 前端）、`mobile`（移动端）、`miniapp`（小程序）、`ai-app`（AI agent 应用）、`dba`（数据库与查询）、`tester`（TDD）、`ops`（部署运维）
+- 游戏设计：`game-designer`（玩法与 GDD）、`combat-designer`（战斗系统）、`level-designer`（关卡设计）、`art-director`（美术方向）、`playtest-analyst`（试玩分析）
 
-只读类禁 Bash/Write/Edit；实现类按职责配置 Read/Grep/Glob + Bash/Write/Edit/FetchURL 的子集（dba 禁 Bash 只写迁移脚本），需要代码结构搜索的 agent（`explore`/`reviewer`/`detective`/`guard`/`builder`/`frontend`/`mobile`/`miniapp`/`ai-app`）额外允许 `mcp__*__codesearch`；`reviewer`/`detective`/`integrator` 额外允许 `mcp__*__dead_code`。具体权限与专长见各 agent 文件。
+只读类禁 Bash/Write/Edit；实现类按职责配置 Read/Grep/Glob + Bash/Write/Edit/FetchURL 的子集（dba 禁 Bash 只写迁移脚本），需要代码结构搜索的 agent（`explore`/`reviewer`/`detective`/`guard`/`builder`/`frontend`/`mobile`/`miniapp`/`ai-app`）额外允许 `mcp__*__codesearch`；`reviewer`/`detective`/`integrator` 额外允许 `mcp__*__dead_code`。游戏设计类（`game-designer`/`combat-designer`/`level-designer`/`art-director`）禁 Bash、允许 Write/Edit 产出设计文档；`playtest-analyst` 允许 Bash 仅用于试玩日志/数据分析，不修改游戏代码。具体权限与专长见各 agent 文件。
 
 agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECONDARY_MODEL` 并配置 `[secondary_model].model` 时，子代理自动走次级模型（主模型留给主会话做规划/决策）；不启用时继承主模型。需强推理的 agent（如 `oracle`）可单独声明 `model_preference: primary` 保留主模型。
 
