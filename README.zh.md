@@ -6,7 +6,7 @@
 
 ```text
 <repo-root>/
-├── kimi-personal-rules/          # 全局协作与工程规则
+├── kimi-personal-rules/          # 全局常驻规则与按需加载的参考 Skill
 ├── kimi-engineering-tools/       # 自包含工程工具 MCP 插件
 ├── kimi-mcp-connectors/          # Context7、Exa、LoreWiki MCP 连接器
 └── kimi-development-workflow/    # 日常开发流程 Skills 插件
@@ -18,22 +18,30 @@
 
 ### 个人全局规则
 
+由两部分配合：`AGENTS.md` 在每轮 prompt 构建时注入，`agent-rules-reference` Skill 只在模型判断相关时才加载详版。
+
 源文件：
 
 ```text
 <repo-root>\kimi-personal-rules\AGENTS.md
+<repo-root>\kimi-personal-rules\skills\agent-rules-reference\
 ```
 
-同步到 Kimi Code 用户规则目录：
+同步到 Kimi Code 用户目录：
 
 ```powershell
 Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\AGENTS.md" `
   -Destination "$HOME\.kimi-code\AGENTS.md" -Force
+
+Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\skills\agent-rules-reference" `
+  -Destination "$HOME\.agents\skills\" -Recurse -Force
 ```
 
-规则涵盖协作方式、最小正确工程、证据与验证、安全边界、前端质量、Git 规范、代码审查和交付闭环。
+`AGENTS.md` 只保留每轮都必须生效的条款：身份与语言、高风险前置确认、子智能体派发阈值、最小正确范围、证据要求、安全边界、前端质量、Git 规范与审查输出。Skill 承载只在做特定一件事时才需要的详版：证据等级 L1–L4、交付前检查项、子智能体能力边界、界面验收清单。
 
-更新全局规则后，建议开启新的 Kimi Code 会话。
+不要给该 Skill 声明 `type: flow`。`flow` 类型的 Skill 只能手动 `/skill:<名称>` 调用，不会按 description 自动加载。
+
+更新规则或 Skill 后，建议开启新的 Kimi Code 会话。
 
 ### 工程工具插件
 

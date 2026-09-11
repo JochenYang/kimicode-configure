@@ -8,7 +8,7 @@ This repository is an independently designed and implemented collection of perso
 
 ```text
 <repo-root>/
-├── kimi-personal-rules/          # Global collaboration and engineering rules
+├── kimi-personal-rules/          # Global resident rules and the on-demand reference Skill
 ├── kimi-engineering-tools/       # Self-contained local MCP engineering tools
 ├── kimi-mcp-connectors/          # Context7, Exa, and LoreWiki MCP connectors
 └── kimi-development-workflow/    # Skills-only daily development workflows
@@ -20,22 +20,30 @@ This repository is an independently designed and implemented collection of perso
 
 ### Personal rules
 
-Source file:
+Two artifacts work together: `AGENTS.md` is injected when every prompt is built, while the `agent-rules-reference` Skill loads its detail only when the model judges it relevant.
+
+Source files:
 
 ```text
 <repo-root>\kimi-personal-rules\AGENTS.md
+<repo-root>\kimi-personal-rules\skills\agent-rules-reference\
 ```
 
-Sync it to the Kimi Code user rules directory:
+Sync them to the Kimi Code user directories:
 
 ```powershell
 Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\AGENTS.md" `
   -Destination "$HOME\.kimi-code\AGENTS.md" -Force
+
+Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\skills\agent-rules-reference" `
+  -Destination "$HOME\.agents\skills\" -Recurse -Force
 ```
 
-The rules define collaboration style, minimal-correct engineering, evidence-based verification, security boundaries, frontend quality, Git conventions, review output, and delivery closure.
+`AGENTS.md` keeps the clauses that must apply on every turn: identity and language, high-risk confirmation, sub-agent dispatch thresholds, minimal-correct scope, evidence expectations, security boundaries, frontend quality, Git conventions, and review output. The Skill keeps the detail that is only needed while doing one specific thing: evidence levels L1-L4, pre-delivery checks, sub-agent capability boundaries, and the UI acceptance checklist.
 
-Start a new Kimi Code session after updating the global rules.
+Do not declare the Skill as `type: flow`. `flow` Skills are manual `/skill:<name>` invocations and are never loaded automatically from their description.
+
+Start a new Kimi Code session after updating the rules or the Skill.
 
 ### Engineering tools plugin
 
