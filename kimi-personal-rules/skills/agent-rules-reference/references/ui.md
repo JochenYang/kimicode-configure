@@ -18,4 +18,6 @@ hover、focus、active、disabled、loading、error、empty 各状态齐备。
 
 ## 双端验证
 
+移动优先，渐进增强；保证触摸目标可以点按。
+
 移动端与桌面端均验证可用性。
