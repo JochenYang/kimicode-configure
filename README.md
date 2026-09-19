@@ -11,7 +11,7 @@ This repository is an independently designed and implemented collection of perso
 ├── kimi-personal-rules/          # Global resident rules and the on-demand reference Skill
 ├── kimi-engineering-tools/       # Self-contained local MCP engineering tools
 ├── kimi-mcp-connectors/          # Context7, Exa, and LoreWiki MCP connectors
-└── kimi-development-workflow/    # Skills-only daily development workflows
+└── kimi-development-workflow/    # Daily development workflow plugin (Skills + Agents)
 ```
 
 `<repo-root>` means the absolute path where this repository is cloned. It can be located on any drive or directory.
@@ -117,7 +117,7 @@ Install:
 /plugins info kimi-development-workflow
 ```
 
-This plugin contains seven manual `flow` Skills and no MCP server, Hook, Command, Node.js runtime, or background process:
+This plugin contains seven Skills and sixteen sub-agents, with no MCP server, Hook, Command, Node.js runtime, or background process. The Skills do not declare `type`, so they are `inline`: the model loads them by description when relevant, and you can still invoke any of them manually with `/skill:<name>`.
 
 - `/skill:change-plan`: converts a clear development goal into an executable and verifiable implementation plan.
 - `/skill:debug`: reproduces, isolates, tests hypotheses, applies the smallest fix, and verifies it.
@@ -127,7 +127,9 @@ This plugin contains seven manual `flow` Skills and no MCP server, Hook, Command
 - `/skill:release-check`: checks release readiness without tagging, publishing, deploying, or pushing.
 - `/skill:doc-gen`: generates or updates API docs, CHANGELOG, README, user docs, and migration guides from code, with each claim linked back to `file:line`.
 
-`change-plan` complements Plan mode: Plan mode controls session behavior and clarification, while the Skill defines the engineering content, scope, risks, acceptance criteria, and verification steps of a plan.
+`change-plan` complements Plan mode: Plan mode controls session behavior and clarification, while the Skill defines the engineering content, scope, risks, acceptance criteria, and verification steps of a plan. It writes the handoff to `.devflow/<slug>.md` inside the project, which downstream Skills read instead of relying on in-session context.
+
+Full documentation, including the sub-agent tool permissions and the recommended lifecycle, is in [`kimi-development-workflow/plugin/README.md`](./kimi-development-workflow/plugin/README.md).
 
 ## Updating local plugins
 

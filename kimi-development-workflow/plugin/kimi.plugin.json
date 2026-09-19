@@ -1,7 +1,7 @@
 {
   "name": "kimi-development-workflow",
-  "version": "0.2.0",
-  "description": "用于日常开发的规划、调试、测试、审查、提交和发布工作流。",
+  "version": "0.3.0",
+  "description": "用于日常开发的规划、调试、测试、审查、提交和发布工作流。Skill 按需求自动加载，也可以手动 /skill: 调用。",
   "keywords": [
     "development",
     "review",
