@@ -26,7 +26,7 @@ export function resolveContainedPath(root: string, candidate: string): { ok: tru
 export interface ResolveProjectTargetInput {
   /** Optional project root from the tool call. Absolute preferred under plugin MCP. */
   cwd?: string
-  /** Search / analysis target (codesearch.path or dead_code.entry). */
+  /** Analysis target (dead_code.entry). */
   target?: string
   /** Default target when omitted. */
   defaultTarget?: string

@@ -3228,8 +3228,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path5) {
-      let input = path5;
+    function removeDotSegments(path4) {
+      let input = path4;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3481,8 +3481,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path5, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path5 && path5 !== "/" ? path5 : void 0;
+        const [path4, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path4 && path4 !== "/" ? path4 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -6875,12 +6875,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs3, exportName) {
+    function addFormats(ajv, list, fs2, exportName) {
       var _a2;
       var _b;
       (_a2 = (_b = ajv.opts.code).formats) !== null && _a2 !== void 0 ? _a2 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs3[f]);
+        ajv.addFormat(f, fs2[f]);
     }
     module.exports = exports = formatsPlugin;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7366,8 +7366,8 @@ function getErrorMap() {
 
 // node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path: path5, errorMaps, issueData } = params;
-  const fullPath = [...path5, ...issueData.path || []];
+  const { data, path: path4, errorMaps, issueData } = params;
+  const fullPath = [...path4, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -7483,11 +7483,11 @@ var errorUtil;
 
 // node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path5, key) {
+  constructor(parent, value, path4, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path5;
+    this._path = path4;
     this._key = key;
   }
   get path() {
@@ -11124,10 +11124,10 @@ function assignProp(target, prop, value) {
     configurable: true
   });
 }
-function getElementAtPath(obj, path5) {
-  if (!path5)
+function getElementAtPath(obj, path4) {
+  if (!path4)
     return obj;
-  return path5.reduce((acc, key) => acc?.[key], obj);
+  return path4.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -11447,11 +11447,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path5, issues) {
+function prefixIssues(path4, issues) {
   return issues.map((iss) => {
     var _a2;
     (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path5);
+    iss.path.unshift(path4);
     return iss;
   });
 }
@@ -21100,228 +21100,9 @@ var StdioServerTransport = class {
   }
 };
 
-// src/tools/codesearch.ts
-import { execFile, execFileSync } from "node:child_process";
-import fs from "node:fs";
-import path2 from "node:path";
-import { promisify } from "node:util";
-
-// src/path-safety.ts
-import path from "node:path";
-function resolveContainedPath(root, candidate) {
-  const resolvedRoot = path.resolve(root);
-  const resolved = path.resolve(resolvedRoot, candidate);
-  const relative = path.relative(resolvedRoot, resolved);
-  if (relative === "") {
-    return { ok: true, path: resolvedRoot };
-  }
-  if (path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`) || relative.startsWith("../") || relative.startsWith("..\\")) {
-    return {
-      ok: false,
-      error: `Error: path escapes project root: ${candidate} (resolved to ${resolved}, root ${resolvedRoot})`
-    };
-  }
-  return { ok: true, path: resolved };
-}
-function looksLikePluginInstallDir(dir) {
-  const normalized = dir.replace(/\\/g, "/").toLowerCase();
-  return normalized.includes("/.kimi-code/plugins/") || normalized.includes("/plugins/managed/");
-}
-function absolutePathHint(processCwd) {
-  if (!looksLikePluginInstallDir(processCwd)) return "";
-  return ` Hint: this MCP server's process cwd is the plugin install dir (${processCwd}). Pass absolute cwd (workspace root) and/or absolute path/entry \u2014 relative paths resolve against the plugin dir, not the user workspace.`;
-}
-function resolveProjectTarget(input) {
-  const processCwd = path.resolve(input.processCwd ?? process.cwd());
-  const target = input.target ?? input.defaultTarget ?? ".";
-  const hasExplicitCwd = typeof input.cwd === "string" && input.cwd.trim() !== "";
-  let projectDir;
-  if (hasExplicitCwd) {
-    const cwdValue = input.cwd.trim();
-    projectDir = path.isAbsolute(cwdValue) ? path.resolve(cwdValue) : path.resolve(processCwd, cwdValue);
-  } else if (path.isAbsolute(target)) {
-    const absoluteTarget = path.resolve(target);
-    return { ok: true, result: { projectDir: absoluteTarget, targetPath: absoluteTarget } };
-  } else {
-    projectDir = processCwd;
-  }
-  const contained = resolveContainedPath(projectDir, target);
-  if (!contained.ok) {
-    return {
-      ok: false,
-      error: contained.error + absolutePathHint(processCwd)
-    };
-  }
-  return {
-    ok: true,
-    result: { projectDir, targetPath: contained.path }
-  };
-}
-function pathNotFoundError(searchPath, processCwd) {
-  const cwd = path.resolve(processCwd ?? process.cwd());
-  return `Error: path not found: ${searchPath}.${absolutePathHint(cwd)}`;
-}
-
-// src/tools/codesearch.ts
-var exec = promisify(execFile);
-var LANG_ALIASES = {
-  typescript: "typescript",
-  ts: "typescript",
-  tsx: "tsx",
-  javascript: "javascript",
-  js: "javascript",
-  jsx: "jsx",
-  py: "python",
-  python: "python",
-  rust: "rust",
-  rs: "rust",
-  go: "go",
-  java: "java",
-  c: "c",
-  cpp: "cpp",
-  "c++": "cpp",
-  csharp: "csharp",
-  cs: "csharp",
-  css: "css",
-  html: "html",
-  bash: "bash",
-  sh: "bash",
-  json: "json",
-  yaml: "yaml",
-  yml: "yaml",
-  swift: "swift",
-  kotlin: "kotlin",
-  scala: "scala",
-  ruby: "ruby",
-  rb: "ruby",
-  php: "php",
-  lua: "lua",
-  elixir: "elixir",
-  haskell: "haskell",
-  hs: "haskell"
-};
-var cachedBins = /* @__PURE__ */ new Map();
-function findAstGrep(projectDir) {
-  const cacheKey = path2.resolve(projectDir);
-  if (cachedBins.has(cacheKey)) return cachedBins.get(cacheKey) ?? null;
-  const localBin = path2.join(
-    cacheKey,
-    "node_modules",
-    ".bin",
-    process.platform === "win32" ? "ast-grep.cmd" : "ast-grep"
-  );
-  if (fs.existsSync(localBin)) {
-    cachedBins.set(cacheKey, localBin);
-    return localBin;
-  }
-  const which = process.platform === "win32" ? "where" : "which";
-  try {
-    const result = execFileSync(which, ["ast-grep"], { stdio: "pipe" }).toString().trim().split(/\r?\n/)[0];
-    if (result) {
-      cachedBins.set(cacheKey, result);
-      return result;
-    }
-  } catch {
-  }
-  cachedBins.set(cacheKey, null);
-  return null;
-}
-function quoteCmdArgument(value) {
-  if (value.length === 0) return '""';
-  return `"${value.replace(/(["^&|<>%!])/g, "^$1")}"`;
-}
-async function runAstGrep(bin, args, options) {
-  if (process.platform === "win32" && bin.toLowerCase().endsWith(".cmd")) {
-    const command = [quoteCmdArgument(bin), ...args.map(quoteCmdArgument)].join(" ");
-    return exec(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", command], options);
-  }
-  return exec(bin, args, options);
-}
-function formatMatch(file, line, col, text) {
-  const lines = text.split("\n");
-  const out = [`  ${file}:${line}:${col}`];
-  for (let i = 0; i < Math.min(lines.length, 5); i++) {
-    out.push(`${i === 0 ? "    >" : "     "} ${lines[i]}`);
-  }
-  if (lines.length > 5) out.push(`     ... (${lines.length - 5} more lines)`);
-  return out.join("\n");
-}
-async function runCodeSearch(input) {
-  const langInput = input.lang.toLowerCase().trim();
-  const lang = LANG_ALIASES[langInput];
-  if (!lang) {
-    const supported = [...new Set(Object.values(LANG_ALIASES))].join(", ");
-    return `Error: unsupported language "${input.lang}". Supported: ${supported}.`;
-  }
-  const resolved = resolveProjectTarget({
-    cwd: input.cwd,
-    target: input.path,
-    defaultTarget: "."
-  });
-  if (!resolved.ok) return resolved.error;
-  const { projectDir, targetPath: searchPath } = resolved.result;
-  if (!fs.existsSync(searchPath)) return pathNotFoundError(searchPath);
-  const bin = findAstGrep(projectDir);
-  if (!bin) {
-    return "Error: ast-grep not found. Install @ast-grep/cli locally or put ast-grep on PATH.";
-  }
-  let raw = "";
-  let spawnErr = null;
-  try {
-    const { stdout, stderr } = await runAstGrep(
-      bin,
-      ["run", "--pattern", input.pattern, "--lang", lang, "--json=compact", searchPath],
-      { maxBuffer: 50 * 1024 * 1024, timeout: 6e4 }
-    );
-    raw = stdout;
-    if (stderr.trim()) spawnErr = stderr.trim().split(/\r?\n/)[0] ?? null;
-  } catch (error2) {
-    const err = error2;
-    raw = err.stdout?.toString() ?? "";
-    const stderr = err.stderr?.toString() ?? err.message ?? String(error2);
-    if (stderr.trim()) spawnErr = stderr.trim().split(/\r?\n/)[0] ?? null;
-  }
-  const parseErrors = [];
-  let allMatches = [];
-  try {
-    const parsed = JSON.parse(raw || "[]");
-    if (Array.isArray(parsed)) allMatches = parsed;
-    else parseErrors.push(`ast-grep returned non-array JSON: ${typeof parsed}`);
-  } catch (error2) {
-    parseErrors.push(`JSON parse failed: ${error2 instanceof Error ? error2.message : String(error2)}`);
-  }
-  if (spawnErr) parseErrors.push(`ast-grep stderr: ${spawnErr}`);
-  const withMtime = await Promise.all(
-    allMatches.map(async (match2) => {
-      try {
-        return { match: match2, mtime: (await fs.promises.stat(match2.file)).mtimeMs };
-      } catch {
-        return { match: match2, mtime: 0 };
-      }
-    })
-  );
-  withMtime.sort((a, b) => b.mtime - a.mtime);
-  const max = input.maxResults ?? 30;
-  const shown = withMtime.slice(0, max).map((item) => item.match);
-  const lines = [`codesearch: pattern="${input.pattern}" lang=${lang} path=${searchPath}`];
-  lines.push(`  matches: ${withMtime.length}${withMtime.length > max ? ` (showing first ${max})` : ""}`);
-  lines.push("");
-  if (shown.length === 0) lines.push("  No matches.");
-  for (const match2 of shown) {
-    const start = match2.range?.start ?? { line: 0, column: 0 };
-    const file = match2.file ? path2.relative(projectDir, match2.file) : "?";
-    lines.push(formatMatch(file, (start.line ?? 0) + 1, (start.column ?? 0) + 1, match2.text ?? ""));
-  }
-  if (parseErrors.length > 0) {
-    lines.push("", `Errors (${parseErrors.length}):`);
-    for (const err of parseErrors.slice(0, 5)) lines.push(`  ${err}`);
-  }
-  return lines.join("\n");
-}
-
 // src/tools/dead-code.ts
-import fs2 from "node:fs/promises";
-import path4 from "node:path";
+import fs from "node:fs/promises";
+import path3 from "node:path";
 
 // node_modules/balanced-match/dist/esm/index.js
 var balanced = (a, b, str) => {
@@ -22379,11 +22160,11 @@ var qmarksTestNoExtDot = ([$0]) => {
   return (f) => f.length === len && f !== "." && f !== "..";
 };
 var defaultPlatform = typeof process === "object" && process ? typeof process.env === "object" && process.env && process.env.__MINIMATCH_TESTING_PLATFORM__ || process.platform : "posix";
-var path3 = {
+var path = {
   win32: { sep: "\\" },
   posix: { sep: "/" }
 };
-var sep = defaultPlatform === "win32" ? path3.win32.sep : path3.posix.sep;
+var sep = defaultPlatform === "win32" ? path.win32.sep : path.posix.sep;
 minimatch.sep = sep;
 var GLOBSTAR = /* @__PURE__ */ Symbol("globstar **");
 minimatch.GLOBSTAR = GLOBSTAR;
@@ -23129,6 +22910,58 @@ minimatch.Minimatch = Minimatch;
 minimatch.escape = escape2;
 minimatch.unescape = unescape2;
 
+// src/path-safety.ts
+import path2 from "node:path";
+function resolveContainedPath(root, candidate) {
+  const resolvedRoot = path2.resolve(root);
+  const resolved = path2.resolve(resolvedRoot, candidate);
+  const relative = path2.relative(resolvedRoot, resolved);
+  if (relative === "") {
+    return { ok: true, path: resolvedRoot };
+  }
+  if (path2.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path2.sep}`) || relative.startsWith("../") || relative.startsWith("..\\")) {
+    return {
+      ok: false,
+      error: `Error: path escapes project root: ${candidate} (resolved to ${resolved}, root ${resolvedRoot})`
+    };
+  }
+  return { ok: true, path: resolved };
+}
+function looksLikePluginInstallDir(dir) {
+  const normalized = dir.replace(/\\/g, "/").toLowerCase();
+  return normalized.includes("/.kimi-code/plugins/") || normalized.includes("/plugins/managed/");
+}
+function absolutePathHint(processCwd) {
+  if (!looksLikePluginInstallDir(processCwd)) return "";
+  return ` Hint: this MCP server's process cwd is the plugin install dir (${processCwd}). Pass absolute cwd (workspace root) and/or absolute path/entry \u2014 relative paths resolve against the plugin dir, not the user workspace.`;
+}
+function resolveProjectTarget(input) {
+  const processCwd = path2.resolve(input.processCwd ?? process.cwd());
+  const target = input.target ?? input.defaultTarget ?? ".";
+  const hasExplicitCwd = typeof input.cwd === "string" && input.cwd.trim() !== "";
+  let projectDir;
+  if (hasExplicitCwd) {
+    const cwdValue = input.cwd.trim();
+    projectDir = path2.isAbsolute(cwdValue) ? path2.resolve(cwdValue) : path2.resolve(processCwd, cwdValue);
+  } else if (path2.isAbsolute(target)) {
+    const absoluteTarget = path2.resolve(target);
+    return { ok: true, result: { projectDir: absoluteTarget, targetPath: absoluteTarget } };
+  } else {
+    projectDir = processCwd;
+  }
+  const contained = resolveContainedPath(projectDir, target);
+  if (!contained.ok) {
+    return {
+      ok: false,
+      error: contained.error + absolutePathHint(processCwd)
+    };
+  }
+  return {
+    ok: true,
+    result: { projectDir, targetPath: contained.path }
+  };
+}
+
 // src/tools/dead-code.ts
 var SKIP_DIRS = /* @__PURE__ */ new Set([
   "node_modules",
@@ -23470,9 +23303,9 @@ var tsParser = {
     return defs;
   },
   normalizeImportPath(rawPath, fromFile, srcDir) {
-    const resolved = path4.resolve(srcDir, path4.dirname(fromFile), rawPath);
-    const relative = path4.relative(srcDir, resolved);
-    if (relative.startsWith("..") || path4.isAbsolute(relative)) return null;
+    const resolved = path3.resolve(srcDir, path3.dirname(fromFile), rawPath);
+    const relative = path3.relative(srcDir, resolved);
+    if (relative.startsWith("..") || path3.isAbsolute(relative)) return null;
     return stripExtension(relative.replace(/\\/g, "/"));
   }
 };
@@ -23509,11 +23342,11 @@ var pyParser = {
     return defs;
   },
   normalizeImportPath(rawPath, fromFile, srcDir) {
-    const fromDir = path4.dirname(fromFile);
+    const fromDir = path3.dirname(fromFile);
     const cleaned = rawPath.replace(/^\.+/, "").replace(/\./g, "/");
-    const resolved = rawPath.startsWith(".") ? path4.resolve(srcDir, fromDir, cleaned) : path4.resolve(srcDir, cleaned);
-    const relative = path4.relative(srcDir, resolved);
-    if (relative.startsWith("..") || path4.isAbsolute(relative)) return null;
+    const resolved = rawPath.startsWith(".") ? path3.resolve(srcDir, fromDir, cleaned) : path3.resolve(srcDir, cleaned);
+    const relative = path3.relative(srcDir, resolved);
+    if (relative.startsWith("..") || path3.isAbsolute(relative)) return null;
     return relative.replace(/\\/g, "/");
   }
 };
@@ -23584,9 +23417,9 @@ function makeRegexParser(name, extensions, importPatterns, typePatterns, stripFi
     normalizeImportPath(rawPath, fromFile, srcDir) {
       const pathPart = stripFinalSegment ? rawPath.replace(/:{1,2}[\w]+$/, "") : rawPath;
       const relative = pathPart.includes("::") ? pathPart.replace(/^crate::/, "").replace(/::/g, "/") : pathPart;
-      const resolved = path4.resolve(srcDir, path4.dirname(fromFile), relative);
-      const rel = path4.relative(srcDir, resolved);
-      if (rel.startsWith("..") || path4.isAbsolute(rel)) return null;
+      const resolved = path3.resolve(srcDir, path3.dirname(fromFile), relative);
+      const rel = path3.relative(srcDir, resolved);
+      if (rel.startsWith("..") || path3.isAbsolute(rel)) return null;
       return stripExtension(rel.replace(/\\/g, "/"));
     }
   };
@@ -23599,15 +23432,15 @@ async function listFiles(dir) {
   async function walk(current) {
     let entries;
     try {
-      entries = await fs2.readdir(current, { withFileTypes: true });
+      entries = await fs.readdir(current, { withFileTypes: true });
     } catch {
       return;
     }
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name)) await walk(path4.join(current, entry.name));
+        if (!SKIP_DIRS.has(entry.name)) await walk(path3.join(current, entry.name));
       } else if (entry.isFile()) {
-        out.push(path4.join(current, entry.name));
+        out.push(path3.join(current, entry.name));
       }
     }
   }
@@ -23625,14 +23458,14 @@ function normalizeEntryPoint(raw, srcDir, moduleKeys) {
   const trimmed = raw.trim();
   if (!trimmed) return [];
   let value;
-  if (path4.isAbsolute(trimmed)) {
-    const rel = path4.relative(srcDir, path4.resolve(trimmed));
-    if (rel.startsWith("..") || path4.isAbsolute(rel)) return [];
+  if (path3.isAbsolute(trimmed)) {
+    const rel = path3.relative(srcDir, path3.resolve(trimmed));
+    if (rel.startsWith("..") || path3.isAbsolute(rel)) return [];
     value = rel.replace(/\\/g, "/");
   } else {
     value = trimmed.replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/^\/+/, "");
   }
-  value = path4.posix.normalize(stripExtension(value.replace(/\.d\.(ts|tsx)$/, ".$1"))).replace(/^\.\//, "");
+  value = path3.posix.normalize(stripExtension(value.replace(/\.d\.(ts|tsx)$/, ".$1"))).replace(/^\.\//, "");
   if (!value || value === "." || value.startsWith("..")) return [];
   const keys = [value];
   if (!value.endsWith("/index") && moduleKeys.has(`${value}/index`)) keys.push(`${value}/index`);
@@ -23651,14 +23484,14 @@ var BUILD_DIRS = /* @__PURE__ */ new Set(["dist", "lib", "build", "out"]);
 async function collectPackageDirs(srcDir) {
   const dirs = [""];
   try {
-    const entries = await fs2.readdir(path4.join(srcDir, "packages"), { withFileTypes: true });
+    const entries = await fs.readdir(path3.join(srcDir, "packages"), { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      dirs.push(path4.join("packages", entry.name));
+      dirs.push(path3.join("packages", entry.name));
       if (entry.name.startsWith("@")) {
-        const scoped = await fs2.readdir(path4.join(srcDir, "packages", entry.name), { withFileTypes: true });
+        const scoped = await fs.readdir(path3.join(srcDir, "packages", entry.name), { withFileTypes: true });
         for (const sub of scoped) {
-          if (sub.isDirectory()) dirs.push(path4.join("packages", entry.name, sub.name));
+          if (sub.isDirectory()) dirs.push(path3.join("packages", entry.name, sub.name));
         }
       }
     }
@@ -23672,7 +23505,7 @@ async function readPackageEntryKeys(srcDir, moduleKeys) {
   for (const dir of packageDirs) {
     let pkg;
     try {
-      pkg = JSON.parse(await fs2.readFile(path4.join(srcDir, dir, "package.json"), "utf8"));
+      pkg = JSON.parse(await fs.readFile(path3.join(srcDir, dir, "package.json"), "utf8"));
     } catch {
       continue;
     }
@@ -23684,8 +23517,8 @@ async function readPackageEntryKeys(srcDir, moduleKeys) {
       if (typeof record2[field] === "string") rawPaths.push(record2[field]);
     }
     for (const rawPath of rawPaths) {
-      let rel = path4.relative(srcDir, path4.resolve(srcDir, dir, rawPath)).replace(/\\/g, "/");
-      if (rel.startsWith("..") || path4.isAbsolute(rel) || rel.includes("node_modules")) continue;
+      let rel = path3.relative(srcDir, path3.resolve(srcDir, dir, rawPath)).replace(/\\/g, "/");
+      if (rel.startsWith("..") || path3.isAbsolute(rel) || rel.includes("node_modules")) continue;
       let key = stripExtension(rel.replace(/\.d\.(ts|tsx)$/, ".$1"));
       const segments = rel.split("/");
       const srcIdx = segments.indexOf("src");
@@ -23703,11 +23536,11 @@ async function readPackageEntryKeys(srcDir, moduleKeys) {
 }
 async function readTsconfigAliases(srcDir) {
   const aliases = [];
-  for (const dir of [srcDir, path4.dirname(srcDir)]) {
+  for (const dir of [srcDir, path3.dirname(srcDir)]) {
     if (!dir) continue;
     let raw;
     try {
-      raw = await fs2.readFile(path4.join(dir, "tsconfig.json"), "utf8");
+      raw = await fs.readFile(path3.join(dir, "tsconfig.json"), "utf8");
     } catch {
       continue;
     }
@@ -23743,7 +23576,7 @@ async function readPackageNames(srcDir) {
     if (!dir) continue;
     let pkg;
     try {
-      pkg = JSON.parse(await fs2.readFile(path4.join(srcDir, dir, "package.json"), "utf8"));
+      pkg = JSON.parse(await fs.readFile(path3.join(srcDir, dir, "package.json"), "utf8"));
     } catch {
       continue;
     }
@@ -23817,12 +23650,12 @@ function detectStructuralEntries(moduleKeys) {
 }
 function isSinglePackageDir(srcDir) {
   const underPackages = (dir) => {
-    const parent = path4.basename(path4.dirname(dir));
+    const parent = path3.basename(path3.dirname(dir));
     if (parent === "packages") return true;
-    return parent.startsWith("@") && path4.basename(path4.dirname(path4.dirname(dir))) === "packages";
+    return parent.startsWith("@") && path3.basename(path3.dirname(path3.dirname(dir))) === "packages";
   };
   if (underPackages(srcDir)) return true;
-  return path4.basename(srcDir) === "src" && underPackages(path4.dirname(srcDir));
+  return path3.basename(srcDir) === "src" && underPackages(path3.dirname(srcDir));
 }
 function selectParsers(files, explicitLangs) {
   if (explicitLangs && explicitLangs.length > 0) {
@@ -23831,7 +23664,7 @@ function selectParsers(files, explicitLangs) {
       (parser) => wanted.has(parser.name.toLowerCase()) || parser.extensions.some((ext2) => wanted.has(ext2))
     );
   }
-  const extSet = new Set(files.map((file) => path4.extname(file).slice(1).toLowerCase()));
+  const extSet = new Set(files.map((file) => path3.extname(file).slice(1).toLowerCase()));
   return simpleParsers.filter((parser) => parser.extensions.some((ext2) => extSet.has(ext2)));
 }
 function resolveModuleKey(normalized, moduleKeys) {
@@ -23864,7 +23697,7 @@ async function runDeadCode(input) {
   if (!resolved.ok) return resolved.error;
   const { projectDir, targetPath: srcDir } = resolved.result;
   try {
-    const stat = await fs2.stat(srcDir);
+    const stat = await fs.stat(srcDir);
     if (!stat.isDirectory()) return `Error: ${input.entry ?? "."} is not a directory`;
   } catch {
     return `Error: ${input.entry ?? srcDir} not found`;
@@ -23874,14 +23707,14 @@ async function runDeadCode(input) {
     ...input.exclude ?? []
   ];
   const files = (await listFiles(srcDir)).filter(
-    (filePath) => !isExcluded(path4.relative(srcDir, filePath).replace(/\\/g, "/"), excludePatterns)
+    (filePath) => !isExcluded(path3.relative(srcDir, filePath).replace(/\\/g, "/"), excludePatterns)
   );
   const parsers = selectParsers(files, input.lang);
   const extToParser = /* @__PURE__ */ new Map();
   for (const parser of parsers) parser.extensions.forEach((ext2) => extToParser.set(ext2, parser));
-  const sourceFiles = files.filter((filePath) => extToParser.has(path4.extname(filePath).slice(1).toLowerCase()));
+  const sourceFiles = files.filter((filePath) => extToParser.has(path3.extname(filePath).slice(1).toLowerCase()));
   const moduleKeys = new Set(
-    sourceFiles.map((filePath) => stripExtension(path4.relative(srcDir, filePath).replace(/\\/g, "/")))
+    sourceFiles.map((filePath) => stripExtension(path3.relative(srcDir, filePath).replace(/\\/g, "/")))
   );
   const aliases = await readTsconfigAliases(srcDir);
   const packageNames = await readPackageNames(srcDir);
@@ -23889,12 +23722,12 @@ async function runDeadCode(input) {
   const reverse = /* @__PURE__ */ new Map();
   const symbols = [];
   for (const filePath of sourceFiles) {
-    const ext2 = path4.extname(filePath).slice(1).toLowerCase();
+    const ext2 = path3.extname(filePath).slice(1).toLowerCase();
     const parser = extToParser.get(ext2);
     if (!parser) continue;
-    const relFile = path4.relative(srcDir, filePath).replace(/\\/g, "/");
+    const relFile = path3.relative(srcDir, filePath).replace(/\\/g, "/");
     const moduleKey = stripExtension(relFile);
-    const content = await fs2.readFile(filePath, "utf8");
+    const content = await fs.readFile(filePath, "utf8");
     const mask = commentsAndLiteralsMask(content, parser.maskLang);
     const targets = /* @__PURE__ */ new Set();
     for (const decl of parser.extractImports(content, mask)) {
@@ -23971,7 +23804,7 @@ async function runDeadCode(input) {
   }
   if (isSinglePackageDir(srcDir)) {
     parts.push(
-      `Scan scope: single package (${path4.basename(srcDir)}) \u2014 referrers in other packages are outside this tree; verify candidates repo-wide.`
+      `Scan scope: single package (${path3.basename(srcDir)}) \u2014 referrers in other packages are outside this tree; verify candidates repo-wide.`
     );
   }
   if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`);
@@ -24279,7 +24112,7 @@ function runGitConventions(input) {
 // src/server.ts
 var server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.2.7"
+  version: "0.3.0"
 });
 server.tool(
   "git_conventions",
@@ -24296,28 +24129,6 @@ results plus the user's Git convention guide unless include_guide=false.`,
   },
   async (input) => ({
     content: [{ type: "text", text: runGitConventions(input) }]
-  })
-);
-server.tool(
-  "codesearch",
-  `AST-based structural code search using ast-grep.
-
-Use when searching for code shape rather than text, such as classes, async
-functions, method calls, hooks, or try/catch blocks. Requires ast-grep on PATH
-or in the current project's node_modules/.bin directory.`,
-  {
-    pattern: external_exports.string().describe("AST pattern, e.g. 'class $NAME' or 'console.log($$$)'."),
-    lang: external_exports.string().describe("Language name or alias, e.g. typescript, tsx, js, python, rust, go."),
-    path: external_exports.string().optional().describe(
-      "Directory to search. Prefer an absolute path when this server runs as a plugin (process cwd is the plugin install dir). Relative paths resolve against cwd. Defaults to cwd."
-    ),
-    maxResults: external_exports.number().int().positive().max(250).optional().describe("Maximum matches to display. Defaults to 30."),
-    cwd: external_exports.string().optional().describe(
-      "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin)."
-    )
-  },
-  async (input) => ({
-    content: [{ type: "text", text: await runCodeSearch(input) }]
   })
 );
 server.tool(

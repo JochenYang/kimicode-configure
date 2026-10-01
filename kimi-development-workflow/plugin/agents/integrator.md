@@ -7,7 +7,6 @@ tools:
   - Grep
   - Glob
   - FetchURL
-  - mcp__*__codesearch
   - mcp__*__dead_code
 disallowedTools:
   - Bash

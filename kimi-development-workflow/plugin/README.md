@@ -32,7 +32,7 @@
 
 ### `debug`：系统化调试
 
-按「复现 → 隔离 → 可证伪假设 → 验证 → 根因 → 最小修复 → 回归验证」处理 bug、测试失败、构建失败、运行时错误和性能退化。支持 `diagnose`、`fix`、`verify` 三种意图。定位阶段优先用结构化搜索，工具不可用时降级为文本搜索并在输出中标明。
+按「复现 → 隔离 → 可证伪假设 → 验证 → 根因 → 最小修复 → 回归验证」处理 bug、测试失败、构建失败、运行时错误和性能退化。支持 `diagnose`、`fix`、`verify` 三种意图。定位阶段用文本搜索缩小范围，并记录搜索范围与 pattern。
 
 ### `test-changed`：当前改动测试
 
@@ -73,7 +73,7 @@
 | `builder`、`ops`、`tester`、`playtest-analyst` | 完整读写与命令权限 |
 | 游戏设计：`game-designer`、`combat-designer`、`level-designer`、`art-director` | 禁 Bash，允许 Write、Edit 产出设计文档 |
 
-需要代码结构搜索的 agent（`explore`、`reviewer`、`detective`、`guard`、`integrator`、`builder`）额外允许 `mcp__*__codesearch`；`reviewer`、`detective`、`integrator` 额外允许 `mcp__*__dead_code`；`oracle`、`game-designer`、`art-director` 额外允许 `WebSearch`。
+需要死模块检测的 agent（`reviewer`、`detective`、`integrator`）额外允许 `mcp__*__dead_code`；`oracle`、`game-designer`、`art-director` 额外允许 `WebSearch`。
 
 agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECONDARY_MODEL` 并配置 `[secondary_model].model` 时，子代理自动走次级模型（主模型留给主会话做规划与决策）；不启用时继承主模型。需强推理的 agent（如 `oracle`）可单独声明 `model_preference: primary` 保留主模型。
 
@@ -98,7 +98,7 @@ change-plan → 实现 → test-changed → review → commit-review → release
 - `change-plan` 把 Handoff 写入项目内 `.devflow/<slug>.md`。下游 Skill 按以下顺序找验收依据：该文件 → 主人在本轮明确写下的范围 → 从 diff 重建（缺的字段标 `unknown`）→ `unavailable`。前三者都没有时，不得声称与计划一致。
 - `.devflow/` 应加入 `.gitignore`。
 - 每个 Skill 在结案前做一次自查：命令绿了不等于验收满足（要逐条对应）、看起来合理不算证据、主人说测过了只是口述。
-- `debug` 与 `review` 在可用时调用 `codesearch` / `dead_code`（`kimi-engineering-tools` 插件提供的 MCP）；不可用时降级并标明。
+- `debug` 与 `review` 在可用时调用 `dead_code`（`kimi-engineering-tools` 插件提供的 MCP）；不可用时降级并标明。
 - `commit-review` 在可用时调用 `git_conventions`（同属该插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 人工检查。
 - `release-check` 只给放行结论，不执行发布。
 - `doc-gen` 在发布后或独立触发，生成或更新文档，不改代码逻辑。

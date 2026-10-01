@@ -1,7 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
-import { runCodeSearch } from "./tools/codesearch.js"
 import { runDeadCode } from "./tools/dead-code.js"
 import { runGitConventions } from "./tools/git-conventions.js"
 
@@ -29,35 +28,6 @@ results plus the user's Git convention guide unless include_guide=false.`,
   },
   async (input) => ({
     content: [{ type: "text", text: runGitConventions(input) }],
-  }),
-)
-
-server.tool(
-  "codesearch",
-  `AST-based structural code search using ast-grep.
-
-Use when searching for code shape rather than text, such as classes, async
-functions, method calls, hooks, or try/catch blocks. Requires ast-grep on PATH
-or in the current project's node_modules/.bin directory.`,
-  {
-    pattern: z.string().describe("AST pattern, e.g. 'class $NAME' or 'console.log($$$)'."),
-    lang: z.string().describe("Language name or alias, e.g. typescript, tsx, js, python, rust, go."),
-    path: z
-      .string()
-      .optional()
-      .describe(
-        "Directory to search. Prefer an absolute path when this server runs as a plugin (process cwd is the plugin install dir). Relative paths resolve against cwd. Defaults to cwd.",
-      ),
-    maxResults: z.number().int().positive().max(250).optional().describe("Maximum matches to display. Defaults to 30."),
-    cwd: z
-      .string()
-      .optional()
-      .describe(
-        "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin).",
-      ),
-  },
-  async (input) => ({
-    content: [{ type: "text", text: await runCodeSearch(input) }],
   }),
 )
 

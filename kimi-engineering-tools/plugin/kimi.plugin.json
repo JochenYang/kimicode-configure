@@ -1,10 +1,9 @@
 {
   "name": "kimi-engineering-tools",
-  "version": "0.2.7",
-  "description": "Local MCP tools for commit conventions, structural code search, and dead-module candidates.",
+  "version": "0.3.0",
+  "description": "Local MCP tools for commit conventions and dead-module candidates.",
   "keywords": [
     "mcp",
-    "code-search",
     "git",
     "static-analysis"
   ],

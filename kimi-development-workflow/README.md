@@ -39,6 +39,6 @@ Windows 上活动的 stdio MCP 进程可能临时占用文件。重新安装报 
 
 ## 依赖
 
-可选依赖 `kimi-engineering-tools` 插件，它提供三个 MCP 工具：`codesearch`、`dead_code`、`git_conventions`。
+可选依赖 `kimi-engineering-tools` 插件，它提供两个 MCP 工具：`dead_code`、`git_conventions`。
 
 未安装或未启用时，相关 Skill 会降级为文本搜索或人工检查，并在输出中写明降级情况，不会假装已完成机器分析。

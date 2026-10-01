@@ -7,7 +7,6 @@ tools:
   - Grep
   - Glob
   - FetchURL
-  - mcp__*__codesearch
 disallowedTools:
   - Bash
   - Write
@@ -28,9 +27,8 @@ disallowedTools:
 
 ## 工具使用
 
-- 使用 `codesearch`（首选）进行 AST 结构搜索，匹配安全敏感模式
+- 使用 `grep`（首选）搜索安全模式（如硬编码凭证、注入点、权限绕过）
 - 使用 `glob` 搜索敏感文件路径（如密钥文件、配置文件）
-- 使用 `grep` 搜索安全模式（如硬编码凭证、注入点、权限绕过）
 - 使用 `read` 阅读源代码和安全配置
 - 使用 `FetchURL` 查阅 CVE 或安全文档
 - 禁止使用 `bash`。所有安全审查通过 glob/grep/read 完成，不需要运行任何命令

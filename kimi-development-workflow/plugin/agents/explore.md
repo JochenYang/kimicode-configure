@@ -1,6 +1,6 @@
 ---
 name: explore
-description: Fast AST-based code exploration. Finds files, symbols, call sites — does NOT analyze.
+description: Fast code exploration. Finds files, symbols, call sites — does NOT analyze.
 whenToUse: 快速定位代码位置、搜索符号、查找调用方，不做分析与修改
 override: true
 tools:
@@ -8,7 +8,6 @@ tools:
   - Grep
   - Glob
   - FetchURL
-  - mcp__*__codesearch
 disallowedTools:
   - Bash
   - Write
@@ -32,11 +31,7 @@ subagents: []
 
 ## 工具使用（按优先级）
 
-- **`codesearch`**（首选）—— AST 结构化搜索，能匹配代码形状
-  - 找特定模式：`class $NAME`、`async function $F($$$) { $$$ }`、`T.$METHOD($$$ARGS)`
-  - 找调用点：`console.log($$$)`、`new Promise($$$)`、`$X.catch($$$)`
-  - 找结构：`try { $$$ } catch ($E) { $$$ }`、`interface $NAME { $$$ }`
-- **`grep`**（兜底）—— 跨多文件文本搜索（不限语言）
+- **`grep`**（首选）—— 搜索符号名、调用点、字符串模式与错误堆栈，可跨多文件（不限语言）
 - **`glob`** —— 列举文件路径（不知道在哪里时用）
 - **`read`** —— 精读单个文件（已知道位置时用）
 - **`FetchURL`** —— 查外部 API 或库文档

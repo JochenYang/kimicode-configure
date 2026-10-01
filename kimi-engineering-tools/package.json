@@ -1,9 +1,9 @@
 {
   "name": "kimi-engineering-tools",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Local MCP tools for commit conventions, structural code search, and dead-module candidates.",
+  "description": "Local MCP tools for commit conventions and dead-module candidates.",
   "engines": {
     "node": ">=20"
   },
