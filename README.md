@@ -126,7 +126,7 @@ This plugin contains seven Skills and sixteen sub-agents, with no MCP server, Ho
 - `/skill:release-check`: checks release readiness without tagging, publishing, deploying, or pushing.
 - `/skill:doc-gen`: generates or updates API docs, CHANGELOG, README, user docs, and migration guides from code, with each claim linked back to `file:line`.
 
-`change-plan` complements Plan mode: Plan mode controls session behavior and clarification, while the Skill defines the engineering content, scope, risks, acceptance criteria, and verification steps of a plan. It writes the handoff to `.devflow/<slug>.md` inside the project, which downstream Skills read instead of relying on in-session context.
+`change-plan` complements Plan mode: Plan mode controls session behavior and clarification, while the Skill defines the engineering content, scope, risks, acceptance criteria, and verification steps of a plan. When the plan is already agreed with the model, it skips planning and lands the plan directly. It writes the handoff to `.devflow/<slug>.md` inside the project; for changes with a regression surface it also writes a durable, committable plan to `docs/plans/<slug>.md` (a lightweight spec with Status, categorized work items, phase gates, Affected behaviors, and a Test plan table), which downstream Skills read instead of relying on in-session context.
 
 Full documentation, including the sub-agent tool permissions and the recommended lifecycle, is in [`kimi-development-workflow/plugin/README.md`](./kimi-development-workflow/plugin/README.md).
 

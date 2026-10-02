@@ -1,6 +1,6 @@
 ---
 name: doc-gen
-description: 写或更新 API 文档、CHANGELOG、README、用户文档、迁移指南时使用。主人说「写个文档」「更新一下 CHANGELOG」「补个 README」「这个接口怎么用」「写个升级说明」时加载。
+description: 写或更新 API 文档、CHANGELOG、README、用户文档、迁移指南时使用。用户说「写个文档」「更新一下 CHANGELOG」「补个 README」「这个接口怎么用」「写个升级说明」时加载。
 ---
 
 请为 `$ARGUMENTS`（指定文档类型与范围；若为空则根据当前改动判断最需要的文档）生成或更新文档。
@@ -8,7 +8,7 @@ description: 写或更新 API 文档、CHANGELOG、README、用户文档、迁�
 ## 流程
 
 1. 读取适用的 AGENTS.md、现有文档结构、package/构建配置和当前 `git status`。
-2. **对照验收依据**：有项目内 `.devflow/<slug>.md` 或主人本轮明确写下的范围时，用它界定文档范围；都没有则基于 diff 生成，并标注范围限制，不声称完整覆盖未审查的代码。
+2. **对照验收依据**：有项目内 `.devflow/<slug>.md`（含其 `Plan:` 指针指向的 `docs/plans/<slug>.md`）或用户本轮明确写下的范围时，用它界定文档范围；Status 为 done 的持久计划可作为 CHANGELOG 与迁移指南的来源；都没有则基于 diff 生成，并标注范围限制，不声称完整覆盖未审查的代码。
 3. 确定文档类型与受众：
    - API 文档：从类型签名、路由定义、导出符号生成；标注来源 `file:line`。
    - CHANGELOG：按 Keep a Changelog 规范，区分 Added/Changed/Deprecated/Removed/Fixed/Security。

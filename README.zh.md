@@ -124,7 +124,7 @@ npm test
 - `/skill:release-check`：检查发布准备状态，但不创建 tag、不发布、不部署、不推送。
 - `/skill:doc-gen`：从代码生成或更新 API 文档、CHANGELOG、README、用户文档和迁移指南，每条声明回指 `file:line`。
 
-`change-plan` 与 Plan mode 互补：Plan mode 控制会话交互和需求澄清，Skill 负责规定工程计划中的范围、风险、验收标准和验证步骤。
+`change-plan` 与 Plan mode 互补：Plan mode 控制会话交互和需求澄清，Skill 负责规定工程计划中的范围、风险、验收标准和验证步骤。方案已与模型规划好时跳过规划直接落地。Handoff 写入项目内 `.devflow/<slug>.md`；有回归面的改动同时写可提交的持久计划 `docs/plans/<slug>.md`（轻量 spec，含 Status、分类目 Work items、阶段闸门、Affected behaviors、Test plan 表格），供下游 Skill 读取，不再依赖会话内上下文。
 
 ## 更新本地插件
 

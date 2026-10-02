@@ -12,7 +12,7 @@
 
 ## 调用方式
 
-7 个 Skill 都不声明 `type`，类型为默认的 `inline`：模型会按 `description` 在合适的时候自动加载，主人也可以随时手动调用。
+7 个 Skill 都不声明 `type`，类型为默认的 `inline`：模型会按 `description` 在合适的时候自动加载，用户也可以随时手动调用。
 
 ```text
 /skill:change-plan 为订单模块增加优惠券抵扣功能
@@ -22,11 +22,16 @@
 
 ## 技能说明
 
-### `change-plan`：编码前规划
+### `change-plan`：编码前规划与计划落地
 
-把功能、重构或复杂修复整理成可执行计划：目标、范围、调用链、风险、验收标准和验证命令。
+把功能、重构或复杂修复整理成可执行计划：目标、范围、调用链、风险、验收标准和验证命令。用户已与模型规划好方案时，跳过规划直接落地，补齐缺失的验收与回归面后写入计划文件。
 
-计划末尾的 Handoff 会写入项目内 `.devflow/<slug>.md`（并把 `.devflow/` 加进 `.gitignore`），作为下游 Skill 的验收依据——不再依赖会话内传递，压缩或换会话都不会丢。除这个文件外不修改任何文件。
+计划产物分两层：
+
+- 临时 Handoff 写入项目内 `.devflow/<slug>.md`（并把 `.devflow/` 加进 `.gitignore`），作为下游 Skill 的验收依据——不再依赖会话内传递，压缩或换会话都不会丢。
+- 有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时，同时写持久回归计划 `docs/plans/<slug>.md`：轻量 spec 格式，含 Status（draft/active/done/archived）、Work items（类目 P0/P1/P2/OPT + 状态流转 `[ ]`→`[~]`→`[x]`）、Phases 阶段闸门（Gate 未过不进下一阶段）、Affected behaviors、Test plan 表格与验证命令，随代码一起提交。此时 `.devflow/<slug>.md` 用 `Plan:` 字段指向它。
+
+除这两个文件外不修改任何文件。
 
 它与 Kimi 的 Plan mode 互补：Plan mode 控制会话是否直接实施，`change-plan` 规定计划内容应覆盖什么。
 
@@ -36,7 +41,7 @@
 
 ### `test-changed`：当前改动测试
 
-根据未暂存、已暂存和新增文件，选最小但足够的验证范围。优先对照 `.devflow/<slug>.md` 里的 Acceptance criteria；记录命令、退出码、环境与失败摘要，区分产品/测试/环境/flaky，并列出未跑的高风险路径与未满足的验收项。
+根据未暂存、已暂存和新增文件，选最小但足够的验证范围。优先对照 `.devflow/<slug>.md` 里的 Acceptance criteria；存在 `docs/plans/<slug>.md` 时逐条执行其中的 Test plan，并把结果列从 `pending` 回写为 `PASS`/`FAIL`（附命令与日期）——这是它唯一允许的文件修改。计划含 Phases 时按阶段执行，当前阶段有 FAIL/pending 或 `[~]`/`[?]` 条目时结论必须写「Gate 未过，不得进入下一阶段」。记录命令、退出码、环境与失败摘要，区分产品/测试/环境/flaky，并列出未跑的高风险路径与未满足的验收项。
 
 ### `review`：只读代码审查
 
@@ -95,9 +100,10 @@ agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECOND
 change-plan → 实现 → test-changed → review → commit-review → release-check → doc-gen
 ```
 
-- `change-plan` 把 Handoff 写入项目内 `.devflow/<slug>.md`。下游 Skill 按以下顺序找验收依据：该文件 → 主人在本轮明确写下的范围 → 从 diff 重建（缺的字段标 `unknown`）→ `unavailable`。前三者都没有时，不得声称与计划一致。
-- `.devflow/` 应加入 `.gitignore`。
-- 每个 Skill 在结案前做一次自查：命令绿了不等于验收满足（要逐条对应）、看起来合理不算证据、主人说测过了只是口述。
+- `change-plan` 把 Handoff 写入项目内 `.devflow/<slug>.md`；有回归面的任务同时写持久计划 `docs/plans/<slug>.md`（随代码提交），Handoff 用 `Plan:` 字段指向它。下游 Skill 按以下顺序找验收依据：`.devflow/<slug>.md`（有 `Plan:` 指针时以持久计划为准）→ `docs/plans/` 下 Status 为 draft/active 的相关计划 → 用户在本轮明确写下的范围 → 从 diff 重建（缺的字段标 `unknown`）→ `unavailable`。都没有时，不得声称与计划一致。
+- `.devflow/` 应加入 `.gitignore`；`docs/plans/` 不加，计划文件随对应改动一起提交。
+- 持久计划的 Status 生命周期：`draft`（落盘未动工）→ `active`（实现中）→ `done`（Work items 全部落定且 Test plan 全部有通过证据，提交时标）→ `archived`（历史保留）。Work items 按类目分批进 Phases，任何条目处于 `[~]`/`[?]` 时不得进入下一阶段。
+- 每个 Skill 在结案前做一次自查：命令绿了不等于验收满足（要逐条对应）、看起来合理不算证据、用户说测过了只是口述。
 - `debug` 与 `review` 在可用时调用 `dead_code`（`kimi-engineering-tools` 插件提供的 MCP）；不可用时降级并标明。
 - `commit-review` 在可用时调用 `git_conventions`（同属该插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 人工检查。
 - `release-check` 只给放行结论，不执行发布。
@@ -107,6 +113,6 @@ change-plan → 实现 → test-changed → review → commit-review → release
 
 所有 Skill 使用前都会读取适用的 `AGENTS.md`，并遵循更具体的项目规则：
 
-- 保留主人已有的无关改动。
+- 保留用户已有的无关改动。
 - 没有执行证据时不宣称完成。
 - 未经明确授权不提交、推送、发布、合并或执行破坏性清理。
