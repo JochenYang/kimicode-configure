@@ -7,12 +7,20 @@ description: 检查代码改动、找潜在问题、评估能不能合并时使�
 
 ## 范围确定
 
-1. 读取适用的 AGENTS.md 和项目开发规则。
+1. 读取适用的 AGENTS.md、项目级 `REVIEW.md`（存在时）和项目开发规则。
 2. 解析参数：空=工作区，`staged`=暂存区，ref/range=对应提交，路径=对应文件/目录；纯流程或设计问题且无代码范围时，声明为非 diff review。
 3. 同时检查未暂存、已暂存与 untracked，除非用户限定范围。
 4. **对照验收依据**：优先读项目内 `.devflow/<slug>.md`；其中有 `Plan:` 指针、或 `.devflow` 不存在但 `docs/plans/` 下有相关计划（Status 为 draft/active）时，以 `docs/plans/<slug>.md` 为准；其次是用户本轮明确写下的范围；再次从 diff 意图重建（缺的写 `unknown`）；都没有则只做 diff 审查，不得声称与计划一致。
 5. 阅读调用方、类型、配置、测试与错误处理，不只看 diff 表面。
 6. 需要时用文本搜索核实公共 API 调用方，记录搜索范围与 pattern，不假装已做机器分析。
+
+## 深度与收敛
+
+- 风险分级按改动内容，不按任务大小：认证、支付、密钥、迁移、CI workflow、公共 API 与不可逆数据操作按 high 走全量审查（必要时建议 `guard`）；文档、文案、开关后的增量改动按 low 只做必要检查。
+- 每条 finding 标注 `introduced` 或 `pre-existing`（改动前就存在）；纯风格与诊断类标 `nit`，默认不计入阻塞项。
+- 收敛：记录本次是第几轮；第 3 轮仍未收敛就停止并建议重新审视方案。首轮之后只审新增 diff；同类缺陷报类别与全部实例；已解决的 finding 不重复报。
+- 发布前复核每条 finding（重新打开代码确认）；有条件时派独立子代理复核，复核不通过的条目直接丢弃。
+- 同一类审查意见反复出现时，改到源头：`AGENTS.md`、`REVIEW.md`、lint 规则或 skill。
 
 ## 审查重点
 
@@ -33,11 +41,12 @@ description: 检查代码改动、找潜在问题、评估能不能合并时使�
 
 ```markdown
 ## Findings
+round: N（本次是第几轮）
 
 ### P1 — title
-`path/to/file.ts:42`
+`path/to/file.ts:42` — introduced | pre-existing
 
-影响 / 证据等级 / 建议
+影响 / 证据等级 / 建议 / nit（如适用）
 
 ## Basis
 source: explicit-handoff | user-pinned | rebuilt-from-context | unavailable

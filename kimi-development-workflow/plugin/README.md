@@ -45,11 +45,11 @@
 
 ### `review`：只读代码审查
 
-发现优先、按 P0–P3 排序，每条带 `path:line`、行为影响、证据等级与最小修复。覆盖正确性、回归、公共 API 兼容、安全、并发与数据一致性、性能、测试缺口和可维护性，并对照验收依据检查范围漂移。无阻塞问题时明确输出 `No blocking findings`。
+发现优先、按 P0–P3 排序，每条带 `path:line`、行为影响、证据等级与最小修复。覆盖正确性、回归、公共 API 兼容、安全、并发与数据一致性、性能、测试缺口和可维护性，并对照验收依据检查范围漂移。读取项目级 `REVIEW.md`（存在时）；审查深度按改动风险分级；每条标注 `introduced` / `pre-existing`，纯风格类标 `nit` 不计入阻塞；三轮未收敛就停止并建议重新审视方案，首轮后只审新增 diff。发布前复核每条 finding，无阻塞问题时明确输出 `No blocking findings`。
 
 ### `commit-review`：提交前检查
 
-检查改动是否单一职责、是否混入临时文件或敏感信息、是否有命令级测试证据、是否需要拆分提交，并生成分支名与 commit message 提案。可用时调用 `git_conventions` 做机器校验；不可用时写明未做机器校验。不执行 `git add`、`git commit` 或 `git push`。
+检查改动是否单一职责、是否混入临时文件或敏感信息、是否有命令级测试证据、是否需要拆分提交，并生成分支名与 commit message 提案。输出固定包含 `Testing`（命令与退出码）、`Risk`（low/medium/high 与理由）、`How to revert` 三行；认证、支付、密钥、迁移、CI workflow 等敏感路径存在未关闭的安全 finding 时 NOT READY。可用时调用 `git_conventions` 做机器校验；不可用时写明未做机器校验。不执行 `git add`、`git commit` 或 `git push`。
 
 ### `release-check`：发布前检查
 

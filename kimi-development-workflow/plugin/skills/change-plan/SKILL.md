@@ -67,6 +67,7 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。
 
 - Status: draft
 - Plan date: YYYY-MM-DD
+- Risk: low | medium | high
 
 ## Goal
 一句话目标与成功标准。
@@ -116,6 +117,8 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。
 ```
 
 Status 生命周期：`draft`（已落盘未动工）→ `active`（实现中，开始动手时改）→ `done`（Work items 全 `[x]`/`[–]`、Test plan 全部有通过证据，随改动一起提交）→ `archived`（仅作历史保留）。Status 的推进只依据证据，不凭印象。
+
+风险分级决定 review 深度：low = 文档、文案、开关后的增量；medium = 普通产品改动与缓存、自动更新、prompt 等敏感面；high = 认证、支付、密钥、迁移、CI workflow、公共 API、不可逆数据操作。分级按改动内容，不按任务大小。
 
 ## 输出格式
 
