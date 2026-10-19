@@ -13,8 +13,7 @@ description: 改完代码想验证、不确定该跑哪些测试、或需要回�
    - `user-pinned`：用户在本轮明确写下的 Goal / Must-have / Out of scope / Acceptance
    - `rebuilt-from-context`：从当前 diff 意图和已讨论的边界重建最小集；只填有依据的字段，缺的写 `unknown`，不编造 Acceptance
    - `unavailable`：都没有
-3. 列出行为主张（来自 Acceptance、Test plan 或 diff），每条对应最短命令。
-4. 收集未暂存、已暂存与 untracked；勿漏 untracked。
+3. 列出行为主张（来自 Acceptance、Test plan 或 diff），每条对应最短命令。4. 收集未暂存、已暂存与 untracked；勿漏 untracked。
 5. 映射改动到模块/API/测试；有依据时优先 Acceptance 与 Verification commands，并标出 Out of scope 改动。
 6. 选最快能证伪主张的检查（类型/单测/包测/集成/构建/smoke）。
 7. 确认已有测试按 Arrange/Act/Assert 断言行为，而非仅不抛错。

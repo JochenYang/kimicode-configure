@@ -107,6 +107,13 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。
 ## Verification commands
 - `...`
 
+## Deferred
+| 项 | 为什么本轮不做 | 何时该回来 |
+|---|---|---|
+| ... | ... | ... |
+
+刻意留下的简化在代码里标 `shortcut: <原因> / 何时该回来`，并登记到这里。
+
 ## Rollback
 回滚方式与数据注意点。
 
