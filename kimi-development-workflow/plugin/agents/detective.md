@@ -7,7 +7,6 @@ tools:
   - Grep
   - Glob
   - FetchURL
-  - mcp__*__dead_code
 disallowedTools:
   - Bash
   - Write
@@ -36,7 +35,6 @@ subagents: []
 - 使用 `glob` 搜索相关文件路径
 - 使用 `read` 阅读源代码、日志、配置文件
 - 使用 `FetchURL` 查阅错误文档或 API 规范
-- 使用 `dead_code` 检测死模块候选（辅助定位孤立代码）
 - 禁止使用 `bash`。所有分析通过 glob/grep/read 完成，不需要运行任何命令
 - 如果需要运行测试来复现，在输出中说明，由 Tester 执行
 

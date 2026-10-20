@@ -1,11 +1,10 @@
 {
   "name": "kimi-engineering-tools",
-  "version": "0.3.0",
-  "description": "Local MCP tools for commit conventions and dead-module candidates.",
+  "version": "0.4.0",
+  "description": "Local MCP tool for commit conventions.",
   "keywords": [
     "mcp",
-    "git",
-    "static-analysis"
+    "git"
   ],
   "mcpServers": {
     "engineering-tools": {
@@ -20,8 +19,8 @@
   },
   "interface": {
     "displayName": "Kimi Engineering Tools",
-    "shortDescription": "Commit validation, AST search, and heuristic dead-module analysis.",
-    "longDescription": "Local engineering tools for Kimi Code CLI. Dead-module results are heuristic review candidates, not deletion proof.",
+    "shortDescription": "Commit message and branch name validation.",
+    "longDescription": "Local engineering tool for Kimi Code CLI: validates commit messages, branch names, and commit bodies against your conventions.",
     "developerName": "Personal"
   }
 }

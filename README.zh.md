@@ -62,7 +62,6 @@ Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\skills\agent-rules-refer
 自包含 MCP bundle 提供：
 
 - `git_conventions`：校验分支名、commit message 和 commit body。
-- `dead_code`：启发式报告待审查的不可达模块候选。
 
 普通用户不需要执行 `npm install`。仓库提交的 `plugin/bin/server.mjs` 已包含 JavaScript 运行时依赖。运行环境需要 PATH 中存在 Node.js 20 或更高版本。
 

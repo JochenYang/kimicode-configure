@@ -75,12 +75,12 @@ var require_code = __commonJS({
         return item === "" || item === '""';
       }
       get str() {
-        var _a2;
-        return (_a2 = this._str) !== null && _a2 !== void 0 ? _a2 : this._str = this._items.reduce((s, c) => `${s}${c}`, "");
+        var _a;
+        return (_a = this._str) !== null && _a !== void 0 ? _a : this._str = this._items.reduce((s, c) => `${s}${c}`, "");
       }
       get names() {
-        var _a2;
-        return (_a2 = this._names) !== null && _a2 !== void 0 ? _a2 : this._names = this._items.reduce((names, c) => {
+        var _a;
+        return (_a = this._names) !== null && _a !== void 0 ? _a : this._names = this._items.reduce((names, c) => {
           if (c instanceof Name)
             names[c.str] = (names[c.str] || 0) + 1;
           return names;
@@ -226,8 +226,8 @@ var require_scope = __commonJS({
         return `${prefix}${ng.index++}`;
       }
       _nameGroup(prefix) {
-        var _a2, _b;
-        if (((_b = (_a2 = this._parent) === null || _a2 === void 0 ? void 0 : _a2._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
+        var _a, _b;
+        if (((_b = (_a = this._parent) === null || _a === void 0 ? void 0 : _a._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
           throw new Error(`CodeGen: prefix "${prefix}" is not allowed in this scope`);
         }
         return this._names[prefix] = { prefix, index: 0 };
@@ -260,12 +260,12 @@ var require_scope = __commonJS({
         return new ValueScopeName(prefix, this._newName(prefix));
       }
       value(nameOrPrefix, value) {
-        var _a2;
+        var _a;
         if (value.ref === void 0)
           throw new Error("CodeGen: ref must be passed in value");
         const name = this.toName(nameOrPrefix);
         const { prefix } = name;
-        const valueKey = (_a2 = value.key) !== null && _a2 !== void 0 ? _a2 : value.ref;
+        const valueKey = (_a = value.key) !== null && _a !== void 0 ? _a : value.ref;
         let vs = this._values[prefix];
         if (vs) {
           const _name = vs.get(valueKey);
@@ -583,8 +583,8 @@ var require_codegen = __commonJS({
         return this;
       }
       optimizeNames(names, constants) {
-        var _a2;
-        this.else = (_a2 = this.else) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
+        var _a;
+        this.else = (_a = this.else) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
         if (!(super.optimizeNames(names, constants) || this.else))
           return;
         this.condition = optimizeExpr(this.condition, names, constants);
@@ -688,16 +688,16 @@ var require_codegen = __commonJS({
         return code;
       }
       optimizeNodes() {
-        var _a2, _b;
+        var _a, _b;
         super.optimizeNodes();
-        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNodes();
+        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNodes();
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
       optimizeNames(names, constants) {
-        var _a2, _b;
+        var _a, _b;
         super.optimizeNames(names, constants);
-        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
+        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
         return this;
       }
@@ -1477,8 +1477,8 @@ var require_applicability = __commonJS({
     }
     exports.shouldUseGroup = shouldUseGroup;
     function shouldUseRule(schema, rule) {
-      var _a2;
-      return schema[rule.keyword] !== void 0 || ((_a2 = rule.definition.implements) === null || _a2 === void 0 ? void 0 : _a2.some((kwd) => schema[kwd] !== void 0));
+      var _a;
+      return schema[rule.keyword] !== void 0 || ((_a = rule.definition.implements) === null || _a === void 0 ? void 0 : _a.some((kwd) => schema[kwd] !== void 0));
     }
     exports.shouldUseRule = shouldUseRule;
   }
@@ -1501,37 +1501,37 @@ var require_dataType = __commonJS({
       DataType2[DataType2["Wrong"] = 1] = "Wrong";
     })(DataType || (exports.DataType = DataType = {}));
     function getSchemaTypes(schema) {
-      const types2 = getJSONTypes(schema.type);
-      const hasNull = types2.includes("null");
+      const types = getJSONTypes(schema.type);
+      const hasNull = types.includes("null");
       if (hasNull) {
         if (schema.nullable === false)
           throw new Error("type: null contradicts nullable: false");
       } else {
-        if (!types2.length && schema.nullable !== void 0) {
+        if (!types.length && schema.nullable !== void 0) {
           throw new Error('"nullable" cannot be used without "type"');
         }
         if (schema.nullable === true)
-          types2.push("null");
+          types.push("null");
       }
-      return types2;
+      return types;
     }
     exports.getSchemaTypes = getSchemaTypes;
     function getJSONTypes(ts) {
-      const types2 = Array.isArray(ts) ? ts : ts ? [ts] : [];
-      if (types2.every(rules_1.isJSONType))
-        return types2;
-      throw new Error("type must be JSONType or JSONType[]: " + types2.join(","));
+      const types = Array.isArray(ts) ? ts : ts ? [ts] : [];
+      if (types.every(rules_1.isJSONType))
+        return types;
+      throw new Error("type must be JSONType or JSONType[]: " + types.join(","));
     }
     exports.getJSONTypes = getJSONTypes;
-    function coerceAndCheckDataType(it, types2) {
+    function coerceAndCheckDataType(it, types) {
       const { gen, data, opts } = it;
-      const coerceTo = coerceToTypes(types2, opts.coerceTypes);
-      const checkTypes = types2.length > 0 && !(coerceTo.length === 0 && types2.length === 1 && (0, applicability_1.schemaHasRulesForType)(it, types2[0]));
+      const coerceTo = coerceToTypes(types, opts.coerceTypes);
+      const checkTypes = types.length > 0 && !(coerceTo.length === 0 && types.length === 1 && (0, applicability_1.schemaHasRulesForType)(it, types[0]));
       if (checkTypes) {
-        const wrongType = checkDataTypes(types2, data, opts.strictNumbers, DataType.Wrong);
+        const wrongType = checkDataTypes(types, data, opts.strictNumbers, DataType.Wrong);
         gen.if(wrongType, () => {
           if (coerceTo.length)
-            coerceData(it, types2, coerceTo);
+            coerceData(it, types, coerceTo);
           else
             reportTypeError(it);
         });
@@ -1540,15 +1540,15 @@ var require_dataType = __commonJS({
     }
     exports.coerceAndCheckDataType = coerceAndCheckDataType;
     var COERCIBLE = /* @__PURE__ */ new Set(["string", "number", "integer", "boolean", "null"]);
-    function coerceToTypes(types2, coerceTypes) {
-      return coerceTypes ? types2.filter((t) => COERCIBLE.has(t) || coerceTypes === "array" && t === "array") : [];
+    function coerceToTypes(types, coerceTypes) {
+      return coerceTypes ? types.filter((t) => COERCIBLE.has(t) || coerceTypes === "array" && t === "array") : [];
     }
-    function coerceData(it, types2, coerceTo) {
+    function coerceData(it, types, coerceTo) {
       const { gen, data, opts } = it;
       const dataType = gen.let("dataType", (0, codegen_1._)`typeof ${data}`);
       const coerced = gen.let("coerced", (0, codegen_1._)`undefined`);
       if (opts.coerceTypes === "array") {
-        gen.if((0, codegen_1._)`${dataType} == 'object' && Array.isArray(${data}) && ${data}.length == 1`, () => gen.assign(data, (0, codegen_1._)`${data}[0]`).assign(dataType, (0, codegen_1._)`typeof ${data}`).if(checkDataTypes(types2, data, opts.strictNumbers), () => gen.assign(coerced, data)));
+        gen.if((0, codegen_1._)`${dataType} == 'object' && Array.isArray(${data}) && ${data}.length == 1`, () => gen.assign(data, (0, codegen_1._)`${data}[0]`).assign(dataType, (0, codegen_1._)`typeof ${data}`).if(checkDataTypes(types, data, opts.strictNumbers), () => gen.assign(coerced, data)));
       }
       gen.if((0, codegen_1._)`${coerced} !== undefined`);
       for (const t of coerceTo) {
@@ -1624,19 +1624,19 @@ var require_dataType = __commonJS({
         return checkDataType(dataTypes[0], data, strictNums, correct);
       }
       let cond;
-      const types2 = (0, util_1.toHash)(dataTypes);
-      if (types2.array && types2.object) {
+      const types = (0, util_1.toHash)(dataTypes);
+      if (types.array && types.object) {
         const notObj = (0, codegen_1._)`typeof ${data} != "object"`;
-        cond = types2.null ? notObj : (0, codegen_1._)`!${data} || ${notObj}`;
-        delete types2.null;
-        delete types2.array;
-        delete types2.object;
+        cond = types.null ? notObj : (0, codegen_1._)`!${data} || ${notObj}`;
+        delete types.null;
+        delete types.array;
+        delete types.object;
       } else {
         cond = codegen_1.nil;
       }
-      if (types2.number)
-        delete types2.integer;
-      for (const t in types2)
+      if (types.number)
+        delete types.integer;
+      for (const t in types)
         cond = (0, codegen_1.and)(cond, checkDataType(t, data, strictNums, correct));
       return cond;
     }
@@ -1866,14 +1866,14 @@ var require_keyword = __commonJS({
     }
     exports.macroKeywordCode = macroKeywordCode;
     function funcKeywordCode(cxt, def) {
-      var _a2;
+      var _a;
       const { gen, keyword, schema, parentSchema, $data, it } = cxt;
       checkAsyncKeyword(it, def);
       const validate = !$data && def.compile ? def.compile.call(it.self, schema, parentSchema, it) : def.validate;
       const validateRef = useKeyword(gen, keyword, validate);
       const valid = gen.let("valid");
       cxt.block$data(valid, validateKeyword);
-      cxt.ok((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid);
+      cxt.ok((_a = def.valid) !== null && _a !== void 0 ? _a : valid);
       function validateKeyword() {
         if (def.errors === false) {
           assignValid();
@@ -1904,8 +1904,8 @@ var require_keyword = __commonJS({
         gen.assign(valid, (0, codegen_1._)`${_await}${(0, code_1.callValidateCode)(cxt, validateRef, passCxt, passSchema)}`, def.modifying);
       }
       function reportErrs(errors) {
-        var _a3;
-        gen.if((0, codegen_1.not)((_a3 = def.valid) !== null && _a3 !== void 0 ? _a3 : valid), errors);
+        var _a2;
+        gen.if((0, codegen_1.not)((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid), errors);
       }
     }
     exports.funcKeywordCode = funcKeywordCode;
@@ -2441,9 +2441,9 @@ var require_validate = __commonJS({
     function typeAndKeywords(it, errsCount) {
       if (it.opts.jtd)
         return schemaKeywords(it, [], false, errsCount);
-      const types2 = (0, dataType_1.getSchemaTypes)(it.schema);
-      const checkedTypes = (0, dataType_1.coerceAndCheckDataType)(it, types2);
-      schemaKeywords(it, types2, !checkedTypes, errsCount);
+      const types = (0, dataType_1.getSchemaTypes)(it.schema);
+      const checkedTypes = (0, dataType_1.coerceAndCheckDataType)(it, types);
+      schemaKeywords(it, types, !checkedTypes, errsCount);
     }
     function checkRefsAndKeywords(it) {
       const { schema, errSchemaPath, opts, self } = it;
@@ -2493,7 +2493,7 @@ var require_validate = __commonJS({
       if (items instanceof codegen_1.Name)
         gen.assign((0, codegen_1._)`${evaluated}.items`, items);
     }
-    function schemaKeywords(it, types2, typeErrors, errsCount) {
+    function schemaKeywords(it, types, typeErrors, errsCount) {
       const { gen, schema, data, allErrors, opts, self } = it;
       const { RULES } = self;
       if (schema.$ref && (opts.ignoreKeywordsWithRef || !(0, util_1.schemaHasRulesButRef)(schema, RULES))) {
@@ -2501,7 +2501,7 @@ var require_validate = __commonJS({
         return;
       }
       if (!opts.jtd)
-        checkStrictTypes(it, types2);
+        checkStrictTypes(it, types);
       gen.block(() => {
         for (const group of RULES.rules)
           groupKeywords(group);
@@ -2513,7 +2513,7 @@ var require_validate = __commonJS({
         if (group.type) {
           gen.if((0, dataType_2.checkDataType)(group.type, data, opts.strictNumbers));
           iterateKeywords(it, group);
-          if (types2.length === 1 && types2[0] === group.type && typeErrors) {
+          if (types.length === 1 && types[0] === group.type && typeErrors) {
             gen.else();
             (0, dataType_2.reportTypeError)(it);
           }
@@ -2537,27 +2537,27 @@ var require_validate = __commonJS({
         }
       });
     }
-    function checkStrictTypes(it, types2) {
+    function checkStrictTypes(it, types) {
       if (it.schemaEnv.meta || !it.opts.strictTypes)
         return;
-      checkContextTypes(it, types2);
+      checkContextTypes(it, types);
       if (!it.opts.allowUnionTypes)
-        checkMultipleTypes(it, types2);
+        checkMultipleTypes(it, types);
       checkKeywordTypes(it, it.dataTypes);
     }
-    function checkContextTypes(it, types2) {
-      if (!types2.length)
+    function checkContextTypes(it, types) {
+      if (!types.length)
         return;
       if (!it.dataTypes.length) {
-        it.dataTypes = types2;
+        it.dataTypes = types;
         return;
       }
-      types2.forEach((t) => {
+      types.forEach((t) => {
         if (!includesType(it.dataTypes, t)) {
           strictTypesError(it, `type "${t}" not allowed by context "${it.dataTypes.join(",")}"`);
         }
       });
-      narrowSchemaTypes(it, types2);
+      narrowSchemaTypes(it, types);
     }
     function checkMultipleTypes(it, ts) {
       if (ts.length > 1 && !(ts.length === 2 && ts.includes("null"))) {
@@ -2873,7 +2873,7 @@ var require_compile = __commonJS({
     var validate_1 = require_validate();
     var SchemaEnv = class {
       constructor(env) {
-        var _a2;
+        var _a;
         this.refs = {};
         this.dynamicAnchors = {};
         let schema;
@@ -2882,7 +2882,7 @@ var require_compile = __commonJS({
         this.schema = env.schema;
         this.schemaId = env.schemaId;
         this.root = env.root || this;
-        this.baseId = (_a2 = env.baseId) !== null && _a2 !== void 0 ? _a2 : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
+        this.baseId = (_a = env.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
         this.schemaPath = env.schemaPath;
         this.localRefs = env.localRefs;
         this.meta = env.meta;
@@ -2978,14 +2978,14 @@ var require_compile = __commonJS({
     }
     exports.compileSchema = compileSchema;
     function resolveRef(root, baseId, ref) {
-      var _a2;
+      var _a;
       ref = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, ref);
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
       let _sch = resolve.call(this, root, ref);
       if (_sch === void 0) {
-        const schema = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
+        const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
         if (schema)
           _sch = new SchemaEnv({ schema, schemaId, root, baseId });
@@ -3054,8 +3054,8 @@ var require_compile = __commonJS({
       "definitions"
     ]);
     function getJsonPointer(parsedRef, { baseId, schema, root }) {
-      var _a2;
-      if (((_a2 = parsedRef.fragment) === null || _a2 === void 0 ? void 0 : _a2[0]) !== "/")
+      var _a;
+      if (((_a = parsedRef.fragment) === null || _a === void 0 ? void 0 : _a[0]) !== "/")
         return;
       for (const part of parsedRef.fragment.slice(1).split("/")) {
         if (typeof schema === "boolean")
@@ -3228,8 +3228,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path4) {
-      let input = path4;
+    function removeDotSegments(path) {
+      let input = path;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3481,8 +3481,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path4, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path4 && path4 !== "/" ? path4 : void 0;
+        const [path, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path && path !== "/" ? path : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -4003,9 +4003,9 @@ var require_core = __commonJS({
     };
     var MAX_EXPRESSION = 200;
     function requiredOptions(o) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
+      var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
       const s = o.strict;
-      const _optz = (_a2 = o.code) === null || _a2 === void 0 ? void 0 : _a2.optimize;
+      const _optz = (_a = o.code) === null || _a === void 0 ? void 0 : _a.optimize;
       const optimize = _optz === true || _optz === void 0 ? 1 : _optz || 0;
       const regExp = (_c = (_b = o.code) === null || _b === void 0 ? void 0 : _b.regExp) !== null && _c !== void 0 ? _c : defaultRegExp;
       const uriResolver = (_d = o.uriResolver) !== null && _d !== void 0 ? _d : uri_1.default;
@@ -4479,7 +4479,7 @@ var require_core = __commonJS({
       }
     }
     function addRule(keyword, definition, dataType) {
-      var _a2;
+      var _a;
       const post = definition === null || definition === void 0 ? void 0 : definition.post;
       if (dataType && post)
         throw new Error('keyword with "post" flag cannot have "type"');
@@ -4505,7 +4505,7 @@ var require_core = __commonJS({
       else
         ruleGroup.rules.push(rule);
       RULES.all[keyword] = rule;
-      (_a2 = definition.implements) === null || _a2 === void 0 ? void 0 : _a2.forEach((kwd) => this.addKeyword(kwd));
+      (_a = definition.implements) === null || _a === void 0 ? void 0 : _a.forEach((kwd) => this.addKeyword(kwd));
     }
     function addBeforeRule(ruleGroup, rule, before) {
       const i = ruleGroup.rules.findIndex((_rule) => _rule.keyword === before);
@@ -4639,10 +4639,10 @@ var require_ref = __commonJS({
         gen.assign(names_1.default.errors, (0, codegen_1._)`${names_1.default.vErrors}.length`);
       }
       function addEvaluatedFrom(source) {
-        var _a2;
+        var _a;
         if (!it.opts.unevaluated)
           return;
-        const schEvaluated = (_a2 = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a2 === void 0 ? void 0 : _a2.evaluated;
+        const schEvaluated = (_a = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a === void 0 ? void 0 : _a.evaluated;
         if (it.props !== true) {
           if (schEvaluated && !schEvaluated.dynamicProps) {
             if (schEvaluated.props !== void 0) {
@@ -6293,7 +6293,7 @@ var require_discriminator = __commonJS({
           return _valid;
         }
         function getMapping() {
-          var _a2;
+          var _a;
           const oneOfMapping = {};
           const topRequired = hasRequired(parentSchema);
           let tagRequired = true;
@@ -6307,7 +6307,7 @@ var require_discriminator = __commonJS({
               if (sch === void 0)
                 throw new ref_error_1.default(it.opts.uriResolver, it.baseId, ref);
             }
-            const propSch = (_a2 = sch === null || sch === void 0 ? void 0 : sch.properties) === null || _a2 === void 0 ? void 0 : _a2[tagName];
+            const propSch = (_a = sch === null || sch === void 0 ? void 0 : sch.properties) === null || _a === void 0 ? void 0 : _a[tagName];
             if (typeof propSch != "object") {
               throw new Error(`discriminator: oneOf subschemas (or referenced schemas) must have "properties/${tagName}"`);
             }
@@ -6875,12 +6875,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs2, exportName) {
-      var _a2;
+    function addFormats(ajv, list, fs, exportName) {
+      var _a;
       var _b;
-      (_a2 = (_b = ajv.opts.code).formats) !== null && _a2 !== void 0 ? _a2 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
+      (_a = (_b = ajv.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs2[f]);
+        ajv.addFormat(f, fs[f]);
     }
     module.exports = exports = formatsPlugin;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7366,8 +7366,8 @@ function getErrorMap() {
 
 // node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path: path4, errorMaps, issueData } = params;
-  const fullPath = [...path4, ...issueData.path || []];
+  const { data, path, errorMaps, issueData } = params;
+  const fullPath = [...path, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -7483,11 +7483,11 @@ var errorUtil;
 
 // node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path4, key) {
+  constructor(parent, value, path, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path4;
+    this._path = path;
     this._key = key;
   }
   get path() {
@@ -9678,9 +9678,9 @@ var ZodUnion = class extends ZodType {
     return this._def.options;
   }
 };
-ZodUnion.create = (types2, params) => {
+ZodUnion.create = (types, params) => {
   return new ZodUnion({
-    options: types2,
+    options: types,
     typeName: ZodFirstPartyTypeKind.ZodUnion,
     ...processCreateParams(params)
   });
@@ -10936,12 +10936,12 @@ var NEVER2 = Object.freeze({
 // @__NO_SIDE_EFFECTS__
 function $constructor(name, initializer3, params) {
   function init(inst, def) {
-    var _a2;
+    var _a;
     Object.defineProperty(inst, "_zod", {
       value: inst._zod ?? {},
       enumerable: false
     });
-    (_a2 = inst._zod).traits ?? (_a2.traits = /* @__PURE__ */ new Set());
+    (_a = inst._zod).traits ?? (_a.traits = /* @__PURE__ */ new Set());
     inst._zod.traits.add(name);
     initializer3(inst, def);
     for (const k in _.prototype) {
@@ -10956,10 +10956,10 @@ function $constructor(name, initializer3, params) {
   }
   Object.defineProperty(Definition, "name", { value: name });
   function _(def) {
-    var _a2;
+    var _a;
     const inst = params?.Parent ? new Definition() : this;
     init(inst, def);
-    (_a2 = inst._zod).deferred ?? (_a2.deferred = []);
+    (_a = inst._zod).deferred ?? (_a.deferred = []);
     for (const fn of inst._zod.deferred) {
       fn();
     }
@@ -11124,10 +11124,10 @@ function assignProp(target, prop, value) {
     configurable: true
   });
 }
-function getElementAtPath(obj, path4) {
-  if (!path4)
+function getElementAtPath(obj, path) {
+  if (!path)
     return obj;
-  return path4.reduce((acc, key) => acc?.[key], obj);
+  return path.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -11447,11 +11447,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path4, issues) {
+function prefixIssues(path, issues) {
   return issues.map((iss) => {
-    var _a2;
-    (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path4);
+    var _a;
+    (_a = iss).path ?? (_a.path = []);
+    iss.path.unshift(path);
     return iss;
   });
 }
@@ -11696,10 +11696,10 @@ var uppercase = /^[^a-z]*$/;
 
 // node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
-  var _a2;
+  var _a;
   inst._zod ?? (inst._zod = {});
   inst._zod.def = def;
-  (_a2 = inst._zod).onattach ?? (_a2.onattach = []);
+  (_a = inst._zod).onattach ?? (_a.onattach = []);
 });
 var numericOriginMap = {
   number: "number",
@@ -11765,8 +11765,8 @@ var $ZodCheckGreaterThan = /* @__PURE__ */ $constructor("$ZodCheckGreaterThan", 
 var $ZodCheckMultipleOf = /* @__PURE__ */ $constructor("$ZodCheckMultipleOf", (inst, def) => {
   $ZodCheck.init(inst, def);
   inst._zod.onattach.push((inst2) => {
-    var _a2;
-    (_a2 = inst2._zod.bag).multipleOf ?? (_a2.multipleOf = def.value);
+    var _a;
+    (_a = inst2._zod.bag).multipleOf ?? (_a.multipleOf = def.value);
   });
   inst._zod.check = (payload) => {
     if (typeof payload.value !== typeof def.value)
@@ -11859,9 +11859,9 @@ var $ZodCheckNumberFormat = /* @__PURE__ */ $constructor("$ZodCheckNumberFormat"
   };
 });
 var $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (inst, def) => {
-  var _a2;
+  var _a;
   $ZodCheck.init(inst, def);
-  (_a2 = inst._zod.def).when ?? (_a2.when = (payload) => {
+  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
     const val = payload.value;
     return !nullish(val) && val.length !== void 0;
   });
@@ -11888,9 +11888,9 @@ var $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (ins
   };
 });
 var $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (inst, def) => {
-  var _a2;
+  var _a;
   $ZodCheck.init(inst, def);
-  (_a2 = inst._zod.def).when ?? (_a2.when = (payload) => {
+  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
     const val = payload.value;
     return !nullish(val) && val.length !== void 0;
   });
@@ -11917,9 +11917,9 @@ var $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (ins
   };
 });
 var $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals", (inst, def) => {
-  var _a2;
+  var _a;
   $ZodCheck.init(inst, def);
-  (_a2 = inst._zod.def).when ?? (_a2.when = (payload) => {
+  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
     const val = payload.value;
     return !nullish(val) && val.length !== void 0;
   });
@@ -11948,7 +11948,7 @@ var $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals"
   };
 });
 var $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat", (inst, def) => {
-  var _a2, _b;
+  var _a, _b;
   $ZodCheck.init(inst, def);
   inst._zod.onattach.push((inst2) => {
     const bag = inst2._zod.bag;
@@ -11959,7 +11959,7 @@ var $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat"
     }
   });
   if (def.pattern)
-    (_a2 = inst._zod).check ?? (_a2.check = (payload) => {
+    (_a = inst._zod).check ?? (_a.check = (payload) => {
       def.pattern.lastIndex = 0;
       if (def.pattern.test(payload.value))
         return;
@@ -12124,7 +12124,7 @@ var version = {
 
 // node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
-  var _a2;
+  var _a;
   inst ?? (inst = {});
   inst._zod.def = def;
   inst._zod.bag = inst._zod.bag || {};
@@ -12139,7 +12139,7 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
     }
   }
   if (checks.length === 0) {
-    (_a2 = inst._zod).deferred ?? (_a2.deferred = []);
+    (_a = inst._zod).deferred ?? (_a.deferred = []);
     inst._zod.deferred?.push(() => {
       inst._zod.run = inst._zod.parse;
     });
@@ -13978,7 +13978,7 @@ var JSONSchemaGenerator = class {
     this.seen = /* @__PURE__ */ new Map();
   }
   process(schema, _params = { path: [], schemaPath: [] }) {
-    var _a2;
+    var _a;
     const def = schema._zod.def;
     const formatMap = {
       guid: "uuid",
@@ -14440,7 +14440,7 @@ var JSONSchemaGenerator = class {
       delete result.schema.default;
     }
     if (this.io === "input" && result.schema._prefault)
-      (_a2 = result.schema).default ?? (_a2.default = result.schema._prefault);
+      (_a = result.schema).default ?? (_a.default = result.schema._prefault);
     delete result.schema._prefault;
     const _result = this.seen.get(schema);
     return _result.schema;
@@ -14508,8 +14508,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         continue;
       }
       if (params.external) {
-        const ext2 = params.external.registry.get(entry[0])?.id;
-        if (schema !== entry[0] && ext2) {
+        const ext = params.external.registry.get(entry[0])?.id;
+        if (schema !== entry[0] && ext) {
           extractToDef(entry);
           continue;
         }
@@ -17928,15 +17928,15 @@ function parseUnionDef(def, refs) {
     return asAnyOf(def, refs);
   const options = def.options instanceof Map ? Array.from(def.options.values()) : def.options;
   if (options.every((x) => x._def.typeName in primitiveMappings && (!x._def.checks || !x._def.checks.length))) {
-    const types2 = options.reduce((types3, x) => {
+    const types = options.reduce((types2, x) => {
       const type = primitiveMappings[x._def.typeName];
-      return type && !types3.includes(type) ? [...types3, type] : types3;
+      return type && !types2.includes(type) ? [...types2, type] : types2;
     }, []);
     return {
-      type: types2.length > 1 ? types2 : types2[0]
+      type: types.length > 1 ? types : types[0]
     };
   } else if (options.every((x) => x._def.typeName === "ZodLiteral" && !x.description)) {
-    const types2 = options.reduce((acc, x) => {
+    const types = options.reduce((acc, x) => {
       const type = typeof x._def.value;
       switch (type) {
         case "string":
@@ -17955,8 +17955,8 @@ function parseUnionDef(def, refs) {
           return acc;
       }
     }, []);
-    if (types2.length === options.length) {
-      const uniqueTypes = types2.filter((x, i, a) => a.indexOf(x) === i);
+    if (types.length === options.length) {
+      const uniqueTypes = types.filter((x, i, a) => a.indexOf(x) === i);
       return {
         type: uniqueTypes.length > 1 ? uniqueTypes : uniqueTypes[0],
         enum: options.reduce((acc, x) => {
@@ -21009,7 +21009,7 @@ var EMPTY_COMPLETION_RESULT = {
 };
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
-import process2 from "node:process";
+import process from "node:process";
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
 var ReadBuffer = class {
@@ -21041,7 +21041,7 @@ function serializeMessage(message) {
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
 var StdioServerTransport = class {
-  constructor(_stdin = process2.stdin, _stdout = process2.stdout) {
+  constructor(_stdin = process.stdin, _stdout = process.stdout) {
     this._stdin = _stdin;
     this._stdout = _stdout;
     this._readBuffer = new ReadBuffer();
@@ -21099,2778 +21099,6 @@ var StdioServerTransport = class {
     });
   }
 };
-
-// src/tools/dead-code.ts
-import fs from "node:fs/promises";
-import path3 from "node:path";
-
-// node_modules/balanced-match/dist/esm/index.js
-var balanced = (a, b, str) => {
-  const ma = a instanceof RegExp ? maybeMatch(a, str) : a;
-  const mb = b instanceof RegExp ? maybeMatch(b, str) : b;
-  const r = ma !== null && mb != null && range(ma, mb, str);
-  return r && {
-    start: r[0],
-    end: r[1],
-    pre: str.slice(0, r[0]),
-    body: str.slice(r[0] + ma.length, r[1]),
-    post: str.slice(r[1] + mb.length)
-  };
-};
-var maybeMatch = (reg, str) => {
-  const m = str.match(reg);
-  return m ? m[0] : null;
-};
-var range = (a, b, str) => {
-  let begs, beg, left, right = void 0, result;
-  let ai = str.indexOf(a);
-  let bi = str.indexOf(b, ai + 1);
-  let i = ai;
-  if (ai >= 0 && bi > 0) {
-    if (a === b) {
-      return [ai, bi];
-    }
-    begs = [];
-    left = str.length;
-    while (i >= 0 && !result) {
-      if (i === ai) {
-        begs.push(i);
-        ai = str.indexOf(a, i + 1);
-      } else if (begs.length === 1) {
-        const r = begs.pop();
-        if (r !== void 0)
-          result = [r, bi];
-      } else {
-        beg = begs.pop();
-        if (beg !== void 0 && beg < left) {
-          left = beg;
-          right = bi;
-        }
-        bi = str.indexOf(b, i + 1);
-      }
-      i = ai < bi && ai >= 0 ? ai : bi;
-    }
-    if (begs.length && right !== void 0) {
-      result = [left, right];
-    }
-  }
-  return result;
-};
-
-// node_modules/brace-expansion/dist/esm/index.js
-var escSlash = "\0SLASH" + Math.random() + "\0";
-var escOpen = "\0OPEN" + Math.random() + "\0";
-var escClose = "\0CLOSE" + Math.random() + "\0";
-var escComma = "\0COMMA" + Math.random() + "\0";
-var escPeriod = "\0PERIOD" + Math.random() + "\0";
-var escSlashPattern = new RegExp(escSlash, "g");
-var escOpenPattern = new RegExp(escOpen, "g");
-var escClosePattern = new RegExp(escClose, "g");
-var escCommaPattern = new RegExp(escComma, "g");
-var escPeriodPattern = new RegExp(escPeriod, "g");
-var slashPattern = /\\\\/g;
-var openPattern = /\\{/g;
-var closePattern = /\\}/g;
-var commaPattern = /\\,/g;
-var periodPattern = /\\\./g;
-var EXPANSION_MAX = 1e5;
-function numeric(str) {
-  return !isNaN(str) ? parseInt(str, 10) : str.charCodeAt(0);
-}
-function escapeBraces(str) {
-  return str.replace(slashPattern, escSlash).replace(openPattern, escOpen).replace(closePattern, escClose).replace(commaPattern, escComma).replace(periodPattern, escPeriod);
-}
-function unescapeBraces(str) {
-  return str.replace(escSlashPattern, "\\").replace(escOpenPattern, "{").replace(escClosePattern, "}").replace(escCommaPattern, ",").replace(escPeriodPattern, ".");
-}
-function parseCommaParts(str) {
-  if (!str) {
-    return [""];
-  }
-  const parts = [];
-  const m = balanced("{", "}", str);
-  if (!m) {
-    return str.split(",");
-  }
-  const { pre, body, post } = m;
-  const p = pre.split(",");
-  p[p.length - 1] += "{" + body + "}";
-  const postParts = parseCommaParts(post);
-  if (post.length) {
-    ;
-    p[p.length - 1] += postParts.shift();
-    p.push.apply(p, postParts);
-  }
-  parts.push.apply(parts, p);
-  return parts;
-}
-function expand(str, options = {}) {
-  if (!str) {
-    return [];
-  }
-  const { max = EXPANSION_MAX } = options;
-  if (str.slice(0, 2) === "{}") {
-    str = "\\{\\}" + str.slice(2);
-  }
-  return expand_(escapeBraces(str), max, true).map(unescapeBraces);
-}
-function embrace(str) {
-  return "{" + str + "}";
-}
-function isPadded(el) {
-  return /^-?0\d/.test(el);
-}
-function lte(i, y) {
-  return i <= y;
-}
-function gte(i, y) {
-  return i >= y;
-}
-function expand_(str, max, isTop) {
-  const expansions = [];
-  for (; ; ) {
-    const m = balanced("{", "}", str);
-    if (!m)
-      return [str];
-    const pre = m.pre;
-    if (/\$$/.test(m.pre)) {
-      const post2 = m.post.length ? expand_(m.post, max, false) : [""];
-      for (let k = 0; k < post2.length && k < max; k++) {
-        const expansion = pre + "{" + m.body + "}" + post2[k];
-        expansions.push(expansion);
-      }
-      return expansions;
-    }
-    const isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
-    const isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
-    const isSequence = isNumericSequence || isAlphaSequence;
-    const isOptions = m.body.indexOf(",") >= 0;
-    if (!isSequence && !isOptions) {
-      if (m.post.match(/,(?!,).*\}/)) {
-        str = m.pre + "{" + m.body + escClose + m.post;
-        isTop = true;
-        continue;
-      }
-      return [str];
-    }
-    const post = m.post.length ? expand_(m.post, max, false) : [""];
-    let n;
-    if (isSequence) {
-      n = m.body.split(/\.\./);
-    } else {
-      n = parseCommaParts(m.body);
-      if (n.length === 1 && n[0] !== void 0) {
-        n = expand_(n[0], max, false).map(embrace);
-        if (n.length === 1) {
-          return post.map((p) => m.pre + n[0] + p);
-        }
-      }
-    }
-    let N;
-    if (isSequence && n[0] !== void 0 && n[1] !== void 0) {
-      const x = numeric(n[0]);
-      const y = numeric(n[1]);
-      const width = Math.max(n[0].length, n[1].length);
-      let incr = n.length === 3 && n[2] !== void 0 ? Math.max(Math.abs(numeric(n[2])), 1) : 1;
-      let test = lte;
-      const reverse = y < x;
-      if (reverse) {
-        incr *= -1;
-        test = gte;
-      }
-      const pad = n.some(isPadded);
-      N = [];
-      for (let i = x; test(i, y) && N.length < max; i += incr) {
-        let c;
-        if (isAlphaSequence) {
-          c = String.fromCharCode(i);
-          if (c === "\\") {
-            c = "";
-          }
-        } else {
-          c = String(i);
-          if (pad) {
-            const need = width - c.length;
-            if (need > 0) {
-              const z = new Array(need + 1).join("0");
-              if (i < 0) {
-                c = "-" + z + c.slice(1);
-              } else {
-                c = z + c;
-              }
-            }
-          }
-        }
-        N.push(c);
-      }
-    } else {
-      N = [];
-      for (let j = 0; j < n.length; j++) {
-        N.push.apply(N, expand_(n[j], max, false));
-      }
-    }
-    for (let j = 0; j < N.length; j++) {
-      for (let k = 0; k < post.length && expansions.length < max; k++) {
-        const expansion = pre + N[j] + post[k];
-        if (!isTop || isSequence || expansion) {
-          expansions.push(expansion);
-        }
-      }
-    }
-    return expansions;
-  }
-}
-
-// node_modules/minimatch/dist/esm/assert-valid-pattern.js
-var MAX_PATTERN_LENGTH = 1024 * 64;
-var assertValidPattern = (pattern) => {
-  if (typeof pattern !== "string") {
-    throw new TypeError("invalid pattern");
-  }
-  if (pattern.length > MAX_PATTERN_LENGTH) {
-    throw new TypeError("pattern is too long");
-  }
-};
-
-// node_modules/minimatch/dist/esm/brace-expressions.js
-var posixClasses = {
-  "[:alnum:]": ["\\p{L}\\p{Nl}\\p{Nd}", true],
-  "[:alpha:]": ["\\p{L}\\p{Nl}", true],
-  "[:ascii:]": ["\\x00-\\x7f", false],
-  "[:blank:]": ["\\p{Zs}\\t", true],
-  "[:cntrl:]": ["\\p{Cc}", true],
-  "[:digit:]": ["\\p{Nd}", true],
-  "[:graph:]": ["\\p{Z}\\p{C}", true, true],
-  "[:lower:]": ["\\p{Ll}", true],
-  "[:print:]": ["\\p{C}", true],
-  "[:punct:]": ["\\p{P}", true],
-  "[:space:]": ["\\p{Z}\\t\\r\\n\\v\\f", true],
-  "[:upper:]": ["\\p{Lu}", true],
-  "[:word:]": ["\\p{L}\\p{Nl}\\p{Nd}\\p{Pc}", true],
-  "[:xdigit:]": ["A-Fa-f0-9", false]
-};
-var braceEscape = (s) => s.replace(/[[\]\\-]/g, "\\$&");
-var regexpEscape = (s) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-var rangesToString = (ranges) => ranges.join("");
-var parseClass = (glob, position) => {
-  const pos = position;
-  if (glob.charAt(pos) !== "[") {
-    throw new Error("not in a brace expression");
-  }
-  const ranges = [];
-  const negs = [];
-  let i = pos + 1;
-  let sawStart = false;
-  let uflag = false;
-  let escaping = false;
-  let negate = false;
-  let endPos = pos;
-  let rangeStart = "";
-  WHILE: while (i < glob.length) {
-    const c = glob.charAt(i);
-    if ((c === "!" || c === "^") && i === pos + 1) {
-      negate = true;
-      i++;
-      continue;
-    }
-    if (c === "]" && sawStart && !escaping) {
-      endPos = i + 1;
-      break;
-    }
-    sawStart = true;
-    if (c === "\\") {
-      if (!escaping) {
-        escaping = true;
-        i++;
-        continue;
-      }
-    }
-    if (c === "[" && !escaping) {
-      for (const [cls, [unip, u, neg]] of Object.entries(posixClasses)) {
-        if (glob.startsWith(cls, i)) {
-          if (rangeStart) {
-            return ["$.", false, glob.length - pos, true];
-          }
-          i += cls.length;
-          if (neg)
-            negs.push(unip);
-          else
-            ranges.push(unip);
-          uflag = uflag || u;
-          continue WHILE;
-        }
-      }
-    }
-    escaping = false;
-    if (rangeStart) {
-      if (c > rangeStart) {
-        ranges.push(braceEscape(rangeStart) + "-" + braceEscape(c));
-      } else if (c === rangeStart) {
-        ranges.push(braceEscape(c));
-      }
-      rangeStart = "";
-      i++;
-      continue;
-    }
-    if (glob.startsWith("-]", i + 1)) {
-      ranges.push(braceEscape(c + "-"));
-      i += 2;
-      continue;
-    }
-    if (glob.startsWith("-", i + 1)) {
-      rangeStart = c;
-      i += 2;
-      continue;
-    }
-    ranges.push(braceEscape(c));
-    i++;
-  }
-  if (endPos < i) {
-    return ["", false, 0, false];
-  }
-  if (!ranges.length && !negs.length) {
-    return ["$.", false, glob.length - pos, true];
-  }
-  if (negs.length === 0 && ranges.length === 1 && /^\\?.$/.test(ranges[0]) && !negate) {
-    const r = ranges[0].length === 2 ? ranges[0].slice(-1) : ranges[0];
-    return [regexpEscape(r), false, endPos - pos, false];
-  }
-  const sranges = "[" + (negate ? "^" : "") + rangesToString(ranges) + "]";
-  const snegs = "[" + (negate ? "" : "^") + rangesToString(negs) + "]";
-  const comb = ranges.length && negs.length ? "(" + sranges + "|" + snegs + ")" : ranges.length ? sranges : snegs;
-  return [comb, uflag, endPos - pos, true];
-};
-
-// node_modules/minimatch/dist/esm/unescape.js
-var unescape2 = (s, { windowsPathsNoEscape = false, magicalBraces = true } = {}) => {
-  if (magicalBraces) {
-    return windowsPathsNoEscape ? s.replace(/\[([^/\\])\]/g, "$1") : s.replace(/((?!\\).|^)\[([^/\\])\]/g, "$1$2").replace(/\\([^/])/g, "$1");
-  }
-  return windowsPathsNoEscape ? s.replace(/\[([^/\\{}])\]/g, "$1") : s.replace(/((?!\\).|^)\[([^/\\{}])\]/g, "$1$2").replace(/\\([^/{}])/g, "$1");
-};
-
-// node_modules/minimatch/dist/esm/ast.js
-var _a;
-var types = /* @__PURE__ */ new Set(["!", "?", "+", "*", "@"]);
-var isExtglobType = (c) => types.has(c);
-var isExtglobAST = (c) => isExtglobType(c.type);
-var adoptionMap = /* @__PURE__ */ new Map([
-  ["!", ["@"]],
-  ["?", ["?", "@"]],
-  ["@", ["@"]],
-  ["*", ["*", "+", "?", "@"]],
-  ["+", ["+", "@"]]
-]);
-var adoptionWithSpaceMap = /* @__PURE__ */ new Map([
-  ["!", ["?"]],
-  ["@", ["?"]],
-  ["+", ["?", "*"]]
-]);
-var adoptionAnyMap = /* @__PURE__ */ new Map([
-  ["!", ["?", "@"]],
-  ["?", ["?", "@"]],
-  ["@", ["?", "@"]],
-  ["*", ["*", "+", "?", "@"]],
-  ["+", ["+", "@", "?", "*"]]
-]);
-var usurpMap = /* @__PURE__ */ new Map([
-  ["!", /* @__PURE__ */ new Map([["!", "@"]])],
-  [
-    "?",
-    /* @__PURE__ */ new Map([
-      ["*", "*"],
-      ["+", "*"]
-    ])
-  ],
-  [
-    "@",
-    /* @__PURE__ */ new Map([
-      ["!", "!"],
-      ["?", "?"],
-      ["@", "@"],
-      ["*", "*"],
-      ["+", "+"]
-    ])
-  ],
-  [
-    "+",
-    /* @__PURE__ */ new Map([
-      ["?", "*"],
-      ["*", "*"]
-    ])
-  ]
-]);
-var startNoTraversal = "(?!(?:^|/)\\.\\.?(?:$|/))";
-var startNoDot = "(?!\\.)";
-var addPatternStart = /* @__PURE__ */ new Set(["[", "."]);
-var justDots = /* @__PURE__ */ new Set(["..", "."]);
-var reSpecials = new Set("().*{}+?[]^$\\!");
-var regExpEscape = (s) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-var qmark = "[^/]";
-var star = qmark + "*?";
-var starNoEmpty = qmark + "+?";
-var ID = 0;
-var AST = class {
-  type;
-  #root;
-  #hasMagic;
-  #uflag = false;
-  #parts = [];
-  #parent;
-  #parentIndex;
-  #negs;
-  #filledNegs = false;
-  #options;
-  #toString;
-  // set to true if it's an extglob with no children
-  // (which really means one child of '')
-  #emptyExt = false;
-  id = ++ID;
-  get depth() {
-    return (this.#parent?.depth ?? -1) + 1;
-  }
-  [/* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      "@@type": "AST",
-      id: this.id,
-      type: this.type,
-      root: this.#root.id,
-      parent: this.#parent?.id,
-      depth: this.depth,
-      partsLength: this.#parts.length,
-      parts: this.#parts
-    };
-  }
-  constructor(type, parent, options = {}) {
-    this.type = type;
-    if (type)
-      this.#hasMagic = true;
-    this.#parent = parent;
-    this.#root = this.#parent ? this.#parent.#root : this;
-    this.#options = this.#root === this ? options : this.#root.#options;
-    this.#negs = this.#root === this ? [] : this.#root.#negs;
-    if (type === "!" && !this.#root.#filledNegs)
-      this.#negs.push(this);
-    this.#parentIndex = this.#parent ? this.#parent.#parts.length : 0;
-  }
-  get hasMagic() {
-    if (this.#hasMagic !== void 0)
-      return this.#hasMagic;
-    for (const p of this.#parts) {
-      if (typeof p === "string")
-        continue;
-      if (p.type || p.hasMagic)
-        return this.#hasMagic = true;
-    }
-    return this.#hasMagic;
-  }
-  // reconstructs the pattern
-  toString() {
-    return this.#toString !== void 0 ? this.#toString : !this.type ? this.#toString = this.#parts.map((p) => String(p)).join("") : this.#toString = this.type + "(" + this.#parts.map((p) => String(p)).join("|") + ")";
-  }
-  #fillNegs() {
-    if (this !== this.#root)
-      throw new Error("should only call on root");
-    if (this.#filledNegs)
-      return this;
-    this.toString();
-    this.#filledNegs = true;
-    let n;
-    while (n = this.#negs.pop()) {
-      if (n.type !== "!")
-        continue;
-      let p = n;
-      let pp = p.#parent;
-      while (pp) {
-        for (let i = p.#parentIndex + 1; !pp.type && i < pp.#parts.length; i++) {
-          for (const part of n.#parts) {
-            if (typeof part === "string") {
-              throw new Error("string part in extglob AST??");
-            }
-            part.copyIn(pp.#parts[i]);
-          }
-        }
-        p = pp;
-        pp = p.#parent;
-      }
-    }
-    return this;
-  }
-  push(...parts) {
-    for (const p of parts) {
-      if (p === "")
-        continue;
-      if (typeof p !== "string" && !(p instanceof _a && p.#parent === this)) {
-        throw new Error("invalid part: " + p);
-      }
-      this.#parts.push(p);
-    }
-  }
-  toJSON() {
-    const ret = this.type === null ? this.#parts.slice().map((p) => typeof p === "string" ? p : p.toJSON()) : [this.type, ...this.#parts.map((p) => p.toJSON())];
-    if (this.isStart() && !this.type)
-      ret.unshift([]);
-    if (this.isEnd() && (this === this.#root || this.#root.#filledNegs && this.#parent?.type === "!")) {
-      ret.push({});
-    }
-    return ret;
-  }
-  isStart() {
-    if (this.#root === this)
-      return true;
-    if (!this.#parent?.isStart())
-      return false;
-    if (this.#parentIndex === 0)
-      return true;
-    const p = this.#parent;
-    for (let i = 0; i < this.#parentIndex; i++) {
-      const pp = p.#parts[i];
-      if (!(pp instanceof _a && pp.type === "!")) {
-        return false;
-      }
-    }
-    return true;
-  }
-  isEnd() {
-    if (this.#root === this)
-      return true;
-    if (this.#parent?.type === "!")
-      return true;
-    if (!this.#parent?.isEnd())
-      return false;
-    if (!this.type)
-      return this.#parent?.isEnd();
-    const pl = this.#parent ? this.#parent.#parts.length : 0;
-    return this.#parentIndex === pl - 1;
-  }
-  copyIn(part) {
-    if (typeof part === "string")
-      this.push(part);
-    else
-      this.push(part.clone(this));
-  }
-  clone(parent) {
-    const c = new _a(this.type, parent);
-    for (const p of this.#parts) {
-      c.copyIn(p);
-    }
-    return c;
-  }
-  static #parseAST(str, ast, pos, opt, extDepth) {
-    const maxDepth = opt.maxExtglobRecursion ?? 2;
-    let escaping = false;
-    let inBrace = false;
-    let braceStart = -1;
-    let braceNeg = false;
-    if (ast.type === null) {
-      let i2 = pos;
-      let acc2 = "";
-      while (i2 < str.length) {
-        const c = str.charAt(i2++);
-        if (escaping || c === "\\") {
-          escaping = !escaping;
-          acc2 += c;
-          continue;
-        }
-        if (inBrace) {
-          if (i2 === braceStart + 1) {
-            if (c === "^" || c === "!") {
-              braceNeg = true;
-            }
-          } else if (c === "]" && !(i2 === braceStart + 2 && braceNeg)) {
-            inBrace = false;
-          }
-          acc2 += c;
-          continue;
-        } else if (c === "[") {
-          inBrace = true;
-          braceStart = i2;
-          braceNeg = false;
-          acc2 += c;
-          continue;
-        }
-        const doRecurse = !opt.noext && isExtglobType(c) && str.charAt(i2) === "(" && extDepth <= maxDepth;
-        if (doRecurse) {
-          ast.push(acc2);
-          acc2 = "";
-          const ext2 = new _a(c, ast);
-          i2 = _a.#parseAST(str, ext2, i2, opt, extDepth + 1);
-          ast.push(ext2);
-          continue;
-        }
-        acc2 += c;
-      }
-      ast.push(acc2);
-      return i2;
-    }
-    let i = pos + 1;
-    let part = new _a(null, ast);
-    const parts = [];
-    let acc = "";
-    while (i < str.length) {
-      const c = str.charAt(i++);
-      if (escaping || c === "\\") {
-        escaping = !escaping;
-        acc += c;
-        continue;
-      }
-      if (inBrace) {
-        if (i === braceStart + 1) {
-          if (c === "^" || c === "!") {
-            braceNeg = true;
-          }
-        } else if (c === "]" && !(i === braceStart + 2 && braceNeg)) {
-          inBrace = false;
-        }
-        acc += c;
-        continue;
-      } else if (c === "[") {
-        inBrace = true;
-        braceStart = i;
-        braceNeg = false;
-        acc += c;
-        continue;
-      }
-      const doRecurse = !opt.noext && isExtglobType(c) && str.charAt(i) === "(" && /* c8 ignore start - the maxDepth is sufficient here */
-      (extDepth <= maxDepth || ast && ast.#canAdoptType(c));
-      if (doRecurse) {
-        const depthAdd = ast && ast.#canAdoptType(c) ? 0 : 1;
-        part.push(acc);
-        acc = "";
-        const ext2 = new _a(c, part);
-        part.push(ext2);
-        i = _a.#parseAST(str, ext2, i, opt, extDepth + depthAdd);
-        continue;
-      }
-      if (c === "|") {
-        part.push(acc);
-        acc = "";
-        parts.push(part);
-        part = new _a(null, ast);
-        continue;
-      }
-      if (c === ")") {
-        if (acc === "" && ast.#parts.length === 0) {
-          ast.#emptyExt = true;
-        }
-        part.push(acc);
-        acc = "";
-        ast.push(...parts, part);
-        return i;
-      }
-      acc += c;
-    }
-    ast.type = null;
-    ast.#hasMagic = void 0;
-    ast.#parts = [str.substring(pos - 1)];
-    return i;
-  }
-  #canAdoptWithSpace(child) {
-    return this.#canAdopt(child, adoptionWithSpaceMap);
-  }
-  #canAdopt(child, map = adoptionMap) {
-    if (!child || typeof child !== "object" || child.type !== null || child.#parts.length !== 1 || this.type === null) {
-      return false;
-    }
-    const gc = child.#parts[0];
-    if (!gc || typeof gc !== "object" || gc.type === null) {
-      return false;
-    }
-    return this.#canAdoptType(gc.type, map);
-  }
-  #canAdoptType(c, map = adoptionAnyMap) {
-    return !!map.get(this.type)?.includes(c);
-  }
-  #adoptWithSpace(child, index) {
-    const gc = child.#parts[0];
-    const blank = new _a(null, gc, this.options);
-    blank.#parts.push("");
-    gc.push(blank);
-    this.#adopt(child, index);
-  }
-  #adopt(child, index) {
-    const gc = child.#parts[0];
-    this.#parts.splice(index, 1, ...gc.#parts);
-    for (const p of gc.#parts) {
-      if (typeof p === "object")
-        p.#parent = this;
-    }
-    this.#toString = void 0;
-  }
-  #canUsurpType(c) {
-    const m = usurpMap.get(this.type);
-    return !!m?.has(c);
-  }
-  #canUsurp(child) {
-    if (!child || typeof child !== "object" || child.type !== null || child.#parts.length !== 1 || this.type === null || this.#parts.length !== 1) {
-      return false;
-    }
-    const gc = child.#parts[0];
-    if (!gc || typeof gc !== "object" || gc.type === null) {
-      return false;
-    }
-    return this.#canUsurpType(gc.type);
-  }
-  #usurp(child) {
-    const m = usurpMap.get(this.type);
-    const gc = child.#parts[0];
-    const nt = m?.get(gc.type);
-    if (!nt)
-      return false;
-    this.#parts = gc.#parts;
-    for (const p of this.#parts) {
-      if (typeof p === "object") {
-        p.#parent = this;
-      }
-    }
-    this.type = nt;
-    this.#toString = void 0;
-    this.#emptyExt = false;
-  }
-  static fromGlob(pattern, options = {}) {
-    const ast = new _a(null, void 0, options);
-    _a.#parseAST(pattern, ast, 0, options, 0);
-    return ast;
-  }
-  // returns the regular expression if there's magic, or the unescaped
-  // string if not.
-  toMMPattern() {
-    if (this !== this.#root)
-      return this.#root.toMMPattern();
-    const glob = this.toString();
-    const [re, body, hasMagic, uflag] = this.toRegExpSource();
-    const anyMagic = hasMagic || this.#hasMagic || this.#options.nocase && !this.#options.nocaseMagicOnly && glob.toUpperCase() !== glob.toLowerCase();
-    if (!anyMagic) {
-      return body;
-    }
-    const flags = (this.#options.nocase ? "i" : "") + (uflag ? "u" : "");
-    return Object.assign(new RegExp(`^${re}$`, flags), {
-      _src: re,
-      _glob: glob
-    });
-  }
-  get options() {
-    return this.#options;
-  }
-  // returns the string match, the regexp source, whether there's magic
-  // in the regexp (so a regular expression is required) and whether or
-  // not the uflag is needed for the regular expression (for posix classes)
-  // TODO: instead of injecting the start/end at this point, just return
-  // the BODY of the regexp, along with the start/end portions suitable
-  // for binding the start/end in either a joined full-path makeRe context
-  // (where we bind to (^|/), or a standalone matchPart context (where
-  // we bind to ^, and not /).  Otherwise slashes get duped!
-  //
-  // In part-matching mode, the start is:
-  // - if not isStart: nothing
-  // - if traversal possible, but not allowed: ^(?!\.\.?$)
-  // - if dots allowed or not possible: ^
-  // - if dots possible and not allowed: ^(?!\.)
-  // end is:
-  // - if not isEnd(): nothing
-  // - else: $
-  //
-  // In full-path matching mode, we put the slash at the START of the
-  // pattern, so start is:
-  // - if first pattern: same as part-matching mode
-  // - if not isStart(): nothing
-  // - if traversal possible, but not allowed: /(?!\.\.?(?:$|/))
-  // - if dots allowed or not possible: /
-  // - if dots possible and not allowed: /(?!\.)
-  // end is:
-  // - if last pattern, same as part-matching mode
-  // - else nothing
-  //
-  // Always put the (?:$|/) on negated tails, though, because that has to be
-  // there to bind the end of the negated pattern portion, and it's easier to
-  // just stick it in now rather than try to inject it later in the middle of
-  // the pattern.
-  //
-  // We can just always return the same end, and leave it up to the caller
-  // to know whether it's going to be used joined or in parts.
-  // And, if the start is adjusted slightly, can do the same there:
-  // - if not isStart: nothing
-  // - if traversal possible, but not allowed: (?:/|^)(?!\.\.?$)
-  // - if dots allowed or not possible: (?:/|^)
-  // - if dots possible and not allowed: (?:/|^)(?!\.)
-  //
-  // But it's better to have a simpler binding without a conditional, for
-  // performance, so probably better to return both start options.
-  //
-  // Then the caller just ignores the end if it's not the first pattern,
-  // and the start always gets applied.
-  //
-  // But that's always going to be $ if it's the ending pattern, or nothing,
-  // so the caller can just attach $ at the end of the pattern when building.
-  //
-  // So the todo is:
-  // - better detect what kind of start is needed
-  // - return both flavors of starting pattern
-  // - attach $ at the end of the pattern when creating the actual RegExp
-  //
-  // Ah, but wait, no, that all only applies to the root when the first pattern
-  // is not an extglob. If the first pattern IS an extglob, then we need all
-  // that dot prevention biz to live in the extglob portions, because eg
-  // +(*|.x*) can match .xy but not .yx.
-  //
-  // So, return the two flavors if it's #root and the first child is not an
-  // AST, otherwise leave it to the child AST to handle it, and there,
-  // use the (?:^|/) style of start binding.
-  //
-  // Even simplified further:
-  // - Since the start for a join is eg /(?!\.) and the start for a part
-  // is ^(?!\.), we can just prepend (?!\.) to the pattern (either root
-  // or start or whatever) and prepend ^ or / at the Regexp construction.
-  toRegExpSource(allowDot) {
-    const dot = allowDot ?? !!this.#options.dot;
-    if (this.#root === this) {
-      this.#flatten();
-      this.#fillNegs();
-    }
-    if (!isExtglobAST(this)) {
-      const noEmpty = this.isStart() && this.isEnd() && !this.#parts.some((s) => typeof s !== "string");
-      const src = this.#parts.map((p) => {
-        const [re, _, hasMagic, uflag] = typeof p === "string" ? _a.#parseGlob(p, this.#hasMagic, noEmpty) : p.toRegExpSource(allowDot);
-        this.#hasMagic = this.#hasMagic || hasMagic;
-        this.#uflag = this.#uflag || uflag;
-        return re;
-      }).join("");
-      let start2 = "";
-      if (this.isStart()) {
-        if (typeof this.#parts[0] === "string") {
-          const dotTravAllowed = this.#parts.length === 1 && justDots.has(this.#parts[0]);
-          if (!dotTravAllowed) {
-            const aps = addPatternStart;
-            const needNoTrav = (
-              // dots are allowed, and the pattern starts with [ or .
-              dot && aps.has(src.charAt(0)) || // the pattern starts with \., and then [ or .
-              src.startsWith("\\.") && aps.has(src.charAt(2)) || // the pattern starts with \.\., and then [ or .
-              src.startsWith("\\.\\.") && aps.has(src.charAt(4))
-            );
-            const needNoDot = !dot && !allowDot && aps.has(src.charAt(0));
-            start2 = needNoTrav ? startNoTraversal : needNoDot ? startNoDot : "";
-          }
-        }
-      }
-      let end = "";
-      if (this.isEnd() && this.#root.#filledNegs && this.#parent?.type === "!") {
-        end = "(?:$|\\/)";
-      }
-      const final2 = start2 + src + end;
-      return [
-        final2,
-        unescape2(src),
-        this.#hasMagic = !!this.#hasMagic,
-        this.#uflag
-      ];
-    }
-    const repeated = this.type === "*" || this.type === "+";
-    const start = this.type === "!" ? "(?:(?!(?:" : "(?:";
-    let body = this.#partsToRegExp(dot);
-    if (this.isStart() && this.isEnd() && !body && this.type !== "!") {
-      const s = this.toString();
-      const me = this;
-      me.#parts = [s];
-      me.type = null;
-      me.#hasMagic = void 0;
-      return [s, unescape2(this.toString()), false, false];
-    }
-    let bodyDotAllowed = !repeated || allowDot || dot || !startNoDot ? "" : this.#partsToRegExp(true);
-    if (bodyDotAllowed === body) {
-      bodyDotAllowed = "";
-    }
-    if (bodyDotAllowed) {
-      body = `(?:${body})(?:${bodyDotAllowed})*?`;
-    }
-    let final = "";
-    if (this.type === "!" && this.#emptyExt) {
-      final = (this.isStart() && !dot ? startNoDot : "") + starNoEmpty;
-    } else {
-      const close = this.type === "!" ? (
-        // !() must match something,but !(x) can match ''
-        "))" + (this.isStart() && !dot && !allowDot ? startNoDot : "") + star + ")"
-      ) : this.type === "@" ? ")" : this.type === "?" ? ")?" : this.type === "+" && bodyDotAllowed ? ")" : this.type === "*" && bodyDotAllowed ? `)?` : `)${this.type}`;
-      final = start + body + close;
-    }
-    return [
-      final,
-      unescape2(body),
-      this.#hasMagic = !!this.#hasMagic,
-      this.#uflag
-    ];
-  }
-  #flatten() {
-    if (!isExtglobAST(this)) {
-      for (const p of this.#parts) {
-        if (typeof p === "object") {
-          p.#flatten();
-        }
-      }
-    } else {
-      let iterations = 0;
-      let done = false;
-      do {
-        done = true;
-        for (let i = 0; i < this.#parts.length; i++) {
-          const c = this.#parts[i];
-          if (typeof c === "object") {
-            c.#flatten();
-            if (this.#canAdopt(c)) {
-              done = false;
-              this.#adopt(c, i);
-            } else if (this.#canAdoptWithSpace(c)) {
-              done = false;
-              this.#adoptWithSpace(c, i);
-            } else if (this.#canUsurp(c)) {
-              done = false;
-              this.#usurp(c);
-            }
-          }
-        }
-      } while (!done && ++iterations < 10);
-    }
-    this.#toString = void 0;
-  }
-  #partsToRegExp(dot) {
-    return this.#parts.map((p) => {
-      if (typeof p === "string") {
-        throw new Error("string type in extglob ast??");
-      }
-      const [re, _, _hasMagic, uflag] = p.toRegExpSource(dot);
-      this.#uflag = this.#uflag || uflag;
-      return re;
-    }).filter((p) => !(this.isStart() && this.isEnd()) || !!p).join("|");
-  }
-  static #parseGlob(glob, hasMagic, noEmpty = false) {
-    let escaping = false;
-    let re = "";
-    let uflag = false;
-    let inStar = false;
-    for (let i = 0; i < glob.length; i++) {
-      const c = glob.charAt(i);
-      if (escaping) {
-        escaping = false;
-        re += (reSpecials.has(c) ? "\\" : "") + c;
-        continue;
-      }
-      if (c === "*") {
-        if (inStar)
-          continue;
-        inStar = true;
-        re += noEmpty && /^[*]+$/.test(glob) ? starNoEmpty : star;
-        hasMagic = true;
-        continue;
-      } else {
-        inStar = false;
-      }
-      if (c === "\\") {
-        if (i === glob.length - 1) {
-          re += "\\\\";
-        } else {
-          escaping = true;
-        }
-        continue;
-      }
-      if (c === "[") {
-        const [src, needUflag, consumed, magic] = parseClass(glob, i);
-        if (consumed) {
-          re += src;
-          uflag = uflag || needUflag;
-          i += consumed - 1;
-          hasMagic = hasMagic || magic;
-          continue;
-        }
-      }
-      if (c === "?") {
-        re += qmark;
-        hasMagic = true;
-        continue;
-      }
-      re += regExpEscape(c);
-    }
-    return [re, unescape2(glob), !!hasMagic, uflag];
-  }
-};
-_a = AST;
-
-// node_modules/minimatch/dist/esm/escape.js
-var escape2 = (s, { windowsPathsNoEscape = false, magicalBraces = false } = {}) => {
-  if (magicalBraces) {
-    return windowsPathsNoEscape ? s.replace(/[?*()[\]{}]/g, "[$&]") : s.replace(/[?*()[\]\\{}]/g, "\\$&");
-  }
-  return windowsPathsNoEscape ? s.replace(/[?*()[\]]/g, "[$&]") : s.replace(/[?*()[\]\\]/g, "\\$&");
-};
-
-// node_modules/minimatch/dist/esm/index.js
-var minimatch = (p, pattern, options = {}) => {
-  assertValidPattern(pattern);
-  if (!options.nocomment && pattern.charAt(0) === "#") {
-    return false;
-  }
-  return new Minimatch(pattern, options).match(p);
-};
-var starDotExtRE = /^\*+([^+@!?*[(]*)$/;
-var starDotExtTest = (ext2) => (f) => !f.startsWith(".") && f.endsWith(ext2);
-var starDotExtTestDot = (ext2) => (f) => f.endsWith(ext2);
-var starDotExtTestNocase = (ext2) => {
-  ext2 = ext2.toLowerCase();
-  return (f) => !f.startsWith(".") && f.toLowerCase().endsWith(ext2);
-};
-var starDotExtTestNocaseDot = (ext2) => {
-  ext2 = ext2.toLowerCase();
-  return (f) => f.toLowerCase().endsWith(ext2);
-};
-var starDotStarRE = /^\*+\.\*+$/;
-var starDotStarTest = (f) => !f.startsWith(".") && f.includes(".");
-var starDotStarTestDot = (f) => f !== "." && f !== ".." && f.includes(".");
-var dotStarRE = /^\.\*+$/;
-var dotStarTest = (f) => f !== "." && f !== ".." && f.startsWith(".");
-var starRE = /^\*+$/;
-var starTest = (f) => f.length !== 0 && !f.startsWith(".");
-var starTestDot = (f) => f.length !== 0 && f !== "." && f !== "..";
-var qmarksRE = /^\?+([^+@!?*[(]*)?$/;
-var qmarksTestNocase = ([$0, ext2 = ""]) => {
-  const noext = qmarksTestNoExt([$0]);
-  if (!ext2)
-    return noext;
-  ext2 = ext2.toLowerCase();
-  return (f) => noext(f) && f.toLowerCase().endsWith(ext2);
-};
-var qmarksTestNocaseDot = ([$0, ext2 = ""]) => {
-  const noext = qmarksTestNoExtDot([$0]);
-  if (!ext2)
-    return noext;
-  ext2 = ext2.toLowerCase();
-  return (f) => noext(f) && f.toLowerCase().endsWith(ext2);
-};
-var qmarksTestDot = ([$0, ext2 = ""]) => {
-  const noext = qmarksTestNoExtDot([$0]);
-  return !ext2 ? noext : (f) => noext(f) && f.endsWith(ext2);
-};
-var qmarksTest = ([$0, ext2 = ""]) => {
-  const noext = qmarksTestNoExt([$0]);
-  return !ext2 ? noext : (f) => noext(f) && f.endsWith(ext2);
-};
-var qmarksTestNoExt = ([$0]) => {
-  const len = $0.length;
-  return (f) => f.length === len && !f.startsWith(".");
-};
-var qmarksTestNoExtDot = ([$0]) => {
-  const len = $0.length;
-  return (f) => f.length === len && f !== "." && f !== "..";
-};
-var defaultPlatform = typeof process === "object" && process ? typeof process.env === "object" && process.env && process.env.__MINIMATCH_TESTING_PLATFORM__ || process.platform : "posix";
-var path = {
-  win32: { sep: "\\" },
-  posix: { sep: "/" }
-};
-var sep = defaultPlatform === "win32" ? path.win32.sep : path.posix.sep;
-minimatch.sep = sep;
-var GLOBSTAR = /* @__PURE__ */ Symbol("globstar **");
-minimatch.GLOBSTAR = GLOBSTAR;
-var qmark2 = "[^/]";
-var star2 = qmark2 + "*?";
-var twoStarDot = "(?:(?!(?:\\/|^)(?:\\.{1,2})($|\\/)).)*?";
-var twoStarNoDot = "(?:(?!(?:\\/|^)\\.).)*?";
-var filter = (pattern, options = {}) => (p) => minimatch(p, pattern, options);
-minimatch.filter = filter;
-var ext = (a, b = {}) => Object.assign({}, a, b);
-var defaults = (def) => {
-  if (!def || typeof def !== "object" || !Object.keys(def).length) {
-    return minimatch;
-  }
-  const orig = minimatch;
-  const m = (p, pattern, options = {}) => orig(p, pattern, ext(def, options));
-  return Object.assign(m, {
-    Minimatch: class Minimatch extends orig.Minimatch {
-      constructor(pattern, options = {}) {
-        super(pattern, ext(def, options));
-      }
-      static defaults(options) {
-        return orig.defaults(ext(def, options)).Minimatch;
-      }
-    },
-    AST: class AST extends orig.AST {
-      /* c8 ignore start */
-      constructor(type, parent, options = {}) {
-        super(type, parent, ext(def, options));
-      }
-      /* c8 ignore stop */
-      static fromGlob(pattern, options = {}) {
-        return orig.AST.fromGlob(pattern, ext(def, options));
-      }
-    },
-    unescape: (s, options = {}) => orig.unescape(s, ext(def, options)),
-    escape: (s, options = {}) => orig.escape(s, ext(def, options)),
-    filter: (pattern, options = {}) => orig.filter(pattern, ext(def, options)),
-    defaults: (options) => orig.defaults(ext(def, options)),
-    makeRe: (pattern, options = {}) => orig.makeRe(pattern, ext(def, options)),
-    braceExpand: (pattern, options = {}) => orig.braceExpand(pattern, ext(def, options)),
-    match: (list, pattern, options = {}) => orig.match(list, pattern, ext(def, options)),
-    sep: orig.sep,
-    GLOBSTAR
-  });
-};
-minimatch.defaults = defaults;
-var braceExpand = (pattern, options = {}) => {
-  assertValidPattern(pattern);
-  if (options.nobrace || !/\{(?:(?!\{).)*\}/.test(pattern)) {
-    return [pattern];
-  }
-  return expand(pattern, { max: options.braceExpandMax });
-};
-minimatch.braceExpand = braceExpand;
-var makeRe = (pattern, options = {}) => new Minimatch(pattern, options).makeRe();
-minimatch.makeRe = makeRe;
-var match = (list, pattern, options = {}) => {
-  const mm = new Minimatch(pattern, options);
-  list = list.filter((f) => mm.match(f));
-  if (mm.options.nonull && !list.length) {
-    list.push(pattern);
-  }
-  return list;
-};
-minimatch.match = match;
-var globMagic = /[?*]|[+@!]\(.*?\)|\[|\]/;
-var regExpEscape2 = (s) => s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-var Minimatch = class {
-  options;
-  set;
-  pattern;
-  windowsPathsNoEscape;
-  nonegate;
-  negate;
-  comment;
-  empty;
-  preserveMultipleSlashes;
-  partial;
-  globSet;
-  globParts;
-  nocase;
-  isWindows;
-  platform;
-  windowsNoMagicRoot;
-  maxGlobstarRecursion;
-  regexp;
-  constructor(pattern, options = {}) {
-    assertValidPattern(pattern);
-    options = options || {};
-    this.options = options;
-    this.maxGlobstarRecursion = options.maxGlobstarRecursion ?? 200;
-    this.pattern = pattern;
-    this.platform = options.platform || defaultPlatform;
-    this.isWindows = this.platform === "win32";
-    const awe = "allowWindowsEscape";
-    this.windowsPathsNoEscape = !!options.windowsPathsNoEscape || options[awe] === false;
-    if (this.windowsPathsNoEscape) {
-      this.pattern = this.pattern.replace(/\\/g, "/");
-    }
-    this.preserveMultipleSlashes = !!options.preserveMultipleSlashes;
-    this.regexp = null;
-    this.negate = false;
-    this.nonegate = !!options.nonegate;
-    this.comment = false;
-    this.empty = false;
-    this.partial = !!options.partial;
-    this.nocase = !!this.options.nocase;
-    this.windowsNoMagicRoot = options.windowsNoMagicRoot !== void 0 ? options.windowsNoMagicRoot : !!(this.isWindows && this.nocase);
-    this.globSet = [];
-    this.globParts = [];
-    this.set = [];
-    this.make();
-  }
-  hasMagic() {
-    if (this.options.magicalBraces && this.set.length > 1) {
-      return true;
-    }
-    for (const pattern of this.set) {
-      for (const part of pattern) {
-        if (typeof part !== "string")
-          return true;
-      }
-    }
-    return false;
-  }
-  debug(..._) {
-  }
-  make() {
-    const pattern = this.pattern;
-    const options = this.options;
-    if (!options.nocomment && pattern.charAt(0) === "#") {
-      this.comment = true;
-      return;
-    }
-    if (!pattern) {
-      this.empty = true;
-      return;
-    }
-    this.parseNegate();
-    this.globSet = [...new Set(this.braceExpand())];
-    if (options.debug) {
-      this.debug = (...args) => console.error(...args);
-    }
-    this.debug(this.pattern, this.globSet);
-    const rawGlobParts = this.globSet.map((s) => this.slashSplit(s));
-    this.globParts = this.preprocess(rawGlobParts);
-    this.debug(this.pattern, this.globParts);
-    let set = this.globParts.map((s, _, __) => {
-      if (this.isWindows && this.windowsNoMagicRoot) {
-        const isUNC = s[0] === "" && s[1] === "" && (s[2] === "?" || !globMagic.test(s[2])) && !globMagic.test(s[3]);
-        const isDrive = /^[a-z]:/i.test(s[0]);
-        if (isUNC) {
-          return [
-            ...s.slice(0, 4),
-            ...s.slice(4).map((ss) => this.parse(ss))
-          ];
-        } else if (isDrive) {
-          return [s[0], ...s.slice(1).map((ss) => this.parse(ss))];
-        }
-      }
-      return s.map((ss) => this.parse(ss));
-    });
-    this.debug(this.pattern, set);
-    this.set = set.filter((s) => s.indexOf(false) === -1);
-    if (this.isWindows) {
-      for (let i = 0; i < this.set.length; i++) {
-        const p = this.set[i];
-        if (p[0] === "" && p[1] === "" && this.globParts[i][2] === "?" && typeof p[3] === "string" && /^[a-z]:$/i.test(p[3])) {
-          p[2] = "?";
-        }
-      }
-    }
-    this.debug(this.pattern, this.set);
-  }
-  // various transforms to equivalent pattern sets that are
-  // faster to process in a filesystem walk.  The goal is to
-  // eliminate what we can, and push all ** patterns as far
-  // to the right as possible, even if it increases the number
-  // of patterns that we have to process.
-  preprocess(globParts) {
-    if (this.options.noglobstar) {
-      for (const partset of globParts) {
-        for (let j = 0; j < partset.length; j++) {
-          if (partset[j] === "**") {
-            partset[j] = "*";
-          }
-        }
-      }
-    }
-    const { optimizationLevel = 1 } = this.options;
-    if (optimizationLevel >= 2) {
-      globParts = this.firstPhasePreProcess(globParts);
-      globParts = this.secondPhasePreProcess(globParts);
-    } else if (optimizationLevel >= 1) {
-      globParts = this.levelOneOptimize(globParts);
-    } else {
-      globParts = this.adjascentGlobstarOptimize(globParts);
-    }
-    return globParts;
-  }
-  // just get rid of adjascent ** portions
-  adjascentGlobstarOptimize(globParts) {
-    return globParts.map((parts) => {
-      let gs = -1;
-      while (-1 !== (gs = parts.indexOf("**", gs + 1))) {
-        let i = gs;
-        while (parts[i + 1] === "**") {
-          i++;
-        }
-        if (i !== gs) {
-          parts.splice(gs, i - gs);
-        }
-      }
-      return parts;
-    });
-  }
-  // get rid of adjascent ** and resolve .. portions
-  levelOneOptimize(globParts) {
-    return globParts.map((parts) => {
-      parts = parts.reduce((set, part) => {
-        const prev = set[set.length - 1];
-        if (part === "**" && prev === "**") {
-          return set;
-        }
-        if (part === "..") {
-          if (prev && prev !== ".." && prev !== "." && prev !== "**") {
-            set.pop();
-            return set;
-          }
-        }
-        set.push(part);
-        return set;
-      }, []);
-      return parts.length === 0 ? [""] : parts;
-    });
-  }
-  levelTwoFileOptimize(parts) {
-    if (!Array.isArray(parts)) {
-      parts = this.slashSplit(parts);
-    }
-    let didSomething = false;
-    do {
-      didSomething = false;
-      if (!this.preserveMultipleSlashes) {
-        for (let i = 1; i < parts.length - 1; i++) {
-          const p = parts[i];
-          if (i === 1 && p === "" && parts[0] === "")
-            continue;
-          if (p === "." || p === "") {
-            didSomething = true;
-            parts.splice(i, 1);
-            i--;
-          }
-        }
-        if (parts[0] === "." && parts.length === 2 && (parts[1] === "." || parts[1] === "")) {
-          didSomething = true;
-          parts.pop();
-        }
-      }
-      let dd = 0;
-      while (-1 !== (dd = parts.indexOf("..", dd + 1))) {
-        const p = parts[dd - 1];
-        if (p && p !== "." && p !== ".." && p !== "**" && !(this.isWindows && /^[a-z]:$/i.test(p))) {
-          didSomething = true;
-          parts.splice(dd - 1, 2);
-          dd -= 2;
-        }
-      }
-    } while (didSomething);
-    return parts.length === 0 ? [""] : parts;
-  }
-  // First phase: single-pattern processing
-  // <pre> is 1 or more portions
-  // <rest> is 1 or more portions
-  // <p> is any portion other than ., .., '', or **
-  // <e> is . or ''
-  //
-  // **/.. is *brutal* for filesystem walking performance, because
-  // it effectively resets the recursive walk each time it occurs,
-  // and ** cannot be reduced out by a .. pattern part like a regexp
-  // or most strings (other than .., ., and '') can be.
-  //
-  // <pre>/**/../<p>/<p>/<rest> -> {<pre>/../<p>/<p>/<rest>,<pre>/**/<p>/<p>/<rest>}
-  // <pre>/<e>/<rest> -> <pre>/<rest>
-  // <pre>/<p>/../<rest> -> <pre>/<rest>
-  // **/**/<rest> -> **/<rest>
-  //
-  // **/*/<rest> -> */**/<rest> <== not valid because ** doesn't follow
-  // this WOULD be allowed if ** did follow symlinks, or * didn't
-  firstPhasePreProcess(globParts) {
-    let didSomething = false;
-    do {
-      didSomething = false;
-      for (let parts of globParts) {
-        let gs = -1;
-        while (-1 !== (gs = parts.indexOf("**", gs + 1))) {
-          let gss = gs;
-          while (parts[gss + 1] === "**") {
-            gss++;
-          }
-          if (gss > gs) {
-            parts.splice(gs + 1, gss - gs);
-          }
-          let next = parts[gs + 1];
-          const p = parts[gs + 2];
-          const p2 = parts[gs + 3];
-          if (next !== "..")
-            continue;
-          if (!p || p === "." || p === ".." || !p2 || p2 === "." || p2 === "..") {
-            continue;
-          }
-          didSomething = true;
-          parts.splice(gs, 1);
-          const other = parts.slice(0);
-          other[gs] = "**";
-          globParts.push(other);
-          gs--;
-        }
-        if (!this.preserveMultipleSlashes) {
-          for (let i = 1; i < parts.length - 1; i++) {
-            const p = parts[i];
-            if (i === 1 && p === "" && parts[0] === "")
-              continue;
-            if (p === "." || p === "") {
-              didSomething = true;
-              parts.splice(i, 1);
-              i--;
-            }
-          }
-          if (parts[0] === "." && parts.length === 2 && (parts[1] === "." || parts[1] === "")) {
-            didSomething = true;
-            parts.pop();
-          }
-        }
-        let dd = 0;
-        while (-1 !== (dd = parts.indexOf("..", dd + 1))) {
-          const p = parts[dd - 1];
-          if (p && p !== "." && p !== ".." && p !== "**") {
-            didSomething = true;
-            const needDot = dd === 1 && parts[dd + 1] === "**";
-            const splin = needDot ? ["."] : [];
-            parts.splice(dd - 1, 2, ...splin);
-            if (parts.length === 0)
-              parts.push("");
-            dd -= 2;
-          }
-        }
-      }
-    } while (didSomething);
-    return globParts;
-  }
-  // second phase: multi-pattern dedupes
-  // {<pre>/*/<rest>,<pre>/<p>/<rest>} -> <pre>/*/<rest>
-  // {<pre>/<rest>,<pre>/<rest>} -> <pre>/<rest>
-  // {<pre>/**/<rest>,<pre>/<rest>} -> <pre>/**/<rest>
-  //
-  // {<pre>/**/<rest>,<pre>/**/<p>/<rest>} -> <pre>/**/<rest>
-  // ^-- not valid because ** doens't follow symlinks
-  secondPhasePreProcess(globParts) {
-    for (let i = 0; i < globParts.length - 1; i++) {
-      for (let j = i + 1; j < globParts.length; j++) {
-        const matched = this.partsMatch(globParts[i], globParts[j], !this.preserveMultipleSlashes);
-        if (matched) {
-          globParts[i] = [];
-          globParts[j] = matched;
-          break;
-        }
-      }
-    }
-    return globParts.filter((gs) => gs.length);
-  }
-  partsMatch(a, b, emptyGSMatch = false) {
-    let ai = 0;
-    let bi = 0;
-    let result = [];
-    let which = "";
-    while (ai < a.length && bi < b.length) {
-      if (a[ai] === b[bi]) {
-        result.push(which === "b" ? b[bi] : a[ai]);
-        ai++;
-        bi++;
-      } else if (emptyGSMatch && a[ai] === "**" && b[bi] === a[ai + 1]) {
-        result.push(a[ai]);
-        ai++;
-      } else if (emptyGSMatch && b[bi] === "**" && a[ai] === b[bi + 1]) {
-        result.push(b[bi]);
-        bi++;
-      } else if (a[ai] === "*" && b[bi] && (this.options.dot || !b[bi].startsWith(".")) && b[bi] !== "**") {
-        if (which === "b")
-          return false;
-        which = "a";
-        result.push(a[ai]);
-        ai++;
-        bi++;
-      } else if (b[bi] === "*" && a[ai] && (this.options.dot || !a[ai].startsWith(".")) && a[ai] !== "**") {
-        if (which === "a")
-          return false;
-        which = "b";
-        result.push(b[bi]);
-        ai++;
-        bi++;
-      } else {
-        return false;
-      }
-    }
-    return a.length === b.length && result;
-  }
-  parseNegate() {
-    if (this.nonegate)
-      return;
-    const pattern = this.pattern;
-    let negate = false;
-    let negateOffset = 0;
-    for (let i = 0; i < pattern.length && pattern.charAt(i) === "!"; i++) {
-      negate = !negate;
-      negateOffset++;
-    }
-    if (negateOffset)
-      this.pattern = pattern.slice(negateOffset);
-    this.negate = negate;
-  }
-  // set partial to true to test if, for example,
-  // "/a/b" matches the start of "/*/b/*/d"
-  // Partial means, if you run out of file before you run
-  // out of pattern, then that's fine, as long as all
-  // the parts match.
-  matchOne(file, pattern, partial2 = false) {
-    let fileStartIndex = 0;
-    let patternStartIndex = 0;
-    if (this.isWindows) {
-      const fileDrive = typeof file[0] === "string" && /^[a-z]:$/i.test(file[0]);
-      const fileUNC = !fileDrive && file[0] === "" && file[1] === "" && file[2] === "?" && /^[a-z]:$/i.test(file[3]);
-      const patternDrive = typeof pattern[0] === "string" && /^[a-z]:$/i.test(pattern[0]);
-      const patternUNC = !patternDrive && pattern[0] === "" && pattern[1] === "" && pattern[2] === "?" && typeof pattern[3] === "string" && /^[a-z]:$/i.test(pattern[3]);
-      const fdi = fileUNC ? 3 : fileDrive ? 0 : void 0;
-      const pdi = patternUNC ? 3 : patternDrive ? 0 : void 0;
-      if (typeof fdi === "number" && typeof pdi === "number") {
-        const [fd, pd] = [
-          file[fdi],
-          pattern[pdi]
-        ];
-        if (fd.toLowerCase() === pd.toLowerCase()) {
-          pattern[pdi] = fd;
-          patternStartIndex = pdi;
-          fileStartIndex = fdi;
-        }
-      }
-    }
-    const { optimizationLevel = 1 } = this.options;
-    if (optimizationLevel >= 2) {
-      file = this.levelTwoFileOptimize(file);
-    }
-    if (pattern.includes(GLOBSTAR)) {
-      return this.#matchGlobstar(file, pattern, partial2, fileStartIndex, patternStartIndex);
-    }
-    return this.#matchOne(file, pattern, partial2, fileStartIndex, patternStartIndex);
-  }
-  #matchGlobstar(file, pattern, partial2, fileIndex, patternIndex) {
-    const firstgs = pattern.indexOf(GLOBSTAR, patternIndex);
-    const lastgs = pattern.lastIndexOf(GLOBSTAR);
-    const [head, body, tail] = partial2 ? [
-      pattern.slice(patternIndex, firstgs),
-      pattern.slice(firstgs + 1),
-      []
-    ] : [
-      pattern.slice(patternIndex, firstgs),
-      pattern.slice(firstgs + 1, lastgs),
-      pattern.slice(lastgs + 1)
-    ];
-    if (head.length) {
-      const fileHead = file.slice(fileIndex, fileIndex + head.length);
-      if (!this.#matchOne(fileHead, head, partial2, 0, 0)) {
-        return false;
-      }
-      fileIndex += head.length;
-      patternIndex += head.length;
-    }
-    let fileTailMatch = 0;
-    if (tail.length) {
-      if (tail.length + fileIndex > file.length)
-        return false;
-      let tailStart = file.length - tail.length;
-      if (this.#matchOne(file, tail, partial2, tailStart, 0)) {
-        fileTailMatch = tail.length;
-      } else {
-        if (file[file.length - 1] !== "" || fileIndex + tail.length === file.length) {
-          return false;
-        }
-        tailStart--;
-        if (!this.#matchOne(file, tail, partial2, tailStart, 0)) {
-          return false;
-        }
-        fileTailMatch = tail.length + 1;
-      }
-    }
-    if (!body.length) {
-      let sawSome = !!fileTailMatch;
-      for (let i2 = fileIndex; i2 < file.length - fileTailMatch; i2++) {
-        const f = String(file[i2]);
-        sawSome = true;
-        if (f === "." || f === ".." || !this.options.dot && f.startsWith(".")) {
-          return false;
-        }
-      }
-      return partial2 || sawSome;
-    }
-    const bodySegments = [[[], 0]];
-    let currentBody = bodySegments[0];
-    let nonGsParts = 0;
-    const nonGsPartsSums = [0];
-    for (const b of body) {
-      if (b === GLOBSTAR) {
-        nonGsPartsSums.push(nonGsParts);
-        currentBody = [[], 0];
-        bodySegments.push(currentBody);
-      } else {
-        currentBody[0].push(b);
-        nonGsParts++;
-      }
-    }
-    let i = bodySegments.length - 1;
-    const fileLength = file.length - fileTailMatch;
-    for (const b of bodySegments) {
-      b[1] = fileLength - (nonGsPartsSums[i--] + b[0].length);
-    }
-    return !!this.#matchGlobStarBodySections(file, bodySegments, fileIndex, 0, partial2, 0, !!fileTailMatch);
-  }
-  // return false for "nope, not matching"
-  // return null for "not matching, cannot keep trying"
-  #matchGlobStarBodySections(file, bodySegments, fileIndex, bodyIndex, partial2, globStarDepth, sawTail) {
-    const bs = bodySegments[bodyIndex];
-    if (!bs) {
-      for (let i = fileIndex; i < file.length; i++) {
-        sawTail = true;
-        const f = file[i];
-        if (f === "." || f === ".." || !this.options.dot && f.startsWith(".")) {
-          return false;
-        }
-      }
-      return sawTail;
-    }
-    const [body, after] = bs;
-    while (fileIndex <= after) {
-      const m = this.#matchOne(file.slice(0, fileIndex + body.length), body, partial2, fileIndex, 0);
-      if (m && globStarDepth < this.maxGlobstarRecursion) {
-        const sub = this.#matchGlobStarBodySections(file, bodySegments, fileIndex + body.length, bodyIndex + 1, partial2, globStarDepth + 1, sawTail);
-        if (sub !== false) {
-          return sub;
-        }
-      }
-      const f = file[fileIndex];
-      if (f === "." || f === ".." || !this.options.dot && f.startsWith(".")) {
-        return false;
-      }
-      fileIndex++;
-    }
-    return partial2 || null;
-  }
-  #matchOne(file, pattern, partial2, fileIndex, patternIndex) {
-    let fi;
-    let pi;
-    let pl;
-    let fl;
-    for (fi = fileIndex, pi = patternIndex, fl = file.length, pl = pattern.length; fi < fl && pi < pl; fi++, pi++) {
-      this.debug("matchOne loop");
-      let p = pattern[pi];
-      let f = file[fi];
-      this.debug(pattern, p, f);
-      if (p === false || p === GLOBSTAR) {
-        return false;
-      }
-      let hit;
-      if (typeof p === "string") {
-        hit = f === p;
-        this.debug("string match", p, f, hit);
-      } else {
-        hit = p.test(f);
-        this.debug("pattern match", p, f, hit);
-      }
-      if (!hit)
-        return false;
-    }
-    if (fi === fl && pi === pl) {
-      return true;
-    } else if (fi === fl) {
-      return partial2;
-    } else if (pi === pl) {
-      return fi === fl - 1 && file[fi] === "";
-    } else {
-      throw new Error("wtf?");
-    }
-  }
-  braceExpand() {
-    return braceExpand(this.pattern, this.options);
-  }
-  parse(pattern) {
-    assertValidPattern(pattern);
-    const options = this.options;
-    if (pattern === "**")
-      return GLOBSTAR;
-    if (pattern === "")
-      return "";
-    let m;
-    let fastTest = null;
-    if (m = pattern.match(starRE)) {
-      fastTest = options.dot ? starTestDot : starTest;
-    } else if (m = pattern.match(starDotExtRE)) {
-      fastTest = (options.nocase ? options.dot ? starDotExtTestNocaseDot : starDotExtTestNocase : options.dot ? starDotExtTestDot : starDotExtTest)(m[1]);
-    } else if (m = pattern.match(qmarksRE)) {
-      fastTest = (options.nocase ? options.dot ? qmarksTestNocaseDot : qmarksTestNocase : options.dot ? qmarksTestDot : qmarksTest)(m);
-    } else if (m = pattern.match(starDotStarRE)) {
-      fastTest = options.dot ? starDotStarTestDot : starDotStarTest;
-    } else if (m = pattern.match(dotStarRE)) {
-      fastTest = dotStarTest;
-    }
-    const re = AST.fromGlob(pattern, this.options).toMMPattern();
-    if (fastTest && typeof re === "object") {
-      Reflect.defineProperty(re, "test", { value: fastTest });
-    }
-    return re;
-  }
-  makeRe() {
-    if (this.regexp || this.regexp === false)
-      return this.regexp;
-    const set = this.set;
-    if (!set.length) {
-      this.regexp = false;
-      return this.regexp;
-    }
-    const options = this.options;
-    const twoStar = options.noglobstar ? star2 : options.dot ? twoStarDot : twoStarNoDot;
-    const flags = new Set(options.nocase ? ["i"] : []);
-    let re = set.map((pattern) => {
-      const pp = pattern.map((p) => {
-        if (p instanceof RegExp) {
-          for (const f of p.flags.split(""))
-            flags.add(f);
-        }
-        return typeof p === "string" ? regExpEscape2(p) : p === GLOBSTAR ? GLOBSTAR : p._src;
-      });
-      pp.forEach((p, i) => {
-        const next = pp[i + 1];
-        const prev = pp[i - 1];
-        if (p !== GLOBSTAR || prev === GLOBSTAR) {
-          return;
-        }
-        if (prev === void 0) {
-          if (next !== void 0 && next !== GLOBSTAR) {
-            pp[i + 1] = "(?:\\/|" + twoStar + "\\/)?" + next;
-          } else {
-            pp[i] = twoStar;
-          }
-        } else if (next === void 0) {
-          pp[i - 1] = prev + "(?:\\/|\\/" + twoStar + ")?";
-        } else if (next !== GLOBSTAR) {
-          pp[i - 1] = prev + "(?:\\/|\\/" + twoStar + "\\/)" + next;
-          pp[i + 1] = GLOBSTAR;
-        }
-      });
-      const filtered = pp.filter((p) => p !== GLOBSTAR);
-      if (this.partial && filtered.length >= 1) {
-        const prefixes = [];
-        for (let i = 1; i <= filtered.length; i++) {
-          prefixes.push(filtered.slice(0, i).join("/"));
-        }
-        return "(?:" + prefixes.join("|") + ")";
-      }
-      return filtered.join("/");
-    }).join("|");
-    const [open, close] = set.length > 1 ? ["(?:", ")"] : ["", ""];
-    re = "^" + open + re + close + "$";
-    if (this.partial) {
-      re = "^(?:\\/|" + open + re.slice(1, -1) + close + ")$";
-    }
-    if (this.negate)
-      re = "^(?!" + re + ").+$";
-    try {
-      this.regexp = new RegExp(re, [...flags].join(""));
-    } catch {
-      this.regexp = false;
-    }
-    return this.regexp;
-  }
-  slashSplit(p) {
-    if (this.preserveMultipleSlashes) {
-      return p.split("/");
-    } else if (this.isWindows && /^\/\/[^/]+/.test(p)) {
-      return ["", ...p.split(/\/+/)];
-    } else {
-      return p.split(/\/+/);
-    }
-  }
-  match(f, partial2 = this.partial) {
-    this.debug("match", f, this.pattern);
-    if (this.comment) {
-      return false;
-    }
-    if (this.empty) {
-      return f === "";
-    }
-    if (f === "/" && partial2) {
-      return true;
-    }
-    const options = this.options;
-    if (this.isWindows) {
-      f = f.split("\\").join("/");
-    }
-    const ff = this.slashSplit(f);
-    this.debug(this.pattern, "split", ff);
-    const set = this.set;
-    this.debug(this.pattern, "set", set);
-    let filename = ff[ff.length - 1];
-    if (!filename) {
-      for (let i = ff.length - 2; !filename && i >= 0; i--) {
-        filename = ff[i];
-      }
-    }
-    for (const pattern of set) {
-      let file = ff;
-      if (options.matchBase && pattern.length === 1) {
-        file = [filename];
-      }
-      const hit = this.matchOne(file, pattern, partial2);
-      if (hit) {
-        if (options.flipNegate) {
-          return true;
-        }
-        return !this.negate;
-      }
-    }
-    if (options.flipNegate) {
-      return false;
-    }
-    return this.negate;
-  }
-  static defaults(def) {
-    return minimatch.defaults(def).Minimatch;
-  }
-};
-minimatch.AST = AST;
-minimatch.Minimatch = Minimatch;
-minimatch.escape = escape2;
-minimatch.unescape = unescape2;
-
-// src/path-safety.ts
-import path2 from "node:path";
-function resolveContainedPath(root, candidate) {
-  const resolvedRoot = path2.resolve(root);
-  const resolved = path2.resolve(resolvedRoot, candidate);
-  const relative = path2.relative(resolvedRoot, resolved);
-  if (relative === "") {
-    return { ok: true, path: resolvedRoot };
-  }
-  if (path2.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path2.sep}`) || relative.startsWith("../") || relative.startsWith("..\\")) {
-    return {
-      ok: false,
-      error: `Error: path escapes project root: ${candidate} (resolved to ${resolved}, root ${resolvedRoot})`
-    };
-  }
-  return { ok: true, path: resolved };
-}
-function looksLikePluginInstallDir(dir) {
-  const normalized = dir.replace(/\\/g, "/").toLowerCase();
-  return normalized.includes("/.kimi-code/plugins/") || normalized.includes("/plugins/managed/");
-}
-function absolutePathHint(processCwd) {
-  if (!looksLikePluginInstallDir(processCwd)) return "";
-  return ` Hint: this MCP server's process cwd is the plugin install dir (${processCwd}). Pass absolute cwd (workspace root) and/or absolute path/entry \u2014 relative paths resolve against the plugin dir, not the user workspace.`;
-}
-function resolveProjectTarget(input) {
-  const processCwd = path2.resolve(input.processCwd ?? process.cwd());
-  const target = input.target ?? input.defaultTarget ?? ".";
-  const hasExplicitCwd = typeof input.cwd === "string" && input.cwd.trim() !== "";
-  let projectDir;
-  if (hasExplicitCwd) {
-    const cwdValue = input.cwd.trim();
-    projectDir = path2.isAbsolute(cwdValue) ? path2.resolve(cwdValue) : path2.resolve(processCwd, cwdValue);
-  } else if (path2.isAbsolute(target)) {
-    const absoluteTarget = path2.resolve(target);
-    return { ok: true, result: { projectDir: absoluteTarget, targetPath: absoluteTarget } };
-  } else {
-    projectDir = processCwd;
-  }
-  const contained = resolveContainedPath(projectDir, target);
-  if (!contained.ok) {
-    return {
-      ok: false,
-      error: contained.error + absolutePathHint(processCwd)
-    };
-  }
-  return {
-    ok: true,
-    result: { projectDir, targetPath: contained.path }
-  };
-}
-
-// src/tools/dead-code.ts
-var SKIP_DIRS = /* @__PURE__ */ new Set([
-  "node_modules",
-  ".git",
-  "dist",
-  "build",
-  "coverage",
-  ".next",
-  ".nuxt",
-  ".turbo",
-  "out",
-  "target",
-  "vendor"
-]);
-var DEFAULT_ENTRIES = [
-  "index",
-  "main",
-  "app",
-  "server",
-  "cli",
-  "mod",
-  "lib",
-  "src/index",
-  "src/main",
-  "src/app",
-  "packages/*/index",
-  "packages/*/src/index",
-  "packages/*/src/main"
-];
-var DEFAULT_EXCLUDES = [
-  "**/*.d.ts",
-  "**/*.test.*",
-  "**/*.spec.*",
-  "**/*.stories.*",
-  "**/__tests__/**",
-  "**/__mocks__/**",
-  "**/.storybook/**",
-  "**/storybook/**",
-  "**/stories/**",
-  "**/test/**",
-  "**/tests/**",
-  "**/fixtures/**",
-  "**/mocks/**",
-  "**/generated/**",
-  "**/__generated__/**",
-  "**/gen/**",
-  "**/*.gen.*",
-  "**/icons/**",
-  "**/examples/**",
-  "**/example/**"
-];
-function lineAt(content, index) {
-  return content.slice(0, index).split("\n").length;
-}
-function commentsAndLiteralsMask(content, lang) {
-  const mask = new Uint8Array(content.length).fill(1);
-  const n = content.length;
-  const erase = (from, to) => {
-    for (let k = from; k < Math.min(to, n); k++) mask[k] = 0;
-  };
-  let i = 0;
-  if (lang === "python") {
-    while (i < n) {
-      const c = content[i];
-      if (c === "#") {
-        while (i < n && content[i] !== "\n") {
-          mask[i] = 0;
-          i++;
-        }
-      } else if (c === "'" || c === '"') {
-        const quote = c;
-        const triple = content[i + 1] === quote && content[i + 2] === quote;
-        const len = triple ? 3 : 1;
-        erase(i, i + len);
-        i += len;
-        while (i < n) {
-          const ch = content[i];
-          if (ch === "\\") {
-            erase(i, i + 2);
-            i += 2;
-          } else if (triple ? ch === quote && content[i + 1] === quote && content[i + 2] === quote : ch === quote) {
-            erase(i, i + (triple ? 3 : 1));
-            i += triple ? 3 : 1;
-            break;
-          } else {
-            erase(i, i + 1);
-            i++;
-          }
-        }
-      } else {
-        i++;
-      }
-    }
-  } else {
-    const isRegexStart = (at) => {
-      let j = at - 1;
-      while (j >= 0 && /\s/.test(content[j] ?? "")) j--;
-      if (j < 0 || content[j] === "\n") return true;
-      if ("=(,:[!&|?{};".includes(content[j] ?? "")) return true;
-      const word = content.slice(Math.max(0, j - 20), j + 1).match(/([A-Za-z_$][\w$]*)$/)?.[1];
-      return Boolean(
-        word && /^(return|case|throw|typeof|instanceof|in|of|delete|void|yield|new)$/.test(word)
-      );
-    };
-    const skipRegex = () => {
-      let end = i + 1;
-      let inClass = false;
-      while (end < n) {
-        const ch = content[end];
-        if (ch === "\\") {
-          end += 2;
-          continue;
-        }
-        if (ch === "[") {
-          inClass = true;
-          end++;
-          continue;
-        }
-        if (ch === "]") {
-          inClass = false;
-          end++;
-          continue;
-        }
-        if (!inClass && ch === "/") break;
-        if (ch === "\n") return;
-        end++;
-      }
-      if (end >= n) return;
-      erase(i, end + 1);
-      i = end + 1;
-    };
-    const skipQuoted = (quote) => {
-      erase(i, i + 1);
-      i++;
-      while (i < n) {
-        const ch = content[i];
-        if (ch === "\\") {
-          erase(i, i + 2);
-          i += 2;
-        } else if (ch === quote) {
-          erase(i, i + 1);
-          i++;
-          return;
-        } else {
-          erase(i, i + 1);
-          i++;
-        }
-      }
-    };
-    const skipTemplate = () => {
-      erase(i, i + 1);
-      i++;
-      let depth = 0;
-      while (i < n) {
-        const ch = content[i];
-        if (ch === "\\") {
-          erase(i, i + 2);
-          i += 2;
-        } else if (depth === 0 && ch === "`") {
-          erase(i, i + 1);
-          i++;
-          return;
-        } else if (ch === "$" && content[i + 1] === "{") {
-          erase(i, i + 2);
-          i += 2;
-          depth = 1;
-        } else if (depth > 0) {
-          if (ch === "{") depth++;
-          else if (ch === "}") depth--;
-          else if (ch === "'" || ch === '"') {
-            skipQuoted(ch);
-            continue;
-          } else if (ch === "`") {
-            skipTemplate();
-            continue;
-          } else if (ch === "/" && isRegexStart(i)) {
-            skipRegex();
-            continue;
-          }
-          erase(i, i + 1);
-          i++;
-        } else {
-          erase(i, i + 1);
-          i++;
-        }
-      }
-    };
-    while (i < n) {
-      const c = content[i];
-      const next = content[i + 1];
-      if (c === "/" && next === "/") {
-        while (i < n && content[i] !== "\n") {
-          mask[i] = 0;
-          i++;
-        }
-      } else if (c === "/" && next === "*") {
-        erase(i, i + 2);
-        i += 2;
-        while (i < n && !(content[i] === "*" && content[i + 1] === "/")) {
-          erase(i, i + 1);
-          i++;
-        }
-        if (i < n) {
-          erase(i, i + 2);
-          i += 2;
-        }
-      } else if (c === "r" && content[i + 1] === "#") {
-        let hashes = 0;
-        let quoteAt = i + 1;
-        while (quoteAt < n && content[quoteAt] === "#") {
-          hashes++;
-          quoteAt++;
-        }
-        if (content[quoteAt] === '"') {
-          let k = quoteAt + 1;
-          while (k < n) {
-            if (content[k] === '"') {
-              let h = k + 1;
-              let matched = 0;
-              while (h < n && content[h] === "#" && matched < hashes) {
-                matched++;
-                h++;
-              }
-              if (matched === hashes) {
-                erase(i, h);
-                i = h;
-                break;
-              }
-            }
-            k++;
-          }
-          if (k >= n) {
-            erase(i, n);
-            i = n;
-          }
-        } else {
-          i++;
-        }
-      } else if (c === "'" || c === '"') {
-        skipQuoted(c);
-      } else if (c === "`") {
-        skipTemplate();
-      } else if (c === "/" && isRegexStart(i)) {
-        skipRegex();
-      } else {
-        i++;
-      }
-    }
-  }
-  return mask;
-}
-function hasLiveCode(mask, from, to) {
-  for (let k = from; k < to && k < mask.length; k++) {
-    if (mask[k] === 1) return true;
-  }
-  return false;
-}
-function stripCommentsAndLiterals(content, lang, mask) {
-  const m = mask ?? commentsAndLiteralsMask(content, lang);
-  const out = content.split("");
-  for (let i = 0; i < content.length; i++) {
-    if (m[i] === 0 && out[i] !== "\n") out[i] = " ";
-  }
-  return out.join("");
-}
-function computeLineStartDepths(content) {
-  const depths = [0];
-  let depth = 0;
-  for (let i = 0; i < content.length; i++) {
-    const c = content[i];
-    if (c === "\n") {
-      depths.push(depth);
-    } else if (c === "{") {
-      depth++;
-    } else if (c === "}") {
-      depth = Math.max(0, depth - 1);
-    }
-  }
-  return depths;
-}
-function isTopLevelExport(stripped, index, lineDepths) {
-  let k = index;
-  while (k > 0 && stripped[k - 1] !== "\n") k--;
-  let depth = lineDepths[lineAt(stripped, index) - 1] ?? 0;
-  for (let j = k; j < index; j++) {
-    if (stripped[j] === "{") depth++;
-    else if (stripped[j] === "}") depth = Math.max(0, depth - 1);
-  }
-  return depth === 0;
-}
-var tsParser = {
-  name: "TypeScript",
-  extensions: ["ts", "tsx", "js", "jsx", "mjs", "cjs"],
-  maskLang: "c",
-  extractImports(content, mask) {
-    const imports = [];
-    const m = mask ?? commentsAndLiteralsMask(content, "c");
-    const patterns = [
-      /import\s*(?:type\s+)?(?:(?:\w+|\{[^}]*\}|\*\s+as\s+\w+)\s+from\s+)?['"]([^'"]+)['"]/g,
-      /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-      /export\s+(?:type\s+)?(?:\{[^}]*\}|\*)\s+from\s+['"]([^'"]+)['"]/g,
-      /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g
-    ];
-    for (const re of patterns) {
-      let match2;
-      while ((match2 = re.exec(content)) !== null) {
-        if (hasLiveCode(m, match2.index, match2.index + 1)) {
-          imports.push({ rawPath: match2[1] ?? "" });
-        }
-      }
-    }
-    return imports;
-  },
-  parseTypeDefs(content, mask) {
-    const defs = [];
-    const code = stripCommentsAndLiterals(content, "c", mask);
-    const lineDepths = computeLineStartDepths(code);
-    const patterns = [
-      [/(export\s+)?interface\s+(\w+)/g, "interface", 2],
-      [/(export\s+)?type\s+(\w+)\s*=/g, "type", 2],
-      [/(export\s+)?(?:const\s+)?enum\s+(\w+)/g, "enum", 2],
-      [/(export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+(\w+)/g, "class", 2],
-      [/(export\s+)(?:default\s+)?(?:async\s+)?function\s*\*?\s*(\w+)/g, "function", 2],
-      [/(export\s+)(?:declare\s+)?(?:const|let|var)\s+(\w+)/g, "variable", 2]
-    ];
-    for (const [re, kind, nameIndex] of patterns) {
-      let match2;
-      while ((match2 = re.exec(code)) !== null) {
-        const exported = Boolean(match2[1]);
-        if (exported && !isTopLevelExport(code, match2.index, lineDepths)) continue;
-        defs.push({
-          name: match2[nameIndex] ?? "",
-          kind,
-          exported,
-          line: lineAt(code, match2.index)
-        });
-      }
-    }
-    return defs;
-  },
-  normalizeImportPath(rawPath, fromFile, srcDir) {
-    const resolved = path3.resolve(srcDir, path3.dirname(fromFile), rawPath);
-    const relative = path3.relative(srcDir, resolved);
-    if (relative.startsWith("..") || path3.isAbsolute(relative)) return null;
-    return stripExtension(relative.replace(/\\/g, "/"));
-  }
-};
-var pyParser = {
-  name: "Python",
-  extensions: ["py"],
-  maskLang: "python",
-  extractImports(content, mask) {
-    const imports = [];
-    const m = mask ?? commentsAndLiteralsMask(content, "python");
-    const patterns = [
-      /^import\s+([.\w]+)/gm,
-      /^from\s+([.\w]+)\s+import\s+[.\w]+(?:\s+as\s+[.\w]+)?(?:\s*,\s*[.\w]+(?:\s+as\s+[.\w]+)?)*/gm
-    ];
-    for (const re of patterns) {
-      let match2;
-      while ((match2 = re.exec(content)) !== null) {
-        if (hasLiveCode(m, match2.index, match2.index + 1)) {
-          imports.push({ rawPath: match2[1] ?? "" });
-        }
-      }
-    }
-    return imports;
-  },
-  parseTypeDefs(content, mask) {
-    const defs = [];
-    const code = stripCommentsAndLiterals(content, "python", mask);
-    const re = /(?:^|\n)class\s+(\w+)\s*(?:\([^)]*\))?\s*:/g;
-    let match2;
-    while ((match2 = re.exec(code)) !== null) {
-      const name = match2[1] ?? "";
-      defs.push({ name, kind: "class", exported: !name.startsWith("_"), line: lineAt(code, match2.index) + 1 });
-    }
-    return defs;
-  },
-  normalizeImportPath(rawPath, fromFile, srcDir) {
-    const fromDir = path3.dirname(fromFile);
-    const cleaned = rawPath.replace(/^\.+/, "").replace(/\./g, "/");
-    const resolved = rawPath.startsWith(".") ? path3.resolve(srcDir, fromDir, cleaned) : path3.resolve(srcDir, cleaned);
-    const relative = path3.relative(srcDir, resolved);
-    if (relative.startsWith("..") || path3.isAbsolute(relative)) return null;
-    return relative.replace(/\\/g, "/");
-  }
-};
-var simpleParsers = [
-  tsParser,
-  pyParser,
-  makeRegexParser(
-    "Go",
-    ["go"],
-    [/import\s+(?:\w+\s+)?"([^"]+)"/g],
-    [[/type\s+(\w+)\s+struct\s*\{/g, "struct"], [/type\s+(\w+)\s+interface\s*\{/g, "interface"]]
-  ),
-  makeRegexParser(
-    "Rust",
-    ["rs"],
-    [/^[ \t]*use\s+([\w:]+).*;/gm, /^[ \t]*mod\s+(\w+)\s*[;{]/gm],
-    [[/(pub\s+)?struct\s+(\w+)/g, "struct"], [/(pub\s+)?enum\s+(\w+)/g, "enum"], [/(pub\s+)?trait\s+(\w+)/g, "interface"]],
-    true
-  ),
-  makeRegexParser(
-    "C#",
-    ["cs"],
-    [/^[ \t]*using\s+(?:static\s+)?(?:\w+\s*=\s*)?([\w.]+)\s*;/gm],
-    [[/(public\s+)?(?:class|record)\s+(\w+)/g, "class"], [/(public\s+)?struct\s+(\w+)/g, "struct"], [/(public\s+)?interface\s+(\w+)/g, "interface"], [/(public\s+)?enum\s+(\w+)/g, "enum"]]
-  ),
-  makeRegexParser(
-    "C++",
-    ["cpp", "cxx", "cc", "c", "hpp", "hxx", "h", "hh"],
-    [/^[ \t]*#\s*include\s*"([^"]+)"/gm],
-    [[/(?:class|struct)\s+(\w+)\s*[{:\n]/g, "struct"], [/(?:enum\s+class|enum)\s+(\w+)/g, "enum"]]
-  )
-];
-function makeRegexParser(name, extensions, importPatterns, typePatterns, stripFinalSegment = false) {
-  return {
-    name,
-    extensions,
-    maskLang: "c",
-    extractImports(content, mask) {
-      const imports = [];
-      const m = mask ?? commentsAndLiteralsMask(content, "c");
-      for (const re of importPatterns) {
-        let match2;
-        while ((match2 = re.exec(content)) !== null) {
-          if (hasLiveCode(m, match2.index, match2.index + 1)) {
-            imports.push({ rawPath: match2[1] ?? "" });
-          }
-        }
-      }
-      return imports;
-    },
-    parseTypeDefs(content, mask) {
-      const defs = [];
-      const code = stripCommentsAndLiterals(content, "c", mask);
-      for (const [re, kind] of typePatterns) {
-        let match2;
-        while ((match2 = re.exec(code)) !== null) {
-          const nameIndex = match2.length > 2 ? 2 : 1;
-          defs.push({
-            name: match2[nameIndex] ?? "",
-            kind,
-            exported: match2[1] === "pub " || match2[1] === "public " || match2.length === 2,
-            line: lineAt(code, match2.index)
-          });
-        }
-      }
-      return defs;
-    },
-    normalizeImportPath(rawPath, fromFile, srcDir) {
-      const pathPart = stripFinalSegment ? rawPath.replace(/:{1,2}[\w]+$/, "") : rawPath;
-      const relative = pathPart.includes("::") ? pathPart.replace(/^crate::/, "").replace(/::/g, "/") : pathPart;
-      const resolved = path3.resolve(srcDir, path3.dirname(fromFile), relative);
-      const rel = path3.relative(srcDir, resolved);
-      if (rel.startsWith("..") || path3.isAbsolute(rel)) return null;
-      return stripExtension(rel.replace(/\\/g, "/"));
-    }
-  };
-}
-function stripExtension(filePath) {
-  return filePath.replace(/\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|cs|cpp|cxx|cc|c|hpp|hxx|hh|h)$/, "");
-}
-async function listFiles(dir) {
-  const out = [];
-  async function walk(current) {
-    let entries;
-    try {
-      entries = await fs.readdir(current, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name)) await walk(path3.join(current, entry.name));
-      } else if (entry.isFile()) {
-        out.push(path3.join(current, entry.name));
-      }
-    }
-  }
-  await walk(dir);
-  return out;
-}
-function isExcluded(relFile, patterns) {
-  const normalized = relFile.replace(/\\/g, "/");
-  return patterns.some((pattern) => minimatch(normalized, pattern, { dot: true, matchBase: true }));
-}
-function isEntryPoint(module, entryPoints) {
-  return entryPoints.some((entry) => entry === module || minimatch(module, entry, { dot: true }));
-}
-function normalizeEntryPoint(raw, srcDir, moduleKeys) {
-  const trimmed = raw.trim();
-  if (!trimmed) return [];
-  let value;
-  if (path3.isAbsolute(trimmed)) {
-    const rel = path3.relative(srcDir, path3.resolve(trimmed));
-    if (rel.startsWith("..") || path3.isAbsolute(rel)) return [];
-    value = rel.replace(/\\/g, "/");
-  } else {
-    value = trimmed.replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/^\/+/, "");
-  }
-  value = path3.posix.normalize(stripExtension(value.replace(/\.d\.(ts|tsx)$/, ".$1"))).replace(/^\.\//, "");
-  if (!value || value === "." || value.startsWith("..")) return [];
-  const keys = [value];
-  if (!value.endsWith("/index") && moduleKeys.has(`${value}/index`)) keys.push(`${value}/index`);
-  return keys;
-}
-function collectExportPaths(value, out) {
-  if (typeof value === "string") {
-    if (value.startsWith("./") && !value.endsWith(".json")) out.push(value.slice(2));
-  } else if (Array.isArray(value)) {
-    for (const item of value) collectExportPaths(item, out);
-  } else if (value !== null && typeof value === "object") {
-    for (const item of Object.values(value)) collectExportPaths(item, out);
-  }
-}
-var BUILD_DIRS = /* @__PURE__ */ new Set(["dist", "lib", "build", "out"]);
-async function collectPackageDirs(srcDir) {
-  const dirs = [""];
-  try {
-    const entries = await fs.readdir(path3.join(srcDir, "packages"), { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      dirs.push(path3.join("packages", entry.name));
-      if (entry.name.startsWith("@")) {
-        const scoped = await fs.readdir(path3.join(srcDir, "packages", entry.name), { withFileTypes: true });
-        for (const sub of scoped) {
-          if (sub.isDirectory()) dirs.push(path3.join("packages", entry.name, sub.name));
-        }
-      }
-    }
-  } catch {
-  }
-  return dirs;
-}
-async function readPackageEntryKeys(srcDir, moduleKeys) {
-  const packageDirs = await collectPackageDirs(srcDir);
-  const keys = [];
-  for (const dir of packageDirs) {
-    let pkg;
-    try {
-      pkg = JSON.parse(await fs.readFile(path3.join(srcDir, dir, "package.json"), "utf8"));
-    } catch {
-      continue;
-    }
-    if (pkg === null || typeof pkg !== "object") continue;
-    const record2 = pkg;
-    const rawPaths = [];
-    collectExportPaths(record2.exports, rawPaths);
-    for (const field of ["main", "module", "types"]) {
-      if (typeof record2[field] === "string") rawPaths.push(record2[field]);
-    }
-    for (const rawPath of rawPaths) {
-      let rel = path3.relative(srcDir, path3.resolve(srcDir, dir, rawPath)).replace(/\\/g, "/");
-      if (rel.startsWith("..") || path3.isAbsolute(rel) || rel.includes("node_modules")) continue;
-      let key = stripExtension(rel.replace(/\.d\.(ts|tsx)$/, ".$1"));
-      const segments = rel.split("/");
-      const srcIdx = segments.indexOf("src");
-      const buildIdx = segments.findIndex((seg) => BUILD_DIRS.has(seg));
-      if (buildIdx !== -1 && (srcIdx === -1 || buildIdx < srcIdx)) {
-        const mirror = [...segments.slice(0, buildIdx), "src", ...segments.slice(buildIdx + 1)].join("/");
-        const mirrorKey = stripExtension(mirror.replace(/\.d\.(ts|tsx)$/, ".$1"));
-        const base = mirrorKey.slice(mirrorKey.lastIndexOf("/") + 1);
-        key = moduleKeys.has(mirrorKey) ? mirrorKey : `src/${base}`;
-      }
-      if (key) keys.push(key);
-    }
-  }
-  return [...new Set(keys)];
-}
-async function readTsconfigAliases(srcDir) {
-  const aliases = [];
-  for (const dir of [srcDir, path3.dirname(srcDir)]) {
-    if (!dir) continue;
-    let raw;
-    try {
-      raw = await fs.readFile(path3.join(dir, "tsconfig.json"), "utf8");
-    } catch {
-      continue;
-    }
-    let config2;
-    try {
-      config2 = JSON.parse(raw);
-    } catch {
-      continue;
-    }
-    for (const [key, targets] of Object.entries(config2.compilerOptions?.paths ?? {})) {
-      const target = targets?.[0];
-      if (typeof target !== "string") continue;
-      const prefix = key.replace(/\*$/, "");
-      if (!prefix) continue;
-      aliases.push({ prefix, target: target.replace(/\*$/, "") });
-    }
-    break;
-  }
-  aliases.sort((a, b) => b.prefix.length - a.prefix.length);
-  return aliases;
-}
-function resolveAlias(rawPath, aliases) {
-  for (const alias of aliases) {
-    if (rawPath.startsWith(alias.prefix)) {
-      return alias.target + rawPath.slice(alias.prefix.length);
-    }
-  }
-  return null;
-}
-async function readPackageNames(srcDir) {
-  const names = [];
-  for (const dir of await collectPackageDirs(srcDir)) {
-    if (!dir) continue;
-    let pkg;
-    try {
-      pkg = JSON.parse(await fs.readFile(path3.join(srcDir, dir, "package.json"), "utf8"));
-    } catch {
-      continue;
-    }
-    const name = pkg?.name;
-    if (typeof name === "string" && name) names.push([name, dir]);
-  }
-  names.sort((a, b) => b[0].length - a[0].length);
-  return names;
-}
-function resolvePackageImport(rawPath, packageNames, moduleKeys) {
-  for (const [name, dir] of packageNames) {
-    if (rawPath !== name && !rawPath.startsWith(`${name}/`)) continue;
-    const rest = rawPath === name ? "" : rawPath.slice(name.length + 1);
-    for (const base of [`${dir}/src`, dir]) {
-      const candidate = stripExtension(base + (rest ? `/${rest}` : ""));
-      if (moduleKeys.has(candidate) || moduleKeys.has(`${candidate}/index`)) return candidate;
-    }
-    return null;
-  }
-  return null;
-}
-var NEXT_APP_ROUTE_FILES = /* @__PURE__ */ new Set([
-  "page",
-  "layout",
-  "route",
-  "loading",
-  "error",
-  "not-found",
-  "template",
-  "default"
-]);
-var ENTRY_SUBDIR_NAMES = /* @__PURE__ */ new Set(["app", "core", "cli", "server", "lib", "cmd", "routes", "views", "pages", "main", "entries"]);
-var ELECTRON_ROLE_RE = /^(?:src|packages\/[^/]+(?:\/src)?|packages\/@[^/]+\/[^/]+(?:\/src)?)\/(main|preload|renderer)(?:\/index)?$/;
-function isAtFrameworkRoot(segs, dir) {
-  return segs[0] === dir || segs[0] === "src" && segs[1] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === dir || segs[0] === "packages" && segs[1] !== void 0 && segs[2] === "src" && segs[3] === dir || segs[0] === "packages" && segs[1]?.startsWith("@") && segs[2] !== void 0 && segs[3] === dir || segs[0] === "packages" && segs[1]?.startsWith("@") && segs[2] === "src" && segs[3] !== void 0 && segs[4] === dir;
-}
-function detectStructuralEntries(moduleKeys) {
-  const entries = /* @__PURE__ */ new Set();
-  for (const key of moduleKeys) {
-    const segs = key.split("/");
-    if (isAtFrameworkRoot(segs, "app")) {
-      const appAt = segs.indexOf("app");
-      if (NEXT_APP_ROUTE_FILES.has(segs[appAt + 1] ?? "")) entries.add(key);
-    }
-    if (isAtFrameworkRoot(segs, "pages")) entries.add(key);
-    if (ELECTRON_ROLE_RE.test(key)) entries.add(key);
-    if (key.endsWith("/index")) {
-      const subdir = segs[segs.length - 2] ?? "";
-      if (!ENTRY_SUBDIR_NAMES.has(subdir)) continue;
-      const subdirAt = segs.length - 2;
-      const scoped = segs[0] === "packages" && segs[1]?.startsWith("@");
-      const atRoot = subdirAt === 0;
-      const atSrcRoot = subdirAt === 1 && segs[0] === "src";
-      const atPkgRoot = subdirAt === 2 && segs[0] === "packages";
-      const atPkgSrcRoot = subdirAt === 3 && segs[0] === "packages" && segs[2] === "src";
-      const atScopeRoot = subdirAt === 4 && scoped;
-      const atScopeSrcRoot = subdirAt === 5 && scoped && segs[3] === "src";
-      if (!(atRoot || atSrcRoot || atPkgRoot || atPkgSrcRoot || atScopeRoot || atScopeSrcRoot)) continue;
-      if (atPkgRoot || atPkgSrcRoot || atScopeRoot || atScopeSrcRoot) {
-        const pkg = scoped ? `${segs[1]}/${segs[2]}` : segs[1] ?? "";
-        if (moduleKeys.has(`packages/${pkg}/index`) || moduleKeys.has(`packages/${pkg}/src/index`)) continue;
-      } else if (atSrcRoot) {
-        if (moduleKeys.has("src/index")) continue;
-      } else if (atRoot && segs.length === 2) {
-        if (moduleKeys.has("index")) continue;
-      }
-      entries.add(key);
-    }
-  }
-  return [...entries];
-}
-function isSinglePackageDir(srcDir) {
-  const underPackages = (dir) => {
-    const parent = path3.basename(path3.dirname(dir));
-    if (parent === "packages") return true;
-    return parent.startsWith("@") && path3.basename(path3.dirname(path3.dirname(dir))) === "packages";
-  };
-  if (underPackages(srcDir)) return true;
-  return path3.basename(srcDir) === "src" && underPackages(path3.dirname(srcDir));
-}
-function selectParsers(files, explicitLangs) {
-  if (explicitLangs && explicitLangs.length > 0) {
-    const wanted = new Set(explicitLangs.map((lang) => lang.toLowerCase()));
-    return simpleParsers.filter(
-      (parser) => wanted.has(parser.name.toLowerCase()) || parser.extensions.some((ext2) => wanted.has(ext2))
-    );
-  }
-  const extSet = new Set(files.map((file) => path3.extname(file).slice(1).toLowerCase()));
-  return simpleParsers.filter((parser) => parser.extensions.some((ext2) => extSet.has(ext2)));
-}
-function resolveModuleKey(normalized, moduleKeys) {
-  if (moduleKeys.has(normalized)) return normalized;
-  const indexModule = `${normalized.replace(/\/$/, "")}/index`;
-  if (moduleKeys.has(indexModule)) return indexModule;
-  const initModule = `${normalized.replace(/\/$/, "")}/__init__`;
-  if (moduleKeys.has(initModule)) return initModule;
-  return normalized;
-}
-function findReachable(graph, roots) {
-  const reachable = /* @__PURE__ */ new Set();
-  const pending = [...roots];
-  while (pending.length > 0) {
-    const module = pending.pop();
-    if (!module || reachable.has(module)) continue;
-    reachable.add(module);
-    for (const dependency of graph.get(module) ?? []) {
-      if (graph.has(dependency) && !reachable.has(dependency)) pending.push(dependency);
-    }
-  }
-  return reachable;
-}
-async function runDeadCode(input) {
-  const resolved = resolveProjectTarget({
-    cwd: input.cwd,
-    target: input.entry,
-    defaultTarget: "."
-  });
-  if (!resolved.ok) return resolved.error;
-  const { projectDir, targetPath: srcDir } = resolved.result;
-  try {
-    const stat = await fs.stat(srcDir);
-    if (!stat.isDirectory()) return `Error: ${input.entry ?? "."} is not a directory`;
-  } catch {
-    return `Error: ${input.entry ?? srcDir} not found`;
-  }
-  const excludePatterns = [
-    ...input.include_default_excludes === false ? [] : DEFAULT_EXCLUDES,
-    ...input.exclude ?? []
-  ];
-  const files = (await listFiles(srcDir)).filter(
-    (filePath) => !isExcluded(path3.relative(srcDir, filePath).replace(/\\/g, "/"), excludePatterns)
-  );
-  const parsers = selectParsers(files, input.lang);
-  const extToParser = /* @__PURE__ */ new Map();
-  for (const parser of parsers) parser.extensions.forEach((ext2) => extToParser.set(ext2, parser));
-  const sourceFiles = files.filter((filePath) => extToParser.has(path3.extname(filePath).slice(1).toLowerCase()));
-  const moduleKeys = new Set(
-    sourceFiles.map((filePath) => stripExtension(path3.relative(srcDir, filePath).replace(/\\/g, "/")))
-  );
-  const aliases = await readTsconfigAliases(srcDir);
-  const packageNames = await readPackageNames(srcDir);
-  const graph = /* @__PURE__ */ new Map();
-  const reverse = /* @__PURE__ */ new Map();
-  const symbols = [];
-  for (const filePath of sourceFiles) {
-    const ext2 = path3.extname(filePath).slice(1).toLowerCase();
-    const parser = extToParser.get(ext2);
-    if (!parser) continue;
-    const relFile = path3.relative(srcDir, filePath).replace(/\\/g, "/");
-    const moduleKey = stripExtension(relFile);
-    const content = await fs.readFile(filePath, "utf8");
-    const mask = commentsAndLiteralsMask(content, parser.maskLang);
-    const targets = /* @__PURE__ */ new Set();
-    for (const decl of parser.extractImports(content, mask)) {
-      const packaged = resolvePackageImport(decl.rawPath, packageNames, moduleKeys);
-      const aliased = packaged === null ? resolveAlias(decl.rawPath, aliases) : null;
-      const importPath = packaged ?? aliased ?? decl.rawPath;
-      const normalized = parser.normalizeImportPath(importPath, importPath === decl.rawPath ? relFile : "", srcDir);
-      if (!normalized) continue;
-      const target = resolveModuleKey(normalized, moduleKeys);
-      if (moduleKeys.has(target)) targets.add(target);
-    }
-    graph.set(moduleKey, targets);
-    if (!reverse.has(moduleKey)) reverse.set(moduleKey, /* @__PURE__ */ new Set());
-    for (const target of targets) {
-      if (!reverse.has(target)) reverse.set(target, /* @__PURE__ */ new Set());
-      reverse.get(target)?.add(moduleKey);
-    }
-    for (const def of parser.parseTypeDefs(content, mask)) {
-      if (def.exported && def.name) {
-        symbols.push({ name: def.name, kind: def.kind, module: moduleKey, file: relFile, line: def.line });
-      }
-    }
-  }
-  if (graph.size === 0) return `No source files found in ${input.entry ?? "."}`;
-  const symbolsByModule = /* @__PURE__ */ new Map();
-  for (const symbol of symbols) {
-    const list = symbolsByModule.get(symbol.module);
-    if (list) list.push(symbol);
-    else symbolsByModule.set(symbol.module, [symbol]);
-  }
-  const explicitKeys = [];
-  let rejectedEntries = 0;
-  for (const entry of [...DEFAULT_ENTRIES, ...input.entry_points ?? []]) {
-    const keys = normalizeEntryPoint(entry, srcDir, moduleKeys);
-    if (keys.length === 0) rejectedEntries++;
-    else explicitKeys.push(...keys);
-  }
-  const exportsKeys = await readPackageEntryKeys(srcDir, moduleKeys);
-  const structuralKeys = detectStructuralEntries(moduleKeys);
-  const uniqueEntryPoints = [.../* @__PURE__ */ new Set([...explicitKeys, ...exportsKeys, ...structuralKeys])];
-  const matches = (patterns) => [...graph.keys()].filter((module) => isEntryPoint(module, patterns));
-  const roots = matches(uniqueEntryPoints);
-  const explicitRoots = matches([...new Set(explicitKeys)]);
-  const exportsRoots = matches(exportsKeys);
-  const structuralRoots = matches(structuralKeys);
-  const minExports = input.min_exports ?? 1;
-  const reachable = findReachable(graph, roots);
-  const candidates = roots.length > 0 ? [...graph.keys()].filter((module) => !reachable.has(module)) : [...graph.keys()].filter((module) => (reverse.get(module)?.size ?? 0) === 0);
-  const confidenceOf = (module) => {
-    if (roots.length === 0) return "low";
-    return (reverse.get(module)?.size ?? 0) === 0 ? "high" : "medium";
-  };
-  const confidenceRank = { high: 3, medium: 2, low: 1 };
-  const deadModules = candidates.filter((module) => !isEntryPoint(module, uniqueEntryPoints)).map((module) => ({
-    module,
-    exportedSymbols: symbolsByModule.get(module) ?? [],
-    confidence: confidenceOf(module)
-  })).filter((item) => item.exportedSymbols.length >= minExports);
-  const minConfidence = input.min_confidence ?? "low";
-  const filtered = deadModules.filter((item) => confidenceRank[item.confidence] >= confidenceRank[minConfidence]).sort(
-    (a, b) => confidenceRank[b.confidence] - confidenceRank[a.confidence] || b.exportedSymbols.length - a.exportedSymbols.length || a.module.localeCompare(b.module)
-  );
-  const mode = roots.length > 0 ? `unreachable from ${roots.length} entry point(s)` : "zero inbound dependencies (no configured entry point matched)";
-  const parts = [`## Dead Module Candidates: ${input.entry ?? "."}`];
-  parts.push(
-    `Languages: ${parsers.map((parser) => parser.name).join(", ") || "none"} | Modules: ${graph.size} | Exported symbols: ${symbols.length} | Candidates: ${filtered.length}${filtered.length !== deadModules.length ? ` (${deadModules.length} before min_confidence=${minConfidence})` : ""}`
-  );
-  parts.push(`Analysis: ${mode}`);
-  parts.push(
-    `Entry points: ${roots.length} matched (built-in/explicit: ${explicitRoots.length}, package exports: ${exportsRoots.length}, structural: ${structuralRoots.length})`
-  );
-  if (exportsRoots.length > 0) {
-    parts.push(`Public API (package.json exports): ${exportsRoots.join(", ")}`);
-  }
-  if (isSinglePackageDir(srcDir)) {
-    parts.push(
-      `Scan scope: single package (${path3.basename(srcDir)}) \u2014 referrers in other packages are outside this tree; verify candidates repo-wide.`
-    );
-  }
-  if (excludePatterns.length > 0) parts.push(`Excludes: ${excludePatterns.length} pattern(s) applied`);
-  parts.push("");
-  if (roots.length === 0) {
-    parts.push(
-      `\u26A0 No configured entry point matched any module (checked ${uniqueEntryPoints.length} pattern(s)${rejectedEntries > 0 ? `, ${rejectedEntries} ignored for resolving outside the project` : ""}).`
-    );
-    parts.push("  Module keys are relative to the analyzed directory and carry no file extension,");
-    parts.push('  e.g. "src/main" or "packages/a/src/index". Absolute paths are mapped inside automatically.');
-    parts.push(
-      `  First modules: ${[...graph.keys()].slice(0, 6).join(", ")}${graph.size > 6 ? `, ... (${graph.size} total)` : ""}`
-    );
-    parts.push("  The candidates below use the weak 'zero inbound dependencies' heuristic and include false positives.");
-    parts.push("");
-  }
-  if (filtered.length === 0) {
-    if (deadModules.length > 0) {
-      parts.push(
-        `No candidates at min_confidence=${minConfidence}; ${deadModules.length} lower-confidence candidate(s) filtered out.`
-      );
-    } else {
-      parts.push("No dead-module candidates detected. This heuristic result is not proof that no dead code exists.");
-    }
-    return parts.join("\n");
-  }
-  const totalDeadExports = filtered.reduce((sum, item) => sum + item.exportedSymbols.length, 0);
-  const counts = { high: 0, medium: 0, low: 0 };
-  for (const item of filtered) counts[item.confidence]++;
-  parts.push("### Summary");
-  parts.push(
-    `  Candidate modules: ${filtered.length} | Candidate exports: ${totalDeadExports} / ${symbols.length} | High: ${counts.high} | Medium: ${counts.medium} | Low: ${counts.low}`
-  );
-  parts.push("", "### Candidates by package");
-  const packageOf = (module) => {
-    const segs = module.split("/");
-    if (segs[0] === "packages" && segs.length > 2) return `${segs[0]}/${segs[1]}`;
-    if (segs.length > 1) return segs[0];
-    return "(root)";
-  };
-  const groups = /* @__PURE__ */ new Map();
-  for (const item of filtered.slice(0, 30)) {
-    const group = packageOf(item.module);
-    const list = groups.get(group);
-    if (list) list.push(item);
-    else groups.set(group, [item]);
-  }
-  for (const [group, items] of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    parts.push(`${group} (${items.length} module${items.length > 1 ? "s" : ""})`);
-    for (const item of items) {
-      parts.push(`  ${item.module}/ [${item.confidence}] (${item.exportedSymbols.length} exported symbols)`);
-      for (const symbol of item.exportedSymbols.slice(0, 10)) {
-        parts.push(`    - ${symbol.kind} ${symbol.name} (${symbol.file}:${symbol.line})`);
-      }
-      if (item.exportedSymbols.length > 10) {
-        parts.push(`    ... and ${item.exportedSymbols.length - 10} more`);
-      }
-    }
-  }
-  parts.push(
-    "",
-    "Confidence: high = zero in-tree references; medium = referenced only by other unreachable modules; low = zero-inbound heuristic (no entry point matched).",
-    "Note: dynamic imports, path aliases, framework routes, plugin entrypoints, and CLI entrypoints can produce false positives."
-  );
-  return parts.join("\n");
-}
 
 // src/tools/git-conventions.ts
 var ALLOWED_TYPES = [
@@ -24112,7 +21340,7 @@ function runGitConventions(input) {
 // src/server.ts
 var server = new McpServer({
   name: "kimi-engineering-tools",
-  version: "0.3.0"
+  version: "0.4.0"
 });
 server.tool(
   "git_conventions",
@@ -24129,31 +21357,6 @@ results plus the user's Git convention guide unless include_guide=false.`,
   },
   async (input) => ({
     content: [{ type: "text", text: runGitConventions(input) }]
-  })
-);
-server.tool(
-  "dead_code",
-  `Detect candidate modules that are unreachable from configured entry points.
-
-This is a heuristic static analysis tool. Treat results as review candidates,
-not proof that code can be deleted. Dynamic imports, framework routes, plugin
-entrypoints, and CLI entrypoints can be false positives.`,
-  {
-    entry: external_exports.string().optional().describe(
-      "Source directory to analyze. Prefer an absolute path under plugin MCP. Relative paths resolve against cwd. Defaults to cwd."
-    ),
-    entry_points: external_exports.array(external_exports.string()).optional().describe("Module keys that count as live entry points. Relative to the analyzed directory, extension optional (e.g. 'src/main', 'packages/a/src/index.ts'); absolute paths are mapped inside automatically. Merged with built-in defaults."),
-    min_exports: external_exports.number().int().positive().optional().describe("Minimum exported symbols in a dead module to report. Defaults to 1."),
-    min_confidence: external_exports.enum(["high", "medium", "low"]).optional().describe("Minimum confidence to report. high = zero in-tree references, medium = referenced only by unreachable modules, low = zero-inbound heuristic. Defaults to low."),
-    lang: external_exports.array(external_exports.string()).optional().describe("Explicit languages/extensions, e.g. ['typescript'] or ['ts', 'tsx']."),
-    exclude: external_exports.array(external_exports.string()).optional().describe("Additional glob patterns to exclude, e.g. ['packages/plugin/**', '**/*.generated.ts']."),
-    include_default_excludes: external_exports.boolean().optional().describe("Default true. Set false to include tests, mocks, storybook, generated files, and examples."),
-    cwd: external_exports.string().optional().describe(
-      "Project root / working directory. Prefer an absolute workspace path. Defaults to MCP process cwd (plugin install dir when installed as a plugin)."
-    )
-  },
-  async (input) => ({
-    content: [{ type: "text", text: await runDeadCode(input) }]
   })
 );
 var transport = new StdioServerTransport();

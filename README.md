@@ -64,7 +64,6 @@ Install:
 The self-contained MCP bundle exposes:
 
 - `git_conventions`: validates branch names, commit messages, and commit bodies.
-- `dead_code`: reports heuristic dead-module candidates for review.
 
 Users do not need to run `npm install`. The committed `plugin/bin/server.mjs` contains the JavaScript runtime dependencies. Node.js 20 or newer must be available on PATH.
 

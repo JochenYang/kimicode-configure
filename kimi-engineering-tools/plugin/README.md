@@ -13,11 +13,8 @@ Self-contained Kimi Code CLI plugin. The runtime bundle includes all JavaScript 
 ## Included MCP tools
 
 - `git_conventions`: validates commit messages and branch names.
-- `dead_code`: reports heuristic dead-module candidates. Results are review input, not deletion proof.
 
-`dead_code.entry` is restricted to the project root resolved from `cwd`. Paths that escape that root are rejected.
-
-Because this plugin's MCP process cwd is the managed plugin directory, always pass an **absolute workspace path** via `cwd` and/or absolute `path`/`entry`. Relative-only calls resolve against the plugin install dir and fail.
+The tool is pure string validation and reads no files, so the MCP process cwd does not affect it.
 
 ## Runtime requirements
 

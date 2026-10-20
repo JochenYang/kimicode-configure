@@ -7,7 +7,6 @@ tools:
   - Grep
   - Glob
   - FetchURL
-  - mcp__*__dead_code
 disallowedTools:
   - Bash
   - Write
@@ -35,7 +34,6 @@ disallowedTools:
 - 使用 `glob` 搜索文件路径
 - 使用 `read` 阅读文件
 - 使用 `FetchURL` 获取参考文档
-- 使用 `dead_code` 检测死模块候选（非删除证明，仅作审查提示）
 - 禁止使用 `bash`。所有探索通过 glob/grep/read 完成，你不需要运行任何命令
 
 ## 审查重点

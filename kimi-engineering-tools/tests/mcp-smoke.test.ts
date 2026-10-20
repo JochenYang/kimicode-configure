@@ -15,7 +15,7 @@ test("bundled server starts and exposes the expected tools", async () => {
     const response = await client.listTools()
     assert.deepEqual(
       response.tools.map((tool) => tool.name).sort(),
-      ["dead_code", "git_conventions"],
+      ["git_conventions"],
     )
   } finally {
     await client.close()

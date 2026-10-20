@@ -37,11 +37,8 @@ npm test
 MCP server key: `engineering-tools` (stdio). Tools:
 
 - `git_conventions`: validates commit messages and branch names. Missing body is WARN by default (`enforce_body=true`); bad body is ERROR.
-- `dead_code`: reports modules that are heuristically unreachable from configured entry points. Results are review candidates, not deletion proof.
 
-`dead_code.entry` and related resolved targets must stay inside the project root from `cwd`.
-
-**Plugin install note:** Kimi Code pins a plugin MCP server's process cwd to the managed plugin directory (`~/.kimi-code/plugins/managed/...`). Relative `path` / `entry` without an absolute `cwd` therefore resolve under the plugin tree and usually fail with `path not found`. Pass an **absolute workspace `cwd`**, and/or an **absolute `path`/`entry`**. Parent traversal (`..`) and absolute paths outside an explicit `cwd` root still return an error.
+**Plugin install note:** Kimi Code pins a plugin MCP server's process cwd to the managed plugin directory (`~/.kimi-code/plugins/managed/...`). This tool is pure string validation and does not touch the filesystem, so the cwd limitation does not affect it.
 
 ## Verification
 

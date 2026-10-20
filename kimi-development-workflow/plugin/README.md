@@ -78,7 +78,7 @@
 | `builder`、`ops`、`tester`、`playtest-analyst` | 完整读写与命令权限 |
 | 游戏设计：`game-designer`、`combat-designer`、`level-designer`、`art-director` | 禁 Bash，允许 Write、Edit 产出设计文档 |
 
-需要死模块检测的 agent（`reviewer`、`detective`、`integrator`）额外允许 `mcp__*__dead_code`；`oracle`、`game-designer`、`art-director` 额外允许 `WebSearch`。
+需要 `WebSearch` 的 agent：`oracle`、`game-designer`、`art-director`。
 
 agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECONDARY_MODEL` 并配置 `[secondary_model].model` 时，子代理自动走次级模型（主模型留给主会话做规划与决策）；不启用时继承主模型。需强推理的 agent（如 `oracle`）可单独声明 `model_preference: primary` 保留主模型。
 
@@ -104,8 +104,7 @@ change-plan → 实现 → test-changed → review → commit-review → release
 - `.devflow/` 应加入 `.gitignore`；`docs/plans/` 不加，计划文件随对应改动一起提交。
 - 持久计划的 Status 生命周期：`draft`（落盘未动工）→ `active`（实现中）→ `done`（Work items 全部落定且 Test plan 全部有通过证据，提交时标）→ `archived`（历史保留）。Work items 按类目分批进 Phases，任何条目处于 `[~]`/`[?]` 时不得进入下一阶段。
 - 每个 Skill 在结案前做一次自查：命令绿了不等于验收满足（要逐条对应）、看起来合理不算证据、用户说测过了只是口述。
-- `debug` 与 `review` 在可用时调用 `dead_code`（`kimi-engineering-tools` 插件提供的 MCP）；不可用时降级并标明。
-- `commit-review` 在可用时调用 `git_conventions`（同属该插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 人工检查。
+- `commit-review` 在可用时调用 `git_conventions`（`kimi-engineering-tools` 插件 MCP）；未安装或未启用时降级为按 `AGENTS.md` 人工检查。
 - `release-check` 只给放行结论，不执行发布。
 - `doc-gen` 在发布后或独立触发，生成或更新文档，不改代码逻辑。
 
