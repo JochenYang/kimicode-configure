@@ -30,8 +30,9 @@
 
 - 临时 Handoff 写入项目内 `.devflow/<slug>.md`（并把 `.devflow/` 加进 `.gitignore`），作为下游 Skill 的验收依据——不再依赖会话内传递，压缩或换会话都不会丢。
 - 有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时，同时写持久回归计划 `docs/plans/<slug>.md`：轻量 spec 格式，含 Status（draft/active/done/archived）、Work items（类目 P0/P1/P2/OPT + 状态流转 `[ ]`→`[~]`→`[x]`）、Phases 阶段闸门（Gate 未过不进下一阶段）、Affected behaviors、Test plan 表格与验证命令，随代码一起提交。此时 `.devflow/<slug>.md` 用 `Plan:` 字段指向它。
+- 阶段审查由 subagent 在独立上下文执行，审查记录存 `.devflow/<slug>/review-<阶段>.md`，Phase log 引用该路径。阻塞发现必须带位置、触发条件、预期 vs 实际、可执行验证方式，缺任一项降级为备注；`low` 一 个 subagent 审查，`high` 至少两个独立审查或换模型交叉审查。
 
-除这两个文件外不修改任何文件。
+除这些文件外不修改任何文件。
 
 它与 Kimi 的 Plan mode 互补：Plan mode 控制会话是否直接实施，`change-plan` 规定计划内容应覆盖什么。
 
