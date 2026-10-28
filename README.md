@@ -39,7 +39,7 @@ Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\skills\agent-rules-refer
   -Destination "$HOME\.agents\skills\" -Recurse -Force
 ```
 
-`AGENTS.md` keeps the clauses that must apply on every turn: identity and language, high-risk confirmation, sub-agent dispatch thresholds, minimal-correct scope, evidence expectations, security boundaries, frontend quality, Git conventions, and review output. The Skill keeps the detail that is only needed while doing one specific thing: evidence levels L1-L4, pre-delivery checks, sub-agent capability boundaries, and the UI acceptance checklist.
+`AGENTS.md` keeps the clauses that must apply on every turn: identity and language, the high-risk list and its review triggers, sub-agent dispatch thresholds, minimal-correct scope, evidence expectations, security boundaries, the UI acceptance routing, Git conventions, and review conduct and output. The Skill keeps the detail that is only needed while doing one specific thing: evidence levels L1-L4, pre-delivery checks, sub-agent capability boundaries, and the UI acceptance checklist.
 
 Do not declare the Skill as `type: flow`. `flow` Skills are manual `/skill:<name>` invocations and are never loaded automatically from their description.
 

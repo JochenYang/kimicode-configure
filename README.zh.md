@@ -37,7 +37,7 @@ Copy-Item -LiteralPath "<repo-root>\kimi-personal-rules\skills\agent-rules-refer
   -Destination "$HOME\.agents\skills\" -Recurse -Force
 ```
 
-`AGENTS.md` 只保留每轮都必须生效的条款：身份与语言、高风险前置确认、子智能体派发阈值、最小正确范围、证据要求、安全边界、前端质量、Git 规范与审查输出。Skill 承载只在做特定一件事时才需要的详版：证据等级 L1–L4、交付前检查项、子智能体能力边界、界面验收清单。
+`AGENTS.md` 只保留每轮都必须生效的条款：身份与语言、高风险清单与审查触发、子智能体派发阈值、最小正确范围、证据要求、安全边界、界面验收路由、Git 规范与审查执行与输出。Skill 承载只在做特定一件事时才需要的详版：证据等级 L1–L4、交付前检查项、子智能体能力边界、界面验收清单。
 
 不要给该 Skill 声明 `type: flow`。`flow` 类型的 Skill 只能手动 `/skill:<名称>` 调用，不会按 description 自动加载。
 
