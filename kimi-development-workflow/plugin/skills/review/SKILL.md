@@ -23,6 +23,13 @@ description: 检查代码改动、找潜在问题、评估能不能合并时使�
 - 发布前复核每条 finding（重新打开代码确认）；有条件时派独立子代理复核，复核不通过的条目直接丢弃。
 - 同一类审查意见反复出现时，改到源头：`AGENTS.md`、`REVIEW.md`、lint 规则或 skill。
 
+## 审查标准
+
+- 批准门槛：改动确实改善所触及系统的代码健康即可批准，不要求完美；让系统变差的改动不批准，除非是真紧急且写明跟进清理。
+- 结论按四档给出：`APPROVE`（可合并）、`APPROVE_WITH_COMMENTS`（仅剩非阻塞项）、`REQUEST_CHANGES`（仍有阻塞项）、`NEEDS_SPECIALIST`（安全、并发、迁移等超出本轮能力，转 `guard` 或专项审查）。
+- 需求或验收标准缺失时，停下索取，不拿风格检查冒充审查结论。
+- 被拒绝的 finding 记录原因，下一轮不再重复提。
+
 ## 审查重点
 
 按风险优先：正确性与失败路径；回归/兼容/公共 API；权限与注入/敏感信息/XSS；并发/事务/幂等/缓存/时区/字符集/数据一致；性能（N+1、无界、全表、热路径阻塞）；测试是否覆盖关键性质/边界/失败路径；可维护性与调试残留；相对验收依据的 Must-have 缺口、Out of scope 扩张、Acceptance 无证据。
@@ -36,7 +43,7 @@ description: 检查代码改动、找潜在问题、评估能不能合并时使�
 - P2：中等边界/性能/错误处理/重要测试缺口。
 - P3：可维护性与非关键优化。
 
-无 L1/L2 验证证据时，不得把「无 Findings」写成「验收已满足」。无阻塞问题须写 `No blocking findings`。不得把风格偏好伪装成功能缺陷。
+无 L1/L2 验证证据时，不得把「无 Findings」写成「验收已满足」。无阻塞问题须写 `No blocking findings`，结论用四档 verdict。不得把风格偏好伪装成功能缺陷。
 
 ## 输出格式
 
@@ -58,7 +65,8 @@ plan alignment: aligned | partial | rebuilt | no plan | unavailable / not applic
 未验证项与原因
 
 ## Conclusion
-No blocking findings / Findings remain / Blocked
+APPROVE / APPROVE_WITH_COMMENTS / REQUEST_CHANGES / NEEDS_SPECIALIST
+（无阻塞时写 No blocking findings；被拒绝的 finding 列出原因）
 （结案自查：无 L1/L2 证据不得声称验收已满足；看起来合理不算证据；用户说测过了只是口述）
 ```
 

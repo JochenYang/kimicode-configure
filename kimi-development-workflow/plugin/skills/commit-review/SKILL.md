@@ -16,7 +16,7 @@ description: 准备提交代码、要 commit message、或判断能不能提交�
 7. 检查生成物、lockfile、迁移、配置和公共 API 变化是否合理。
 8. 读取命令级测试证据；无则要求最短验证。按改动内容定风险 tier（认证、支付、密钥、迁移、CI workflow、公共 API 与不可逆数据操作按 high）；敏感路径存在未关闭的安全 finding 时 NOT READY。自己说测过只是口述，不构成批准。
 9. 按项目规则生成分支名与 commit message（subject：英文祈使、小写开头、无句号）。
-10. 若需 body：2–4 条 bullet（目的、核心改动、验证）。
+10. 若需 body：2–4 条 bullet（为什么改、核心改动、验证结果），写最终状态而不是过程；改动后重读一遍，确保描述仍与最终 diff 一致。
 11. 可用 `git_conventions` 时用提案的 message/branch/files 调用：`ERROR` → NOT READY；`WARN` 记入阻塞项或范围说明。不可用则写明未做机器校验，不假装已校验。
 12. **结案自查**：没有 plan 不单独构成 NOT READY；但命令绿了不等于验收满足、看起来合理不算证据、用户说测过了只是口述——这三条不满足时必须 NOT READY。
 13. 提出确认问题；不运行 `git add` / `git commit` / `git push`。

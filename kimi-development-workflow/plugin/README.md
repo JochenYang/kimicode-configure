@@ -29,7 +29,7 @@
 计划产物分两层：
 
 - 临时 Handoff 写入项目内 `.devflow/<slug>.md`（并把 `.devflow/` 加进 `.gitignore`），作为下游 Skill 的验收依据——不再依赖会话内传递，压缩或换会话都不会丢。
-- 有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时，同时写持久回归计划 `docs/plans/<slug>.md`：轻量 spec 格式，含 Status（draft/active/done/archived）、Work items（类目 P0/P1/P2/OPT + 状态流转 `[ ]`→`[~]`→`[x]`）、Phases 阶段闸门（Gate 未过不进下一阶段）、Affected behaviors、Test plan 表格与验证命令，随代码一起提交。此时 `.devflow/<slug>.md` 用 `Plan:` 字段指向它。
+- 有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时，同时写持久回归计划 `docs/plans/<slug>.md`：轻量 spec 格式，含 Status（draft/active/done/archived）、Work items（类目 P0/P1/P2/OPT + 状态流转 `[ ]`→`[~]`→`[x]`）、Phases 阶段闸门（Gate 未过不进下一阶段，附拆分策略与扩展/收缩迁移顺序）、Ruled out、Affected behaviors、Test plan 表格与验证命令，随代码一起提交。此时 `.devflow/<slug>.md` 用 `Plan:` 字段指向它。
 - 阶段审查由 subagent 在独立上下文执行，审查记录存 `.devflow/<slug>/review-<阶段>.md`，Phase log 引用该路径。阻塞发现必须带位置、触发条件、预期 vs 实际、可执行验证方式，缺任一项降级为备注；`low` 一 个 subagent 审查，`high` 至少两个独立审查或换模型交叉审查。
 
 除这些文件外不修改任何文件。
@@ -46,7 +46,7 @@
 
 ### `review`：只读代码审查
 
-发现优先、按 P0–P3 排序，每条带 `path:line`、行为影响、证据等级与最小修复。覆盖正确性、回归、公共 API 兼容、安全、并发与数据一致性、性能、测试缺口和可维护性，并对照验收依据检查范围漂移。读取项目级 `REVIEW.md`（存在时）；审查深度按改动风险分级；每条标注 `introduced` / `pre-existing`，纯风格类标 `nit` 不计入阻塞；三轮未收敛就停止并建议重新审视方案，首轮后只审新增 diff。发布前复核每条 finding，无阻塞问题时明确输出 `No blocking findings`。
+发现优先、按 P0–P3 排序，每条带 `path:line`、行为影响、证据等级与最小修复。覆盖正确性、回归、公共 API 兼容、安全、并发与数据一致性、性能、测试缺口和可维护性，并对照验收依据检查范围漂移。读取项目级 `REVIEW.md`（存在时）；审查深度按改动风险分级；每条标注 `introduced` / `pre-existing`，纯风格类标 `nit` 不计入阻塞；三轮未收敛就停止并建议重新审视方案，首轮后只审新增 diff。结论用四档 verdict：`APPROVE` / `APPROVE_WITH_COMMENTS` / `REQUEST_CHANGES` / `NEEDS_SPECIALIST`，并遵循「改善代码健康即批准，不要求完美」的批准标准。发布前复核每条 finding，无阻塞问题时明确输出 `No blocking findings`。
 
 ### `commit-review`：提交前检查
 
