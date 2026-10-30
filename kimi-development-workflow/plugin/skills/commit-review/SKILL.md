@@ -9,7 +9,7 @@ description: 准备提交代码、要 commit message、或判断能不能提交�
 
 1. 读取 AGENTS.md 中的 Git、测试和安全规则。
 2. **对照验收依据**：优先读项目内 `.devflow/<slug>.md`；其中有 `Plan:` 指针、或 `.devflow` 不存在但 `docs/plans/` 下有相关计划（Status 为 draft/active）时，以 `docs/plans/<slug>.md` 为准；其次是用户本轮明确写下的范围；再次从 diff 重建；都没有写 `unavailable`。能对照时给出 `matched` / `drift` / `n/a`，不能对照时不得声称 matched。
-3. 存在 `docs/plans/<slug>.md` 时：确认计划文件包含在本次提交内；Test plan 仍有 `pending` 条目、Work items 存在 `[~]`/`[?]` 或 Phases 有未过 Gate 时列入阻塞项或范围说明；Status 只能在 Work items 全部落定（`[x]`/`[–]`）且 Test plan 全部有通过证据时标 `done`。
+3. 存在 `docs/plans/<slug>.md` 时：确认计划文件包含在本次提交内；Test plan 仍有 `pending` 条目、Work items 存在 `[~]`/`[?]`、或 Phase log 缺少该阶段的通过记录时列入阻塞项或范围说明；Status 只能在 Work items 全部落定（`[x]`/`[–]`）且 Test plan 全部有通过证据时标 `done`。
 4. 获取 `git status --short`、未暂存/已暂存 diff 与 untracked。
 5. 判断是否单一职责；指出应排除、拆分或补充的文件。
 6. 搜索疑似密钥、Token、Cookie、私钥、`.env`、生产地址、调试日志和临时文件。

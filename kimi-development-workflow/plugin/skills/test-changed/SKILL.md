@@ -45,6 +45,6 @@ plan alignment: aligned | partial | rebuilt | no plan | unavailable
 
 无 `explicit-handoff` / `user-pinned` 时，plan alignment 不得写 `aligned`。
 
-持久计划含 Phases 表时按阶段执行：当前阶段的 Test plan 条目存在 FAIL 或 `pending` 时，结论必须写 `Gate 未过，不得进入下一阶段`；全部 PASS 时写 `Gate 通过` 并注明可进入的下一阶段。Work items 里存在 `[~]` 或 `[?]` 时同样不得放行下一阶段。
+持久计划含 Phases 表时按阶段执行：当前阶段的 Test plan 条目存在 FAIL 或 `pending` 时，结论必须写 `Gate 未过，不得进入下一阶段`；全部 PASS 时写 `Gate 通过` 并注明可进入的下一阶段。Work items 里存在 `[~]` 或 `[?]` 时同样不得放行下一阶段。Phase log 已有该阶段通过记录但 Work items 仍有 `[~]` 时，视为状态不一致，Gate 未过，先回填状态。
 
 默认只跑安全可重复验证。不删除用户文件、不重置 Git、不提交/推送；唯一的文件修改是按第 9 步回写 `docs/plans/<slug>.md` 的 Test plan 结果列。用户未要求则不擅自补实现；只列缺失测试与最小建议。

@@ -49,6 +49,7 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/
 
 - Plan: docs/plans/<slug>.md  （有持久计划时写此行，字段以持久计划为准）
 - Goal: ...
+- Why: ...（为什么要做，成功对谁有意义）
 - Must-have: ...
 - Out of scope: ...
 - Ruled out: ...（排除的方案与原因，避免下次重试）
@@ -71,8 +72,8 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/
 - Plan date: YYYY-MM-DD
 - Risk: low | medium | high
 
-## Goal
-一句话目标与成功标准。
+## Goal / Why
+一句话目标、动机与成功标准。
 
 ## Scope
 - Must-have: ...
@@ -95,9 +96,11 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/
 - `[?]` 审查不通过，已回退或待重做；`[–]` 本轮不做（写明理由）；`[!]` 待用户决定，阻塞当前阶段直到裁决后转 `[x]` / `[?]` / `[–]`
 
 ## Phases
-| 阶段 | 包含条目 | Gate | 状态 |
-|------|----------|------|------|
-| 1 | W1, W2 | 条目全 [x]，对应 Test plan 全 PASS | [ ] |
+| 阶段 | 包含条目 | Gate |
+|------|----------|------|
+| 1 | W1, W2 | 条目全 [x]，对应 Test plan 全 PASS |
+
+Work items 是唯一进度源；Phases 只定义顺序与 Gate，Gate 结论只记 Phase log。
 
 阶段闸门：任何条目处于 `[~]`、`[?]` 或 `[!]` 时不得开始下一阶段。Gate 通过 = 该阶段条目的验证项全 PASS 且 subagent 审查无阻塞发现；条目从 `[~]` 转 `[x]` 前必须回答四问——主张复核、最小性、新风险、反例。任务小到只有一批时，Phases 只留一行。
 
@@ -110,7 +113,11 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/
 - **配置与代码分开**：发布配置、开关、部署接线单独一批，回滚时机不同。
 
 ## Affected behaviors
-改动会影响的既有行为（回归面），每条注明模块或 `path:line`。
+| 行为 | 类型 | 位置 |
+|---|---|---|
+| ... | added / modified / removed | `path:line` |
+
+类型沿用 spec 增量的写法：`added` 新增行为，`modified` 改变既有行为，`removed` 删除既有行为。回归面按类型分别检查。
 
 ## Test plan
 | # | 用例 | 输入/操作 | 预期 | 验证方式 | 结果 |
@@ -138,7 +145,14 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/
 （每过一个 Gate 记一行：跑了什么命令、看到什么输出、四问结论、审查记录路径。输出超过 10 行时存到 `.devflow/<slug>/` 并在证据列引用路径。）
 ```
 
-Status 生命周期：`draft`（已落盘未动工）→ `active`（实现中，首次改代码前由实现方改为 active）→ `done`（Work items 全 `[x]`/`[–]`、Test plan 全部有通过证据、subagent 审查记录已归档，随改动一起提交）→ `archived`（仅作历史保留）。Status 的推进只依据证据，不凭印象；本 Skill 只负责创建 `draft`。
+### 计划自检（写盘前逐条过）
+
+- [ ] 必需段落齐全：Goal/Why、Scope、Ruled out、Work items、Phases、Affected behaviors、Test plan、Verification commands、Deferred、Rollback、Phase log
+- [ ] P0/P1 条目至少映射一条 Test plan 用例；每条 Acceptance 有编号映射
+- [ ] 初始状态一致：Work items 全 `[ ]`，Test plan 全 `pending`，Phase log 为空
+- [ ] 没有 `[~]`/`[?]`/`[!]` 却标 Gate 通过
+
+Status 生命周期：`draft`（已落盘未动工）→ `active`（实现中，首次改代码前由实现方改为 active）→ `done`（Work items 全 `[x]`/`[–]`、Test plan 全部有通过证据、subagent 审查记录已归档，随改动一起提交）→ `archived`（仅作历史保留）。Status 的推进只依据证据，不凭印象；本 Skill 负责创建 `draft`，实现阶段由执行方按本文件的状态规则回填。计划完成后保留在原处；需要清理时移到 `docs/plans/archive/YYYY-MM-DD-<slug>.md`，不删除历史。
 
 风险分级决定 review 深度：low = 文档、文案、开关后的增量；medium = 普通产品改动与缓存、自动更新、prompt 等敏感面；high = 认证、支付、密钥、迁移、CI workflow、公共 API、不可逆数据操作。分级按改动内容，不按任务大小。
 
@@ -160,10 +174,11 @@ Status 生命周期：`draft`（已落盘未动工）→ `active`（实现中，
 
 Gate 标通过前必须：
 
-1. 把该阶段相关用例的「结果」列从 `pending` 改为 `PASS` / `FAIL` / `N/A（理由）`；`FAIL` 必须附失败输出。
-2. 该阶段仍有 `pending` 用例时，Gate 不得标通过。
-3. 在 Phase log 记录命令、关键输出、四问结论和审查记录路径；输出超过 10 行时存到 `.devflow/<slug>/` 并在证据列引用路径。
-4. 引用 subagent 审查记录，自审记录不计入 Gate 证据。
+1. 把该阶段 Work items 从 `[~]` 改为 `[x]`；仍有 `[~]`/`[?]`/`[!]` 时 Gate 不得标通过。
+2. 把该阶段相关用例的「结果」列从 `pending` 改为 `PASS` / `FAIL` / `N/A（理由）`；`FAIL` 必须附失败输出。
+3. 该阶段仍有 `pending` 用例时，Gate 不得标通过。
+4. 在 Phase log 记录命令、关键输出、四问结论和审查记录路径；输出超过 10 行时存到 `.devflow/<slug>/` 并在证据列引用路径。
+5. 引用 subagent 审查记录，自审记录不计入 Gate 证据。
 
 ## 审查执行方式（subagent 接口）
 
