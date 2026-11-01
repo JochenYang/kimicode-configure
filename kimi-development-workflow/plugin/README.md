@@ -29,7 +29,7 @@
 计划产物分两层：
 
 - 临时 Handoff 写入项目内 `.devflow/<slug>.md`（并把 `.devflow/` 加进 `.gitignore`），作为下游 Skill 的验收依据——不再依赖会话内传递，压缩或换会话都不会丢。
-- 有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时，同时写持久回归计划 `docs/plans/<slug>.md`：轻量 spec 格式，含 Status（draft/active/done/archived）、Goal/Why、Work items（类目 P0/P1/P2/OPT + 状态流转，唯一进度源）、Phases 阶段闸门（无独立状态列，Gate 结论只记 Phase log）、Affected behaviors（added/modified/removed）、Ruled out、Deferred、Test plan 表格与写盘前自检，随代码一起提交。此时 `.devflow/<slug>.md` 用 `Plan:` 字段指向它。
+- 有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时，同时写持久回归计划 `docs/plans/<slug>.md`：轻量 spec 格式，含 Status（draft/active/done/archived）、Goal/Why、Work items（类目 P0/P1/P2/OPT + 状态流转，唯一进度源，禁止用汇总段代替）、Phases 阶段闸门（无独立状态列，Gate 结论只记 Phase log，且 Gate 行只能由 `test-changed` 写入并附状态自检）、Affected behaviors（added/modified/removed）、Ruled out、Deferred、Test plan 表格与写盘前自检，随代码一起提交。此时 `.devflow/<slug>.md` 用 `Plan:` 字段指向它。
 - 阶段审查由 subagent 在独立上下文执行，审查记录存 `.devflow/<slug>/review-<阶段>.md`，Phase log 引用该路径。阻塞发现必须带位置、触发条件、预期 vs 实际、可执行验证方式，缺任一项降级为备注；`low` 一 个 subagent 审查，`high` 至少两个独立审查或换模型交叉审查。
 
 除这些文件外不修改任何文件。
@@ -42,7 +42,7 @@
 
 ### `test-changed`：当前改动测试
 
-根据未暂存、已暂存和新增文件，选最小但足够的验证范围。优先对照 `.devflow/<slug>.md` 里的 Acceptance criteria；存在 `docs/plans/<slug>.md` 时逐条执行其中的 Test plan，并把结果列从 `pending` 回写为 `PASS`/`FAIL`（附命令与日期）——这是它唯一允许的文件修改。计划含 Phases 时按阶段执行，当前阶段有 FAIL/pending 或 `[~]`/`[?]` 条目时结论必须写「Gate 未过，不得进入下一阶段」。记录命令、退出码、环境与失败摘要，区分产品/测试/环境/flaky，并列出未跑的高风险路径与未满足的验收项。
+根据未暂存、已暂存和新增文件，选最小但足够的验证范围。优先对照 `.devflow/<slug>.md` 里的 Acceptance criteria；存在 `docs/plans/<slug>.md` 时逐条执行其中的 Test plan，并把结果列从 `pending` 回写为 `PASS`/`FAIL`（附命令与日期），Gate 通过时追加 Phase log 行并附状态自检证据——这是它允许的两处文件修改。计划含 Phases 时按阶段执行，当前阶段有 FAIL/pending 或 `[~]`/`[?]` 条目时结论必须写「Gate 未过，不得进入下一阶段」。记录命令、退出码、环境与失败摘要，区分产品/测试/环境/flaky，并列出未跑的高风险路径与未满足的验收项。
 
 ### `review`：只读代码审查
 

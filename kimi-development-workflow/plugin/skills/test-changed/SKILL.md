@@ -18,7 +18,7 @@ description: 改完代码想验证、不确定该跑哪些测试、或需要回�
 6. 选最快能证伪主张的检查（类型/单测/包测/集成/构建/smoke）。
 7. 确认已有测试按 Arrange/Act/Assert 断言行为，而非仅不抛错。
 8. 执行并记录命令、退出码、环境、耗时、失败摘要；结果回指对应主张或验收项。
-9. **回写持久计划**：验收依据是 `docs/plans/<slug>.md` 时，把 Test plan 表中执行过的条目结果列从 `pending` 更新为 `PASS (command, YYYY-MM-DD)` 或 `FAIL (...)`，未执行的保持 `pending`。这是本 Skill 唯一允许的文件修改；不改计划的其他字段，不把 FAIL 改成 PASS。
+9. **回写持久计划**：验收依据是 `docs/plans/<slug>.md` 时，把 Test plan 表中执行过的条目结果列从 `pending` 更新为 `PASS (command, YYYY-MM-DD)` 或 `FAIL (...)`，未执行的保持 `pending`。Gate 通过时在 Phase log 追加一行：先确认该阶段 Work items 无 `[ ]`/`[~]`，把检查命令与输出写进证据列。这是本 Skill 允许的两处文件修改；不改计划的其他字段，不把 FAIL 改成 PASS。
 10. 失败时区分产品/测试/环境/flaky；不为绿测改断言逃避。
 11. 按风险决定是否扩大范围；列出未跑的高风险路径与未满足的验收项。
 12. **结案自查**：命令绿了不等于验收满足，必须逐条对应 Acceptance 或行为主张；看起来合理不算证据；用户说测过了只是口述，没有命令和退出码不构成执行证据；部分测试通过必须写出跳过的数量与理由。以上任一条不满足时，结论不得写可合并/可提交。
@@ -47,4 +47,4 @@ plan alignment: aligned | partial | rebuilt | no plan | unavailable
 
 持久计划含 Phases 表时按阶段执行：当前阶段的 Test plan 条目存在 FAIL 或 `pending` 时，结论必须写 `Gate 未过，不得进入下一阶段`；全部 PASS 时写 `Gate 通过` 并注明可进入的下一阶段。Work items 里存在 `[~]` 或 `[?]` 时同样不得放行下一阶段。Phase log 已有该阶段通过记录但 Work items 仍有 `[~]` 时，视为状态不一致，Gate 未过，先回填状态。
 
-默认只跑安全可重复验证。不删除用户文件、不重置 Git、不提交/推送；唯一的文件修改是按第 9 步回写 `docs/plans/<slug>.md` 的 Test plan 结果列。用户未要求则不擅自补实现；只列缺失测试与最小建议。
+默认只跑安全可重复验证。不删除用户文件、不重置 Git、不提交/推送；允许的文件修改只有两处：按第 9 步回写 `docs/plans/<slug>.md` 的 Test plan 结果列，以及 Gate 通过时追加 Phase log 行。用户未要求则不擅自补实现；只列缺失测试与最小建议。
