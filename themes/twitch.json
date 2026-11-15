@@ -1,0 +1,20 @@
+{
+  "name": "twitch",
+  "displayName": "Twitch",
+  "base": "dark",
+  "colors": {
+    "primary": "#7C5CFF",
+    "accent": "#FF6B6B",
+    "border": "#5A3A9A",
+    "borderFocus": "#7C5CFF",
+    "success": "#00D95A",
+    "warning": "#FFB347",
+    "error": "#E91916",
+    "text": "#EFEFF1",
+    "textStrong": "#FFFFFF",
+    "textDim": "#A8A8B8",
+    "textMuted": "#808090",
+    "roleUser": "#B07CFF",
+    "shellMode": "#FF6B6B"
+  }
+}

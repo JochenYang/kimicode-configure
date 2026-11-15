@@ -1,0 +1,20 @@
+{
+  "name": "spotify",
+  "displayName": "Spotify",
+  "base": "dark",
+  "colors": {
+    "primary": "#1DB954",
+    "accent": "#1ED760",
+    "border": "#1A6B3A",
+    "borderFocus": "#1DB954",
+    "success": "#1DB954",
+    "warning": "#FFB347",
+    "error": "#E91429",
+    "text": "#FFFFFF",
+    "textStrong": "#FFFFFF",
+    "textDim": "#B3B3B3",
+    "textMuted": "#727272",
+    "roleUser": "#1DB954",
+    "shellMode": "#1ED760"
+  }
+}

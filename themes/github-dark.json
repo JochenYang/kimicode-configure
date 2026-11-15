@@ -1,0 +1,20 @@
+{
+  "name": "github-dark",
+  "displayName": "GitHub Dark",
+  "base": "dark",
+  "colors": {
+    "primary": "#58A6FF",
+    "accent": "#BC8CFF",
+    "border": "#2A5A8A",
+    "borderFocus": "#58A6FF",
+    "success": "#3FB950",
+    "warning": "#D29922",
+    "error": "#F85149",
+    "text": "#E6EDF3",
+    "textStrong": "#F0F6FC",
+    "textDim": "#8B949E",
+    "textMuted": "#6E7681",
+    "roleUser": "#58A6FF",
+    "shellMode": "#BC8CFF"
+  }
+}

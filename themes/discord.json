@@ -1,0 +1,20 @@
+{
+  "name": "discord",
+  "displayName": "Discord",
+  "base": "dark",
+  "colors": {
+    "primary": "#5865F2",
+    "accent": "#57F287",
+    "border": "#3A4A9A",
+    "borderFocus": "#5865F2",
+    "success": "#57F287",
+    "warning": "#FEE75C",
+    "error": "#ED4245",
+    "text": "#DBDEE1",
+    "textStrong": "#F2F3F5",
+    "textDim": "#949BA4",
+    "textMuted": "#6D737C",
+    "roleUser": "#5865F2",
+    "shellMode": "#57F287"
+  }
+}

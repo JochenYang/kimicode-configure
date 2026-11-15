@@ -1,0 +1,20 @@
+{
+  "name": "netflix",
+  "displayName": "Netflix",
+  "base": "dark",
+  "colors": {
+    "primary": "#E50914",
+    "accent": "#B20710",
+    "border": "#8A1A1A",
+    "borderFocus": "#E50914",
+    "success": "#46D369",
+    "warning": "#FFB347",
+    "error": "#E50914",
+    "text": "#FFFFFF",
+    "textStrong": "#FFFFFF",
+    "textDim": "#999999",
+    "textMuted": "#666666",
+    "roleUser": "#E50914",
+    "shellMode": "#E50914"
+  }
+}
