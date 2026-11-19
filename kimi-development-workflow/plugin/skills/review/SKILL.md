@@ -28,6 +28,8 @@ description: 检查代码改动、找潜在问题、评估能不能合并时使�
 - 批准门槛：改动确实改善所触及系统的代码健康即可批准，不要求完美；让系统变差的改动不批准，除非是真紧急且写明跟进清理。
 - 结论按四档给出：`APPROVE`（可合并）、`APPROVE_WITH_COMMENTS`（仅剩非阻塞项）、`REQUEST_CHANGES`（仍有阻塞项）、`NEEDS_SPECIALIST`（安全、并发、迁移等超出本轮能力，转 `guard` 或专项审查）。
 - 需求或验收标准缺失时，停下索取，不拿风格检查冒充审查结论。
+- 高风险或 UI 改动要求行为证据：探针输出、可重复脚本、截图/录屏、迁移 dry-run；只有测试通过不算证据。脚本留在仓库，截图不能替代脚本。检查写法见 `change-plan` skill 的 `references/deterministic-checks.md`。
+- 注释只解释设计意图或非显然约束；用注释解释一个 workaround 却没有对应检查时列为 finding，建议改成 lint、类型、测试或 API 约束。
 - 被拒绝的 finding 记录原因，下一轮不再重复提。
 
 ## 审查重点

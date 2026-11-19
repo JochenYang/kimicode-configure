@@ -15,6 +15,7 @@ description: 写或更新 API 文档、CHANGELOG、README、用户文档、迁�
    - README：项目概述、安装、快速上手、配置、贡献入口。
    - 用户文档：面向最终用户的使用指南、FAQ、故障排查。
    - 迁移指南：breaking change 配套，含影响、升级步骤、回滚。
+   - Feature map：从用户视角列出可见功能、入口与状态，供计划、审查和 UI 验证共用；每条回指路由或 `path:line`。
 4. **证据约束**：每条文档声明须可回指代码或提交。无依据的描述标注 `unverified`，不得编造 API 行为、参数或返回值。
 5. CHANGELOG 条目须对应实际提交或 diff；不得凭意图编造未发生的变更。
 6. 迁移指南须与 `release-check` 的 breaking change 清单一致；遗漏 breaking 项是常见错误。
