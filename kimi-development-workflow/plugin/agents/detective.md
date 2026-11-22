@@ -1,6 +1,6 @@
 ---
 name: detective
-description: Bug 根因定位与复现分析。用于分析报错、追踪状态分叉并给出最小修复建议
+description: Bug 根因定位（只读静态分析，跑命令复现交 Tester）。用于分析报错、追踪状态分叉并给出最小修复建议
 whenToUse: Bug 调试、错误分析、根因定位
 tools:
   - Read
