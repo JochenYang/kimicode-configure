@@ -23,6 +23,18 @@ description: 检查代码改动、找潜在问题、评估能不能合并时使�
 - 发布前复核每条 finding（重新打开代码确认）；有条件时派独立子代理复核，复核不通过的条目直接丢弃。
 - 同一类审查意见反复出现时，改到源头：`AGENTS.md`、`REVIEW.md`、lint 规则或 skill。
 
+## 多轮收敛（Round ≥ 2 或高风险）
+
+单轮低风险审查用上面的流程即可。进入第二轮，或改动为 high 风险时按本协议执行，细则见 `references/convergence-protocol.md`。
+
+- **角色分离**：高风险或多轮时必须派 `reviewer` subagent，只产出 findings 与证据；主会话逐条打开代码核实并写裁决；用户只在确认闸回答。主会话不得同时产出 findings 和写 decision；低风险单轮可一次完成，但要写明未使用独立审计方。
+- **每轮状态文件**：`.devflow/<slug>/review-<round>.json`，记录 `round`、`max_rounds`、`findings[]`（id/severity/original_severity/decision/repeat_count/confirmed/verified_fixed）、`baseline_finding_ids`、`structure_comparison`、`context_not_read`、`status_inconsistent`、`manual_stop_count`、`clean_rounds`、`baseline_frozen`。
+- **裁决值**：`pending` / `accepted` / `rejected` / `downgraded` / `intentional`；每条 finding 必须有裁决，不能沉默携带。`accepted` 表示承诺修复，任何 accepted 未 `verified_fixed` 都算未闭合；不修的用 `intentional`（附理由）或 `rejected`。
+- **闸门顺序**（first-match-wins）：blocking 被驳回/降级/标 intentional 未确认 → 交用户；重复 finding → 交用户；Round > 1 结构对比未通过 → 交用户；上下文未读或状态不一致 → 交用户；手动停止达上限 → 交用户；连续干净轮 + 冻结基线 + 无未闭合条目 + 结构通过 → `converged`；`round ≥ max_rounds` → `stop_max_rounds`；其余 → `continue`。
+- **脚本**：`node <skill 目录>/scripts/review-gate.mjs .devflow/<slug>/review-<round>.json`；输出 `action`、`gate`、`open_items`、`blocking_open`、`blocking_total`。脚本会交叉校验 `clean_rounds ≤ round`、`baseline_finding_ids` 全部闭合、`new_blocking_count` 与 findings 推导一致；不一致即 `invalid_state`。没有 Node 时按同一顺序人工判定并写明「闸门为人工判定」。
+- **clean_rounds 重置**：任何闸门 1–5 命中，或本轮有新 blocking，重置为 0；不得跨轮累计。
+- 收敛时输出边界声明：未覆盖范围、未验证假设、残余风险。
+
 ## 审查标准
 
 - 批准门槛：改动确实改善所触及系统的代码健康即可批准，不要求完美；让系统变差的改动不批准，除非是真紧急且写明跟进清理。
@@ -70,6 +82,9 @@ plan alignment: aligned | partial | rebuilt | no plan | unavailable / not applic
 APPROVE / APPROVE_WITH_COMMENTS / REQUEST_CHANGES / NEEDS_SPECIALIST
 （无阻塞时写 No blocking findings；被拒绝的 finding 列出原因）
 （结案自查：无 L1/L2 证据不得声称验收已满足；看起来合理不算证据；用户说测过了只是口述）
+
+## Boundary（仅 converged）
+未覆盖范围 / 未验证假设 / 残余风险
 ```
 
 不要修改文件、提交或推送。

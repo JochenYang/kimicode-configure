@@ -126,7 +126,7 @@ Work items 是唯一进度源；Phases 只定义顺序与 Gate，Gate 结论只�
 |---|------|-----------|------|----------|------|
 | 1 | ... | ... | ... | `命令` 或手工步骤 | pending |
 
-（用例对应 Work item 时在编号列注明，如 `1 (W1)`。结果列只允许 `pending` / `PASS` / `FAIL` / `N/A（理由）`；P0/P1 条目至少映射一条用例，无法映射的并入 `## Deferred` 并写明为什么不可测。UI/交互用例优先附可重复脚本路径，截图只作补充。）
+（用例对应 Work item 时在编号列注明，如 `1 (W1)`。结果列只允许 `pending` / `PASS` / `FAIL` / `N/A（理由）`；P0/P1 条目至少映射一条用例，无法映射的并入 `## Deferred` 并写明为什么不可测。UI/交互用例优先附可重复脚本路径，截图只作补充。高风险或有状态需求先用 EARS 句式写清触发条件与预期，状态机风险附状态图。）
 
 ## Verification commands
 - `...`
@@ -181,7 +181,7 @@ Gate 标通过前必须：
 2. 把该阶段相关用例的「结果」列从 `pending` 改为 `PASS` / `FAIL` / `N/A（理由）`；`FAIL` 必须附失败输出。
 3. 该阶段仍有 `pending` 用例时，Gate 不得标通过。
 4. 在 Phase log 记录命令、关键输出、五问结论、`check-level` 和审查记录路径；Gate 行由 `test-changed` 写入，证据列必须含状态自检命令与输出；输出超过 10 行时存到 `.devflow/<slug>/` 并在证据列引用路径。
-5. 引用 subagent 审查记录，自审记录不计入 Gate 证据。
+5. 引用 subagent 审查记录与闸门脚本输出（`converged` / `needs_user_confirmation` / `stop_max_rounds`），自审记录不计入 Gate 证据。
 
 ## 审查执行方式（subagent 接口）
 

@@ -46,7 +46,7 @@
 
 ### `review`：只读代码审查
 
-发现优先、按 P0–P3 排序，每条带 `path:line`、行为影响、证据等级与最小修复。覆盖正确性、回归、公共 API 兼容、安全、并发与数据一致性、性能、测试缺口和可维护性，并对照验收依据检查范围漂移。读取项目级 `REVIEW.md`（存在时）；审查深度按改动风险分级；每条标注 `introduced` / `pre-existing`，纯风格类标 `nit` 不计入阻塞；三轮未收敛就停止并建议重新审视方案，首轮后只审新增 diff。高风险或 UI 改动要求行为证据（探针输出、可重复脚本、截图/录屏、迁移 dry-run），只有测试通过不算证据。结论用四档 verdict：`APPROVE` / `APPROVE_WITH_COMMENTS` / `REQUEST_CHANGES` / `NEEDS_SPECIALIST`，并遵循「改善代码健康即批准，不要求完美」的批准标准。发布前复核每条 finding，无阻塞问题时明确输出 `No blocking findings`。
+发现优先、按 P0–P3 排序，每条带 `path:line`、行为影响、证据等级与最小修复。覆盖正确性、回归、公共 API 兼容、安全、并发与数据一致性、性能、测试缺口和可维护性，并对照验收依据检查范围漂移。读取项目级 `REVIEW.md`（存在时）；审查深度按改动风险分级；每条标注 `introduced` / `pre-existing`，纯风格类标 `nit` 不计入阻塞；三轮未收敛就停止并建议重新审视方案，首轮后只审新增 diff。进入第二轮或高风险时按多轮收敛协议执行：每轮写 `.devflow/<slug>/review-<round>.json`，用 `scripts/review-gate.mjs` 按 8 条闸门判定 `converged` / `needs_user_confirmation` / `stop_max_rounds` / `continue`，并交叉校验 `clean_rounds ≤ round`、基线全部闭合、`new_blocking_count` 与 findings 推导一致；收敛要求连续干净轮、冻结基线、无未闭合条目、结构对比通过。高风险或 UI 改动要求行为证据（探针输出、可重复脚本、截图/录屏、迁移 dry-run），只有测试通过不算证据。结论用四档 verdict：`APPROVE` / `APPROVE_WITH_COMMENTS` / `REQUEST_CHANGES` / `NEEDS_SPECIALIST`，并遵循「改善代码健康即批准，不要求完美」的批准标准。发布前复核每条 finding，无阻塞问题时明确输出 `No blocking findings`。
 
 ### `commit-review`：提交前检查
 
