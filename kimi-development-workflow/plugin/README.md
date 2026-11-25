@@ -73,13 +73,14 @@
 
 | 类别 | 权限 |
 |---|---|
-| 只读分析：`explore`、`reviewer`、`detective`、`guard`、`oracle`、`integrator` | 不给 Bash、Write、Edit |
+| `explore`、`detective`、`oracle`、`integrator` | 不给 Bash、Write、Edit |
+| `reviewer`、`guard` | 可跑只读 Bash（git status/diff、依赖审计、类型检查、相关测试），不给 Write、Edit；可 WebSearch |
 | `perf` | 可运行命令做基准测量，但不给 Write、Edit |
 | `dba` | 不给 Bash，只写迁移脚本 |
 | `builder`、`ops`、`tester`、`playtest-analyst` | 完整读写与命令权限 |
 | 游戏设计：`game-designer`、`combat-designer`、`level-designer`、`art-director` | 禁 Bash，允许 Write、Edit 产出设计文档 |
 
-需要 `WebSearch` 的 agent：`oracle`、`game-designer`、`art-director`。
+需要 `WebSearch` 的 agent：`reviewer`、`guard`、`oracle`、`game-designer`、`art-director`。
 
 agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECONDARY_MODEL` 并配置 `[secondary_model].model` 时，子代理自动走次级模型（主模型留给主会话做规划与决策）；不启用时继承主模型。需强推理的 agent（如 `oracle`）可单独声明 `model_preference: primary` 保留主模型。
 
