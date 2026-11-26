@@ -1,6 +1,6 @@
 # Kimi Development Workflow
 
-面向日常软件开发的 Kimi Code 工作流插件，包含 7 个 Skill 与 16 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
+面向日常软件开发的 Kimi Code 工作流插件，包含 7 个 Skill 与 17 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
 
 插件本体在 `plugin/` 目录。功能说明、技能清单、子代理权限与推荐生命周期见 [plugin/README.md](plugin/README.md)，本文件只讲安装与维护。
 

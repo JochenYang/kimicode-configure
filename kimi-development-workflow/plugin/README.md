@@ -1,6 +1,6 @@
 # Kimi Development Workflow
 
-这是一个面向日常软件开发的 Kimi Code 工作流插件，包含 7 个 Skill 与 16 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
+这是一个面向日常软件开发的 Kimi Code 工作流插件，包含 7 个 Skill 与 17 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
 
 ## 安装
 
@@ -30,7 +30,8 @@
 
 - 临时 Handoff 写入项目内 `.devflow/<slug>.md`（并把 `.devflow/` 加进 `.gitignore`），作为下游 Skill 的验收依据——不再依赖会话内传递，压缩或换会话都不会丢。
 - 有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时，同时写持久回归计划 `docs/plans/<slug>.md`：轻量 spec 格式，含 Status（draft/active/done/archived）、Goal/Why、Work items（类目 P0/P1/P2/OPT + 状态流转，唯一进度源，禁止用汇总段代替）、Phases 阶段闸门（无独立状态列，Gate 结论只记 Phase log，且 Gate 行只能由 `test-changed` 写入并附状态自检）、Affected behaviors（added/modified/removed）、Ruled out、Deferred、Test plan 表格与写盘前自检，随代码一起提交。审查用五问（主张复核、最小性、新风险、反例、可检查性），可检查性回答写入 Phase log 的 `check-level`。此时 `.devflow/<slug>.md` 用 `Plan:` 字段指向它。
-- 阶段审查由 subagent 在独立上下文执行，审查记录存 `.devflow/<slug>/review-<阶段>.md`，Phase log 引用该路径。阻塞发现必须带位置、触发条件、预期 vs 实际、可执行验证方式，缺任一项降级为备注；`low` 一 个 subagent 审查，`high` 至少两个独立审查或换模型交叉审查。
+- 阶段审查由 subagent 在独立上下文执行（默认 `reviewer`，涉及安全面加 `guard`），审查记录存 `.devflow/<slug>/review-<阶段>.md`，Phase log 引用该路径。阻塞发现必须带位置、触发条件、预期 vs 实际、可执行验证方式，缺任一项降级为备注；`low` 一个 `reviewer` 审查，`high` 至少两个独立审查（默认 `reviewer` 加 `guard`，或换模型交叉审查）。
+- 「派发」一节与各 Skill 的分工段是本插件对派发的明确授权（Kimi 默认不派 subagent，除非用户、`AGENTS.md` 或 skill 要求）：只在能换来读写量、并行或独立性时才派；点、线的改动自己做，面、批先落计划再拆批次派 `builder`，新页面与改版先派 `ux-designer` 出规格，查派 `explore` / `detective`，审派 `reviewer`；每个批次对应一组 Work items（返回后 `[~]`，Gate 与审查后 `[x]`），交接写清目标、验收、范围与已知证据，回收时不凭 Status 放行，续作用 Agent 工具的 `resume`。
 
 除这些文件外不修改任何文件。
 
@@ -62,25 +63,26 @@
 
 ## Agents
 
-插件 `agents/` 目录提供 16 个专长子代理，由主 Agent 自动发现并按任务委派，各自带工具权限隔离。
+插件 `agents/` 目录提供 17 个专长子代理，由主 Agent 自动发现并按任务委派，各自带工具权限隔离。Kimi 默认不派 subagent（除非用户、`AGENTS.md` 或 skill 明确要求），所以 `debug`、`test-changed`、`change-plan`、`release-check`、`review` 在该交接的步骤点名角色。
 
 - 只读分析：`explore`（代码定位）、`reviewer`（审查）、`detective`（根因）、`guard`（安全）、`oracle`（反方顾问）、`perf`（性能）、`integrator`（跨层集成一致性）
-- 实现：`builder`（通用实现，覆盖服务端、Web 前端、移动端、小程序与 AI 应用）、`dba`（数据库与迁移）、`ops`（部署运维）
+- 实现：`builder`（通用实现，覆盖服务端、Web 前端、移动端、小程序、AI 应用与桌面端）、`dba`（数据库与迁移）、`ops`（部署运维）
 - 测试：`tester`（TDD 与测试补齐）
+- 设计：`ux-designer`（网站、App、小程序、桌面客户端与游戏界面的 UX/UI 规格）
 - 游戏设计：`game-designer`（玩法与 GDD）、`combat-designer`（战斗系统）、`level-designer`（关卡设计）、`art-director`（美术方向）、`playtest-analyst`（试玩分析）
 
 工具权限按职责隔离：
 
 | 类别 | 权限 |
 |---|---|
-| `explore`、`detective`、`oracle`、`integrator` | 不给 Bash、Write、Edit |
-| `reviewer`、`guard` | 可跑只读 Bash（git status/diff、依赖审计、类型检查、相关测试），不给 Write、Edit；可 WebSearch |
+| `explore`、`oracle` | 不给 Bash、Write、Edit |
+| `reviewer`、`guard`、`detective`、`integrator` | 可跑只读 Bash，不给 Write、Edit；范围以各 agent 的「命令约束」为准（`reviewer`、`guard`：git status/diff 与类型检查，`reviewer` 另可跑相关测试，`guard` 另可跑依赖审计；`detective` 另可跑不改仓库的最小复现命令；`integrator` 只跑类型检查与契约 lint） |
 | `perf` | 可运行命令做基准测量，但不给 Write、Edit |
 | `dba` | 不给 Bash，只写迁移脚本 |
 | `builder`、`ops`、`tester`、`playtest-analyst` | 完整读写与命令权限 |
-| 游戏设计：`game-designer`、`combat-designer`、`level-designer`、`art-director` | 禁 Bash，允许 Write、Edit 产出设计文档 |
+| `ux-designer` 与游戏设计：`game-designer`、`combat-designer`、`level-designer`、`art-director` | 禁 Bash，允许 Write、Edit 产出设计文档 |
 
-需要 `WebSearch` 的 agent：`reviewer`、`guard`、`oracle`、`game-designer`、`art-director`。
+需要 `WebSearch` 的 agent：`reviewer`、`guard`、`oracle`、`ux-designer`、`game-designer`、`art-director`。
 
 agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECONDARY_MODEL` 并配置 `[secondary_model].model` 时，子代理自动走次级模型（主模型留给主会话做规划与决策）；不启用时继承主模型。需强推理的 agent（如 `oracle`）可单独声明 `model_preference: primary` 保留主模型。
 

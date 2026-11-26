@@ -113,7 +113,7 @@ npm test
 /plugins info kimi-development-workflow
 ```
 
-该插件包含 7 个手动 `flow` Skill，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程：
+该插件包含 7 个 Skill 与 17 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。Skill 不声明 `type`，即默认的 `inline`：模型在相关时按 `description` 自动加载，你也可以随时用 `/skill:<name>` 手动调用：
 
 - `/skill:change-plan`：将明确的开发目标转换为可执行、可验证的实施计划。
 - `/skill:debug`：复现、隔离、验证假设、最小修复并回归验证。
@@ -124,6 +124,8 @@ npm test
 - `/skill:doc-gen`：从代码生成或更新 API 文档、CHANGELOG、README、用户文档和迁移指南，每条声明回指 `file:line`。
 
 `change-plan` 与 Plan mode 互补：Plan mode 控制会话交互和需求澄清，Skill 负责规定工程计划中的范围、风险、验收标准和验证步骤。方案已与模型规划好时跳过规划直接落地。Handoff 写入项目内 `.devflow/<slug>.md`；有回归面的改动同时写可提交的持久计划 `docs/plans/<slug>.md`（轻量 spec，含 Status、分类目 Work items、阶段闸门、Affected behaviors、Test plan 表格），供下游 Skill 读取，不再依赖会话内上下文。
+
+`change-plan` 的「派发」一节与各 Skill 的分工段是本插件对派发的明确授权（Kimi 默认不派子代理，除非用户、`AGENTS.md` 或 skill 要求）：只在能换来读写量、并行或独立性时才派；点、线的改动主 Agent 自己做，面、批先落计划再拆成互不重叠的批次派 `builder`，新页面与改版先派 `ux-designer` 出规格；`debug`、`test-changed`、`release-check`、`review` 在该交接的步骤点名角色；续作用 `resume` id 续用同一个子代理，不重开。
 
 ## 更新本地插件
 

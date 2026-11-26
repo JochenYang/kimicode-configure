@@ -115,7 +115,7 @@ Install:
 /plugins info kimi-development-workflow
 ```
 
-This plugin contains seven Skills and sixteen sub-agents, with no MCP server, Hook, Command, Node.js runtime, or background process. The Skills do not declare `type`, so they are `inline`: the model loads them by description when relevant, and you can still invoke any of them manually with `/skill:<name>`.
+This plugin contains seven Skills and seventeen sub-agents, with no MCP server, Hook, Command, Node.js runtime, or background process. The Skills do not declare `type`, so they are `inline`: the model loads them by description when relevant, and you can still invoke any of them manually with `/skill:<name>`.
 
 - `/skill:change-plan`: converts a clear development goal into an executable and verifiable implementation plan.
 - `/skill:debug`: reproduces, isolates, tests hypotheses, applies the smallest fix, and verifies it.
@@ -126,6 +126,8 @@ This plugin contains seven Skills and sixteen sub-agents, with no MCP server, Ho
 - `/skill:doc-gen`: generates or updates API docs, CHANGELOG, README, user docs, and migration guides from code, with each claim linked back to `file:line`.
 
 `change-plan` complements Plan mode: Plan mode controls session behavior and clarification, while the Skill defines the engineering content, scope, risks, acceptance criteria, and verification steps of a plan. When the plan is already agreed with the model, it skips planning and lands the plan directly. It writes the handoff to `.devflow/<slug>.md` inside the project; for changes with a regression surface it also writes a durable, committable plan to `docs/plans/<slug>.md` (a lightweight spec with Status, categorized work items, phase gates, Affected behaviors, and a Test plan table), which downstream Skills read instead of relying on in-session context.
+
+The dispatch section of `change-plan` and the hand-off notes of the other Skills are the plugin's explicit authorization to delegate (Kimi launches no sub-agent unless the user, `AGENTS.md`, or a skill asks for one): delegate only for read/write volume, parallelism or independence; keep point and line changes in the main agent; plan first for multi-layer and bulk work, then dispatch `builder` in non-overlapping batches; start new pages and redesigns with `ux-designer`; `debug`, `test-changed`, `release-check` and `review` name the role at each hand-off; a continued agent is resumed with the `resume` id instead of being started again.
 
 Full documentation, including the sub-agent tool permissions and the recommended lifecycle, is in [`kimi-development-workflow/plugin/README.md`](./kimi-development-workflow/plugin/README.md).
 
