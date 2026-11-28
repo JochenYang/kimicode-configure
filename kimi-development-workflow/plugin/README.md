@@ -1,6 +1,6 @@
 # Kimi Development Workflow
 
-这是一个面向日常软件开发的 Kimi Code 工作流插件，包含 7 个 Skill 与 17 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
+这是一个面向日常软件开发的 Kimi Code 工作流插件，包含 8 个 Skill 与 17 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。
 
 ## 安装
 
@@ -12,7 +12,7 @@
 
 ## 调用方式
 
-7 个 Skill 都不声明 `type`，类型为默认的 `inline`：模型会按 `description` 在合适的时候自动加载，用户也可以随时手动调用。
+8 个 Skill 都不声明 `type`，类型为默认的 `inline`：模型会按 `description` 在合适的时候自动加载，用户也可以随时手动调用。`grill-me` 只在用户主动要求时用——它的 `description` 以「用户主动要求的」开头并写明不用于没要求被访谈的任务。
 
 ```text
 /skill:change-plan 为订单模块增加优惠券抵扣功能
@@ -22,9 +22,13 @@
 
 ## 技能说明
 
+### `grill-me`：逐题需求访谈（用户主动要求时）
+
+用户说「grill me」「拷问我」「把我问清楚」时加载。按决策依赖一次问一题、每题带推荐答案、能从代码库查到的不问，直到对目标、范围、验收与关键取舍达成共识。产出只有一份 `.devflow/<slug>/interview.md`（已查证的事实、共识与决策、验收草案、排除的方案、未决项），不写开发计划；用户要跳过直接开工时推回一次，坚持就放行并标「按最小输入继续」。收口后由 `change-plan` 消费：它按目录找到记录、沿用其 slug、不重问已记的决策。
+
 ### `change-plan`：编码前规划与计划落地
 
-把功能、重构或复杂修复整理成可执行计划：目标、范围、调用链、风险、验收标准和验证命令。用户已与模型规划好方案时，跳过规划直接落地，补齐缺失的验收与回归面后写入计划文件。
+把功能、重构或复杂修复整理成可执行计划：目标、范围、调用链、风险、验收标准和验证命令。用户已与模型规划好方案时，跳过规划直接落地，补齐缺失的验收与回归面后写入计划文件；有 `grill-me` 访谈记录时先读它，Handoff 用 `Interview:` 字段指回记录。
 
 计划产物分两层：
 
@@ -101,9 +105,10 @@ agent 默认不声明 `model_preference`：启用 `KIMI_CODE_EXPERIMENTAL_SECOND
 ## 推荐生命周期
 
 ```text
-change-plan → 实现 → test-changed → review → commit-review → release-check → doc-gen
+grill-me（可选）→ change-plan → 实现 → test-changed → review → commit-review → release-check → doc-gen
 ```
 
+- `grill-me` 只在用户主动要求时进入：产出 `.devflow/<slug>/interview.md`，`change-plan` 按目录找到它、沿用 slug、不重问已记的决策，Handoff 用 `Interview:` 字段指回记录。
 - `change-plan` 把 Handoff 写入项目内 `.devflow/<slug>.md`；有回归面的任务同时写持久计划 `docs/plans/<slug>.md`（随代码提交），Handoff 用 `Plan:` 字段指向它。下游 Skill 按以下顺序找验收依据：`.devflow/<slug>.md`（有 `Plan:` 指针时以持久计划为准）→ `docs/plans/` 下 Status 为 draft/active 的相关计划 → 用户在本轮明确写下的范围 → 从 diff 重建（缺的字段标 `unknown`）→ `unavailable`。都没有时，不得声称与计划一致。
 - `.devflow/` 应加入 `.gitignore`；`docs/plans/` 不加，计划文件随对应改动一起提交。
 - 持久计划的 Status 生命周期：`draft`（落盘未动工）→ `active`（实现中）→ `done`（Work items 全部落定且 Test plan 全部有通过证据，提交时标）→ `archived`（历史保留）。Work items 按类目分批进 Phases，任何条目处于 `[~]`/`[?]` 时不得进入下一阶段。

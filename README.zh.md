@@ -113,8 +113,9 @@ npm test
 /plugins info kimi-development-workflow
 ```
 
-该插件包含 7 个 Skill 与 17 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。Skill 不声明 `type`，即默认的 `inline`：模型在相关时按 `description` 自动加载，你也可以随时用 `/skill:<name>` 手动调用：
+该插件包含 8 个 Skill 与 17 个专长子代理，不包含 MCP server、Hook、Command、Node.js 运行时或后台进程。Skill 不声明 `type`，即默认的 `inline`：模型在相关时按 `description` 自动加载，你也可以随时用 `/skill:<name>` 手动调用：
 
+- `/skill:grill-me`：在你明确要求时逐题访谈需求，记录决策供 `change-plan` 消费。
 - `/skill:change-plan`：将明确的开发目标转换为可执行、可验证的实施计划。
 - `/skill:debug`：复现、隔离、验证假设、最小修复并回归验证。
 - `/skill:test-changed`：为当前改动选择并运行最小有效验证范围。

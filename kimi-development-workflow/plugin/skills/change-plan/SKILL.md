@@ -16,7 +16,7 @@ description: 在动手改代码前理清范围、验收标准和实现步骤时�
 
 先判断用户处在哪种状态：
 
-1. **方案已确认**：用户已与模型规划好方案（对话中已达成一致，或 Plan mode 的计划刚被批准）。跳过「规划流程」，只补齐缺失的验收、回归面与验证命令，直接进入「落地计划」。不重述整个方案，不推翻已定决策；发现已确认方案有明显漏洞时先指出再落盘。
+1. **方案已确认**：用户已与模型规划好方案（对话中已达成一致，或 Plan mode 的计划刚被批准）。跳过「规划流程」，只补齐缺失的验收、回归面与验证命令，直接进入「落地计划」。不重述整个方案，不推翻已定决策；发现已确认方案有明显漏洞时先指出再落盘。用户做过 `grill-me` 访谈时，先在 `.devflow/*/interview.md` 找与当前任务对应的记录（按标题或 `Goal` 对应；多份都像时取 `Date` 最新的一份并注明，拿不准就问用户一句），slug 沿用该文件所在目录名、不另推：找到就读，已记的决策一律采用、不重问；`OPEN` 项写进 Risks 的待定决策；验收草案并入 Acceptance；并在 `.devflow/<slug>.md` 顶部写一行 `Interview:` 指针（见模板），便于回指。
 2. **只有目标没有方案**：走「规划流程」。
 
 ## 规划流程
@@ -38,7 +38,7 @@ description: 在动手改代码前理清范围、验收标准和实现步骤时�
 - **临时 Handoff**：`.devflow/<slug>.md`。所有计划都写；同时把 `.devflow/` 加进 `.gitignore`。
 - **持久回归计划**：`docs/plans/<slug>.md`。改动有明确回归面（影响既有行为、需要回归测试）或用户要求存盘时写；它随代码一起提交，不进 `.gitignore`。写持久计划时在 `.devflow/<slug>.md` 加一行 `Plan: docs/plans/<slug>.md`，下游 Skill 以持久计划为准。
 
-slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/<slug>/` 目录用于存审查记录和长命令输出，随临时 Handoff 一起被 gitignore。
+slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/<slug>/` 目录用于存审查记录、访谈记录（`grill-me` 的 `interview.md`）和长命令输出，随临时 Handoff 一起被 gitignore。
 
 ### `.devflow/<slug>.md` 模板
 
@@ -48,6 +48,7 @@ slug 用 kebab-case 的任务名，两类文件共用同一个 slug。`.devflow/
 # <任务名>
 
 - Plan: docs/plans/<slug>.md  （有持久计划时写此行，字段以持久计划为准）
+- Interview: .devflow/<slug>/interview.md  （有 grill-me 访谈记录时写此行）
 - Goal: ...
 - Why: ...（为什么要做，成功对谁有意义）
 - Must-have: ...

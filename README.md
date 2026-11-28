@@ -115,8 +115,9 @@ Install:
 /plugins info kimi-development-workflow
 ```
 
-This plugin contains seven Skills and seventeen sub-agents, with no MCP server, Hook, Command, Node.js runtime, or background process. The Skills do not declare `type`, so they are `inline`: the model loads them by description when relevant, and you can still invoke any of them manually with `/skill:<name>`.
+This plugin contains eight Skills and seventeen sub-agents, with no MCP server, Hook, Command, Node.js runtime, or background process. The Skills do not declare `type`, so they are `inline`: the model loads them by description when relevant, and you can still invoke any of them manually with `/skill:<name>`.
 
+- `/skill:grill-me`: runs a one-question-at-a-time requirements interview when you explicitly ask for it, and records the decisions for `change-plan`.
 - `/skill:change-plan`: converts a clear development goal into an executable and verifiable implementation plan.
 - `/skill:debug`: reproduces, isolates, tests hypotheses, applies the smallest fix, and verifies it.
 - `/skill:test-changed`: selects and runs the smallest meaningful validation set for current changes.
